@@ -1,19 +1,22 @@
 package com.java_template.common.util;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class HttpUtils {
     private static final HttpClient client = HttpClient.newHttpClient();
-    private static final Logger logger = Logger.getLogger(HttpUtils.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
+    private static final ObjectMapper om = new ObjectMapper();
 
     private static String ensureBearerToken(String token) {
         return token.startsWith("Bearer") ? token : "Bearer " + token;
@@ -37,40 +40,57 @@ public class HttpUtils {
         return builder.build();
     }
 
-    private static CompletableFuture<Map<String, Object>> sendRequest(String url, String token, String method, Object data) {
+    private static CompletableFuture<ObjectNode> sendRequest(String url, String token, String method, Object data) {
         HttpRequest request = createRequest(url, token, method, data);
+        ObjectNode result = om.createObjectNode();
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
                     int statusCode = response.statusCode();
                     String responseBody = response.body();
-                    logger.info(method + " request to " + url + " completed with status " + statusCode);
-                    Map<String, Object> result = new HashMap<>();
-                    result.put("status", statusCode);
-                    result.put("json", responseBody);
-                    return result;
+                    logger.info("{} request to {} completed with status {}", method, url, statusCode);
+                    try {
+                        JsonNode responseJson = om.readTree(responseBody);
+                        if (responseJson.isObject()) {
+                            result.set("data", (ObjectNode) responseJson);
+                        } else if (responseJson.isTextual()) {
+                            try {
+                                JsonNode parsedJson = om.readTree(responseJson.asText());
+                                result.set("data", (ObjectNode) parsedJson);
+                            } catch (Exception e) {
+                                result.put("data", responseJson.asText());
+                            }
+                        } else {
+                            result.put("data", responseJson);
+                        }
+                        result.put("status", statusCode);
+                        return result;
+                    } catch (Exception e) {
+                        logger.error("Failed to parse response JSON: {}", e.getMessage(), e);
+                        return null;
+                    }
                 })
                 .exceptionally(ex -> {
-                    logger.log(Level.SEVERE, "Error during " + method + " request to " + url, ex);
-                    Map<String, Object> errorResult = new HashMap<>();
-                    errorResult.put("status", 500);
-                    errorResult.put("json", "Internal error: " + ex.getMessage());
-                    return errorResult;
+                    logger.info("Error during " + method + " request to " + url, ex);
+                    ObjectNode errorResult = om.createObjectNode();
+                    result.put("status", 500);
+                    result.put("json", "Internal error: " + ex.getMessage());
+                    return result;
                 });
     }
 
-    public static CompletableFuture<Map<String, Object>> sendGetRequest(String token, String apiUrl, String path) {
+    public static CompletableFuture<ObjectNode> sendGetRequest(String token, String apiUrl, String path) {
         return sendRequest(apiUrl + "/" + path, token, "GET", null);
     }
 
-    public static CompletableFuture<Map<String, Object>> sendPostRequest(String token, String apiUrl, String path, Object data) {
+    public static CompletableFuture<ObjectNode> sendPostRequest(String token, String apiUrl, String path, Object data) {
         return sendRequest(apiUrl + "/" + path, token, "POST", data);
     }
 
-    public static CompletableFuture<Map<String, Object>> sendPutRequest(String token, String apiUrl, String path, Object data) {
+    public static CompletableFuture<ObjectNode> sendPutRequest(String token, String apiUrl, String path, Object data) {
         return sendRequest(apiUrl + "/" + path, token, "PUT", data);
     }
 
-    public static CompletableFuture<Map<String, Object>> sendDeleteRequest(String token, String apiUrl, String path) {
+    public static CompletableFuture<ObjectNode> sendDeleteRequest(String token, String apiUrl, String path) {
         return sendRequest(apiUrl + "/" + path, token, "DELETE", null);
     }
 }

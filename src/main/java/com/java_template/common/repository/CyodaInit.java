@@ -1,20 +1,19 @@
 package com.java_template.common.repository;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.java_template.common.ai.AIAssistantService;
 import com.java_template.common.auth.Authentication;
 import com.java_template.common.util.HttpUtils;
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.net.http.HttpClient;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Logger;
+
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -22,8 +21,8 @@ import static com.java_template.common.config.Config.*;
 
 @Component
 public class CyodaInit {
-    private static final Logger logger = Logger.getLogger(CyodaInit.class.getName());
-    private static final Path ENTITY_DIR = Paths.get(System.getProperty("user.dir")).resolve("entity");
+    private static final Logger logger = LoggerFactory.getLogger(CyodaInit.class);
+    private static final Path ENTITY_DIR = Paths.get(System.getProperty("user.dir")).resolve("src/main/java/com/java_template/entity");
     private static final String API_V_WORKFLOWS = "/api/v1/workflows";
 
     private final Authentication authentication;
@@ -55,27 +54,13 @@ public class CyodaInit {
                         String entityName = jsonFile.getParent().getFileName().toString();
                         return cyodaHttpRepository.modelExists(token, entityName, ENTITY_VERSION)
                                 .thenCompose(modelExists -> modelExists ? CompletableFuture.completedFuture(null)
-                                        : initWorkflow(jsonFile.getParent(), token, entityName));
+                                        : processWorkflowFile(jsonFile, token, entityName));
                     })
                     .collect(Collectors.toList());
 
             return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
         } catch (IOException e) {
-            logger.severe("Error reading files: " + e.getMessage());
-            return CompletableFuture.failedFuture(e);
-        }
-    }
-
-    private CompletableFuture<Void> initWorkflow(Path entityDir, String token, String entityName) {
-        try {
-            List<CompletableFuture<Void>> futures = Files.walk(entityDir)
-                    .filter(file -> file.getFileName().toString().equals("workflow.json"))
-                    .map(file -> processWorkflowFile(file, token, entityName))
-                    .collect(Collectors.toList());
-
-            return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-        } catch (IOException e) {
-            logger.severe("Error processing workflow.json: " + e.getMessage());
+            logger.error("Error reading files at {}: {}", entityDir, e.getMessage(), e);
             return CompletableFuture.failedFuture(e);
         }
     }
@@ -95,10 +80,10 @@ public class CyodaInit {
             return HttpUtils.sendPostRequest(token, CYODA_AI_URL, API_V_WORKFLOWS + "/initial", data)
                     .thenAccept(response -> logger.info("AI workflow init status: " + response.get("status")))
                     .thenCompose(ignored -> HttpUtils.sendPostRequest(token, CYODA_AI_URL, API_V_WORKFLOWS + "/return-dto", data))
-                    .thenCompose(response -> HttpUtils.sendPostRequest(token, CYODA_API_URL, "platform-api/statemachine/import?needRewrite=true", response.get("json")))
+                    .thenCompose(response -> HttpUtils.sendPostRequest(token, CYODA_API_URL, "platform-api/statemachine/import?needRewrite=true", response.get("data")))
                     .thenApply(response -> null);
         } catch (IOException e) {
-            logger.severe("Ошибка чтения файла: " + e.getMessage());
+            logger.error("Error reading file: {}", e.getMessage());
             return CompletableFuture.completedFuture(null);
         }
     }
@@ -141,7 +126,7 @@ public class CyodaInit {
 //        try {
 //            objectMapper.writerWithDefaultPrettyPrinter().writeValue(configFilePath.toFile(), config);
 //        } catch (IOException e) {
-//            logger.severe("Error saving config: " + e.getMessage());
+//            logger.error("Error saving config: " + e.getMessage());
 //        }
 //    }
 //}

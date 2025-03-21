@@ -175,7 +175,7 @@ public class CyodaHttpRepository {
                 List<SaveEntityRespDTO> entities = mapper.readValue(respJson, new TypeReference<>() {});
                 return entities.get(0);
             } else {
-                logger.error("Request failed! Status code: " + response.getStatusLine().getStatusCode());
+                logger.error("Request failed! Status code: {}", response.getStatusLine().getStatusCode());
                 return null;
             }
 
@@ -466,7 +466,7 @@ public class CyodaHttpRepository {
         String exportModelPath = String.format("model/export/SIMPLE_VIEW/%s/%s", modelName, entityVersion);
         return HttpUtils.sendGetRequest(token, CYODA_API_URL, exportModelPath)
                 .thenApply(response ->{
-                    int status = (int) response.get("status");
+                    int status = response.get("status").asInt();
                     return status == 200;
                 });
     }

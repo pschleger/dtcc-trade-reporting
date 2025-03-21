@@ -25,6 +25,9 @@ public class JsonUtils {
 
     public static String toJson(Object data) {
         try {
+            if (data instanceof String) {
+                return (String) data;
+            }
             return objectMapper.writeValueAsString(data);
         } catch (Exception e) {
             throw new RuntimeException("Error converting to JSON", e);

@@ -173,7 +173,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
             try {
                 logger.info("<< Received event: \n{}", cloudEvent.getTextData());
                 Object json = objectMapper.readValue(cloudEvent.getTextData(), Object.class);
-                logger.info("<< Received event: \n" + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(json));
+                //logger.info("<< Received event: \n" + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(json));
                 switch (cloudEvent.getType()) {
                     case CALC_REQ_EVENT_TYPE:
                         EntityProcessorCalculationRequest request = objectMapper.readValue(cloudEvent.getTextData(), EntityProcessorCalculationRequest.class);
@@ -233,7 +233,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
         }
 
 //        logger.info("<< Sending event:\n" + event);
-        logger.info("<< Sending event {}, success: {}\n", cloudEvent.getType(), event.getSuccess());
+        logger.info("<< Sending event {}, success: {}", cloudEvent.getType(), event.getSuccess());
 
         // stream observer is not thread safe, for production usage this should be managed by some pooling for such cases
         synchronized (observer) {
