@@ -26,16 +26,15 @@ public class CyodaInit {
     private static final String API_V_WORKFLOWS = "/api/v1/workflows";
 
     private final Authentication authentication;
-    private final CyodaHttpRepository cyodaHttpRepository;
+    private final CyodaRepository cyodaRepository;
     private final AIAssistantService aiAssistantService;
 
-    public CyodaInit(Authentication authentication, CyodaHttpRepository cyodaHttpRepository, AIAssistantService aiAssistantService) {
+    public CyodaInit(Authentication authentication, CyodaRepository cyodaRepository, AIAssistantService aiAssistantService) {
         this.authentication = authentication;
-        this.cyodaHttpRepository = cyodaHttpRepository;
+        this.cyodaRepository = cyodaRepository;
         this.aiAssistantService = aiAssistantService;
     }
 
-    //todo token
     @PostConstruct
     public void initCyoda() {
         logger.info("🚀 CyodaInit: initializing Cyoda...");
@@ -52,7 +51,7 @@ public class CyodaInit {
                     .filter(path -> path.getParent().getParent().getFileName().toString().equals("entity"))
                     .map(jsonFile -> {
                         String entityName = jsonFile.getParent().getFileName().toString();
-                        return cyodaHttpRepository.modelExists(token, entityName, ENTITY_VERSION)
+                        return cyodaRepository.modelExists(token, entityName, ENTITY_VERSION)
                                 .thenCompose(modelExists -> modelExists ? CompletableFuture.completedFuture(null)
                                         : processWorkflowFile(jsonFile, token, entityName));
                     })
@@ -80,7 +79,7 @@ public class CyodaInit {
             return HttpUtils.sendPostRequest(token, CYODA_AI_URL, API_V_WORKFLOWS + "/initial", data)
                     .thenAccept(response -> logger.info("AI workflow init status: " + response.get("status")))
                     .thenCompose(ignored -> HttpUtils.sendPostRequest(token, CYODA_AI_URL, API_V_WORKFLOWS + "/return-dto", data))
-                    .thenCompose(response -> HttpUtils.sendPostRequest(token, CYODA_API_URL, "platform-api/statemachine/import?needRewrite=true", response.get("data")))
+                    .thenCompose(response -> HttpUtils.sendPostRequest(token, CYODA_API_URL, "platform-api/statemachine/import?needRewrite=true", response.get("json")))
                     .thenApply(response -> null);
         } catch (IOException e) {
             logger.error("Error reading file: {}", e.getMessage());

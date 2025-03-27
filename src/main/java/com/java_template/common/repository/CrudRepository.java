@@ -1,34 +1,49 @@
 package com.java_template.common.repository;
 
+//import com.datastax.oss.driver.api.core.uuid.Uuids;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.java_template.common.repository.dto.Meta;
 
-import com.java_template.common.entity.BaseEntity;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
-import java.util.Optional;
+public interface CrudRepository {
 
-public interface CrudRepository<T extends BaseEntity, ID> {
+    Meta getMeta(String token, String entityModel, String entityVersion);
 
-    T save(T entity);
+    CompletableFuture<ObjectNode> count(Meta meta);
 
-    Iterable<T> saveAll(Iterable<T> entities);
+    CompletableFuture<Void> deleteById(Meta meta, UUID id);
 
-    Optional<T> findById(ID id);
+    CompletableFuture<ObjectNode> delete(Meta meta, Object entity);
 
-    boolean existsById(ID id);
+    CompletableFuture<ObjectNode> deleteAll(Meta meta);
 
-    Iterable<T> findAll();
+    CompletableFuture<ObjectNode> deleteAllEntities(Meta meta, List<Object> entities);
 
-    Iterable<T> findAllById(Iterable<ID> ids);
+    CompletableFuture<ObjectNode> deleteAllByKey(Meta meta, List<Object> keys);
 
-    long count();
+    CompletableFuture<ObjectNode> deleteByKey(Meta meta, Object key);
 
-    void deleteById(ID id);
+    CompletableFuture<ObjectNode> existsByKey(Meta meta, Object key);
 
-    void delete(T entity);
+    CompletableFuture<ObjectNode> findAll(Meta meta);
 
-    void deleteAllById(Iterable<? extends ID> ids);
+    CompletableFuture<ObjectNode> findAllByKey(Meta meta, List<Object> keys);
 
-    void deleteAll(Iterable<? extends T> entities);
+    CompletableFuture<ObjectNode> findByKey(Meta meta, Object key);
 
-    void deleteAll();
+    CompletableFuture<ObjectNode> findById(Meta meta, UUID id);
 
+    CompletableFuture<ObjectNode> findAllByCriteria(Meta meta, Object criteria);
+
+    CompletableFuture<ObjectNode> save(Meta meta, Object entity);
+
+    CompletableFuture<ObjectNode> saveAll(Meta meta, List<Object> entities);
+
+    CompletableFuture<ObjectNode> update(Meta meta, UUID id, Object entity);
+
+    CompletableFuture<ObjectNode> updateAll(Meta meta, List<Object> entities);
 }
+

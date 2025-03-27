@@ -1,6 +1,7 @@
 package com.java_template.entity;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.java_template.common.util.JsonUtils;
 import org.cyoda.cloud.api.event.BaseEvent;
 import org.cyoda.cloud.api.event.DataPayload;
@@ -17,7 +18,7 @@ import java.util.function.Function;
 
 @Component
 public class WorkflowProcessor {
-    private static final Map<String, Function<Map<String, Object>, CompletableFuture<Map<String, Object>>>> processDispatch = new HashMap<>();
+    private static final Map<String, Function<ObjectNode, CompletableFuture<ObjectNode>>> processDispatch = new HashMap<>();
 
     private static final Path entityPath = Paths.get("src/main/java/com/java_template/entity");
 
@@ -44,7 +45,7 @@ public class WorkflowProcessor {
                 if (!method.getName().startsWith("_") && method.getReturnType().equals(CompletableFuture.class)) {
                     processDispatch.put(method.getName(), payload -> {
                         try {
-                            return (CompletableFuture<Map<String, Object>>) method.invoke(null, payload);
+                            return (CompletableFuture<ObjectNode>) method.invoke(null, payload);
                         } catch (Exception e) {
                             throw new RuntimeException("Error invoking workflow method: " + method.getName(), e);
                         }
@@ -61,17 +62,12 @@ public class WorkflowProcessor {
         return relativePath.replace(".java", "");
     }
 
-    public static CompletableFuture<Map<String, Object>> processEvent(String processorName, Map<String, Object> payload) {
-        Function<Map<String, Object>, CompletableFuture<Map<String, Object>>> processor = processDispatch.get(processorName);
+    public static CompletableFuture<ObjectNode> processEvent(String processorName, ObjectNode payload) {
+        Function<ObjectNode, CompletableFuture<ObjectNode>> processor = processDispatch.get(processorName);
         if (processor == null) {
-            return CompletableFuture.failedFuture(new IllegalArgumentException("Unknown processing step: " + processorName));
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Unknown processor: " + processorName));
         }
 
-        return processor.apply(payload).thenApply(result -> {
-            if (!(result instanceof Map)) {
-                throw new IllegalStateException("Processing result must be a Map<String, Object> but got a " + result.getClass().getName());
-            }
-            return result;
-        });
+        return processor.apply(payload);
     }
 }

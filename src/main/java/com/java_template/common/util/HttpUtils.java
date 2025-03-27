@@ -5,14 +5,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.springframework.stereotype.Component;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
+@Component
 public class HttpUtils {
     private static final HttpClient client = HttpClient.newHttpClient();
     private static final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
@@ -51,16 +56,16 @@ public class HttpUtils {
                     try {
                         JsonNode responseJson = om.readTree(responseBody);
                         if (responseJson.isObject()) {
-                            result.set("data", (ObjectNode) responseJson);
+                            result.set("json", (ObjectNode) responseJson);
                         } else if (responseJson.isTextual()) {
                             try {
                                 JsonNode parsedJson = om.readTree(responseJson.asText());
-                                result.set("data", (ObjectNode) parsedJson);
+                                result.set("json", (ObjectNode) parsedJson);
                             } catch (Exception e) {
-                                result.put("data", responseJson.asText());
+                                result.put("json", responseJson.asText());
                             }
                         } else {
-                            result.put("data", responseJson);
+                            result.put("json", responseJson);
                         }
                         result.put("status", statusCode);
                         return result;
@@ -78,8 +83,14 @@ public class HttpUtils {
                 });
     }
 
+    public static CompletableFuture<ObjectNode> sendGetRequest(String token, String apiUrl, String path, Map<String, String> params) {
+        String fullUrl = buildUrlWithParams(apiUrl + "/" + path, params);
+        return sendRequest(fullUrl, token, "GET", null);
+    }
+
     public static CompletableFuture<ObjectNode> sendGetRequest(String token, String apiUrl, String path) {
-        return sendRequest(apiUrl + "/" + path, token, "GET", null);
+        String fullUrl = buildUrlWithParams(apiUrl + "/" + path, null);
+        return sendRequest(fullUrl, token, "GET", null);
     }
 
     public static CompletableFuture<ObjectNode> sendPostRequest(String token, String apiUrl, String path, Object data) {
@@ -92,5 +103,15 @@ public class HttpUtils {
 
     public static CompletableFuture<ObjectNode> sendDeleteRequest(String token, String apiUrl, String path) {
         return sendRequest(apiUrl + "/" + path, token, "DELETE", null);
+    }
+
+    private static String buildUrlWithParams(String baseUrl, Map<String, String> params) {
+        if (params == null || params.isEmpty()) {
+            return baseUrl;
+        }
+        String queryString = params.entrySet().stream()
+                .map(entry -> entry.getKey() + "=" + URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8))
+                .collect(Collectors.joining("&"));
+        return baseUrl + "?" + queryString;
     }
 }

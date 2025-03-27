@@ -1,5 +1,6 @@
 package com.java_template.common.grpc.client;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.java_template.common.auth.Authentication;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -171,17 +172,16 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
     private void handleCloudEvent(CloudEvent cloudEvent) {
         CompletableFuture.runAsync(() -> {
             try {
-                logger.info("<< Received event: \n{}", cloudEvent.getTextData());
                 Object json = objectMapper.readValue(cloudEvent.getTextData(), Object.class);
-                //logger.info("<< Received event: \n" + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(json));
                 switch (cloudEvent.getType()) {
                     case CALC_REQ_EVENT_TYPE:
+                        logger.info("[IN] Received event {}: \n{}", CALC_REQ_EVENT_TYPE, cloudEvent.getTextData());
                         EntityProcessorCalculationRequest request = objectMapper.readValue(cloudEvent.getTextData(), EntityProcessorCalculationRequest.class);
                         EntityProcessorCalculationResponse response = objectMapper.readValue(cloudEvent.getTextData(), EntityProcessorCalculationResponse.class);
                         String processorName = request.getProcessorName();
+                        ObjectNode payloadData = (ObjectNode) request.getPayload().getData();
                         logger.info("Processing {}: {}", CALC_REQ_EVENT_TYPE, processorName);
-                        Map<String, Object> payloadData = JsonUtils.jsonToMap(request.getPayload().getData().toString());
-                        CompletableFuture<Map<String, Object>> futureResult =  workflowProcessor.processEvent(processorName, payloadData);
+                        CompletableFuture<ObjectNode> futureResult =  workflowProcessor.processEvent(processorName, payloadData);
                         futureResult.thenAccept(result -> {
                             try {
                                 response.getPayload().setData(JsonUtils.getJsonNode(result));
@@ -192,15 +192,19 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                         });
                         break;
                     case EVENT_ACK_TYPE:
-                        logger.info("Received {}", EVENT_ACK_TYPE);
+                        logger.debug("[IN] Received event {}: \n{}", EVENT_ACK_TYPE, cloudEvent.getTextData());
+                        break;
+                    case GREET_EVENT_TYPE:
+                        logger.info("[IN] Received event {}: \n{}", GREET_EVENT_TYPE, cloudEvent.getTextData());
                         break;
                     case KEEP_ALIVE_EVENT_TYPE:
+                        logger.debug("[IN] Received event {}: \n{}", KEEP_ALIVE_EVENT_TYPE, cloudEvent.getTextData());
                         EventAckResponse eventAckResponse = objectMapper.readValue(cloudEvent.getTextData(), EventAckResponse.class);
                         eventAckResponse.setSourceEventId(eventAckResponse.getId());
                         sendEvent(eventAckResponse);
                         break;
                     default:
-                        logger.info("Unhandled event type: {}", cloudEvent.getType());
+                        logger.info("[IN] Received unhandled event type {}: \n{}", cloudEvent.getType(), cloudEvent.getTextData());
                 }
             } catch (IOException e) {
                 logger.error("Error processing event: {}", cloudEvent, e);
@@ -232,8 +236,11 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
             throw new IllegalStateException("Stream observer is not initialized");
         }
 
-//        logger.info("<< Sending event:\n" + event);
-        logger.info("<< Sending event {}, success: {}", cloudEvent.getType(), event.getSuccess());
+        if (cloudEvent.getType().equals(EVENT_ACK_TYPE)) {
+            logger.debug("[OUT] Sending event {}, success: {}", cloudEvent.getType(), event.getSuccess());
+        } else {
+            logger.info("[OUT] Sending event {}, success: {}", cloudEvent.getType(), event.getSuccess());
+        }
 
         // stream observer is not thread safe, for production usage this should be managed by some pooling for such cases
         synchronized (observer) {
