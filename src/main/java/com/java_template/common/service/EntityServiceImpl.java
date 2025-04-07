@@ -1,5 +1,6 @@
 package com.java_template.common.service;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.java_template.common.auth.Authentication;
 import com.java_template.common.repository.CrudRepository;
@@ -14,13 +15,11 @@ import java.util.concurrent.CompletableFuture;
 public class EntityServiceImpl implements EntityService {
 
     private final CrudRepository repository;
-    private final Authentication authentication;
     private final String token;
 
     @Autowired
     public EntityServiceImpl(CrudRepository repository, Authentication authentication) {
         this.repository = repository;
-        this.authentication = authentication;
         this.token = authentication.getToken();
     }
 
@@ -31,27 +30,33 @@ public class EntityServiceImpl implements EntityService {
     }
 
     @Override
-    public CompletableFuture<ObjectNode> getItems(String entityModel, String entityVersion) {
+    public CompletableFuture<ArrayNode> getItems(String entityModel, String entityVersion) {
         Meta meta = repository.getMeta(token, entityModel, entityVersion);
         return repository.findAll(meta);
     }
 
     @Override
-    public CompletableFuture<ObjectNode> getItemByCondition(String entityModel, String entityVersion, ObjectNode condition) {
+    public CompletableFuture<ArrayNode> getItemByCondition(String entityModel, String entityVersion, Object condition) {
         Meta meta = repository.getMeta(token, entityModel, entityVersion);
         return repository.findAllByCriteria(meta, condition);
     }
 
     @Override
-    public CompletableFuture<ObjectNode> getItemsByCondition(String entityModel, String entityVersion, ObjectNode condition) {
+    public CompletableFuture<ArrayNode> getItemsByCondition(String entityModel, String entityVersion, Object condition) {
         Meta meta = repository.getMeta(token, entityModel, entityVersion);
         return repository.findAllByCriteria(meta, condition);
     }
 
     @Override
-    public CompletableFuture<ObjectNode> addItem(String entityModel, String entityVersion, ObjectNode entity) {
+    public CompletableFuture<ArrayNode> addItem(String entityModel, String entityVersion, Object entity) {
         Meta meta = repository.getMeta(token, entityModel, entityVersion);
         return repository.save(meta, entity);
+    }
+
+    @Override
+    public CompletableFuture<ArrayNode> addItems(String entityModel, String entityVersion, Object entities) {
+        Meta meta = repository.getMeta(token, entityModel, entityVersion);
+        return repository.saveAll(meta, entities);
     }
 
     @Override
@@ -61,9 +66,15 @@ public class EntityServiceImpl implements EntityService {
     }
 
     @Override
-    public CompletableFuture<Void> deleteItem(String entityModel, String entityVersion, UUID technicalId) {
+    public CompletableFuture<ObjectNode> deleteItem(String entityModel, String entityVersion, UUID technicalId) {
         Meta meta = repository.getMeta(token, entityModel, entityVersion);
-        return repository.deleteById(meta, technicalId)
+        return repository.deleteById(meta, technicalId);
+    }
+
+    @Override
+    public CompletableFuture<ObjectNode> deleteItems(String entityModel, String entityVersion) {
+        Meta meta = repository.getMeta(token, entityModel, entityVersion);
+        return repository.deleteAll(meta)
                 .thenApply(ignored -> null);
     }
 }

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.java_template.common.util.JsonUtils;
-import com.java_template.entity.WorkflowProcessor;
+import com.java_template.common.workflow.WorkflowProcessor;
 import io.cloudevents.core.builder.CloudEventBuilder;
 import io.cloudevents.core.data.PojoCloudEventData;
 import io.cloudevents.core.format.EventFormat;
@@ -32,7 +32,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -52,7 +51,6 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
 
     private static final List<String> TAGS = List.of(GRPC_PROCESSOR_TAG);
     private static final String OWNER = "PLAY";
-    private static final String SPEC_VERSION = "1.0";
     private static final String SOURCE = "SimpleSample";
     private static final String JOIN_EVENT_TYPE = "CalculationMemberJoinEvent";
     private static final String CALC_RESP_EVENT_TYPE = "EntityProcessorCalculationResponse";
@@ -60,7 +58,6 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
     private static final String GREET_EVENT_TYPE = "CalculationMemberGreetEvent";
     private static final String KEEP_ALIVE_EVENT_TYPE = "CalculationMemberKeepAliveEvent";
     private static final String EVENT_ACK_TYPE = "EventAckResponse";
-    private static final String EVENT_ID_FORMAT = "{uuid}";
     private static final int GRPC_SERVER_PORT = 443;
 
     public CyodaCalculationMemberClient(ObjectMapper objectMapper, WorkflowProcessor workflowProcessor, Authentication authentication) {
@@ -70,23 +67,6 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
 
         if (this.token == null) {
             throw new IllegalStateException("Token is not initialized");
-        }
-    }
-
-    public CloudEvent createCloudEvent(String eventId, String eventType, Map<String, Object> data) {
-        try {
-            String jsonData = JsonUtils.mapToJson(data);
-
-            CloudEvent.Builder cloudEventBuilder = CloudEvent.newBuilder()
-                    .setId(eventId)
-                    .setSource(SOURCE)
-                    .setSpecVersion(SPEC_VERSION)
-                    .setType(eventType)
-                    .setTextData(jsonData);
-
-            return cloudEventBuilder.build();
-        } catch (Exception e) {
-            throw new RuntimeException("Error creating CloudEvent", e);
         }
     }
 
@@ -144,8 +124,6 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
             cloudEventStreamObserver = cloudEventsServiceStub.startStreaming(new StreamObserver<>() {
                 @Override
                 public void onNext(CloudEvent cloudEvent) {
-//                    logger.info(">> Got EVENT:\n" + cloudEvent);
-
                     handleCloudEvent(cloudEvent);
                 }
 
@@ -159,20 +137,19 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                     logger.info("Stream completed by remote backend");
                 }
             });
-            logger.info("Started streaming events from gRPC server");
+            logger.info("Connected to gRPC event stream and awaiting events...");
             CalculationMemberJoinEvent event = new CalculationMemberJoinEvent();
             event.setOwner(OWNER);
             event.setTags(TAGS);
             sendEvent(event);
         } catch (Exception e) {
-            logger.error("Failed to start streaming events from gRPC server", e);
+            logger.error("Failed to connect to gRPC event stream", e);
         }
     }
 
     private void handleCloudEvent(CloudEvent cloudEvent) {
         CompletableFuture.runAsync(() -> {
             try {
-                Object json = objectMapper.readValue(cloudEvent.getTextData(), Object.class);
                 switch (cloudEvent.getType()) {
                     case CALC_REQ_EVENT_TYPE:
                         logger.info("[IN] Received event {}: \n{}", CALC_REQ_EVENT_TYPE, cloudEvent.getTextData());
@@ -242,7 +219,8 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
             logger.info("[OUT] Sending event {}, success: {}", cloudEvent.getType(), event.getSuccess());
         }
 
-        // stream observer is not thread safe, for production usage this should be managed by some pooling for such cases
+        // StreamObserver is not thread-safe. Current implementation uses synchronized block.
+        // For high-concurrency production environments, consider using event queue or stream pooling.
         synchronized (observer) {
             observer.onNext(cloudEvent);
         }

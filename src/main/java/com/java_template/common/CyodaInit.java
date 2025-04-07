@@ -1,7 +1,8 @@
-package com.java_template.common.repository;
+package com.java_template.common;
 
 import com.java_template.common.ai.AIAssistantService;
 import com.java_template.common.auth.Authentication;
+import com.java_template.common.repository.CyodaRepository;
 import com.java_template.common.util.HttpUtils;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;

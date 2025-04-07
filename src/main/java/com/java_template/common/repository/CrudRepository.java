@@ -1,6 +1,7 @@
 package com.java_template.common.repository;
 
 //import com.datastax.oss.driver.api.core.uuid.Uuids;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.java_template.common.repository.dto.Meta;
 
@@ -14,7 +15,7 @@ public interface CrudRepository {
 
     CompletableFuture<ObjectNode> count(Meta meta);
 
-    CompletableFuture<Void> deleteById(Meta meta, UUID id);
+    CompletableFuture<ObjectNode> deleteById(Meta meta, UUID id);
 
     CompletableFuture<ObjectNode> delete(Meta meta, Object entity);
 
@@ -28,7 +29,7 @@ public interface CrudRepository {
 
     CompletableFuture<ObjectNode> existsByKey(Meta meta, Object key);
 
-    CompletableFuture<ObjectNode> findAll(Meta meta);
+    CompletableFuture<ArrayNode> findAll(Meta meta);
 
     CompletableFuture<ObjectNode> findAllByKey(Meta meta, List<Object> keys);
 
@@ -36,11 +37,11 @@ public interface CrudRepository {
 
     CompletableFuture<ObjectNode> findById(Meta meta, UUID id);
 
-    CompletableFuture<ObjectNode> findAllByCriteria(Meta meta, Object criteria);
+    CompletableFuture<ArrayNode> findAllByCriteria(Meta meta, Object criteria);
 
-    CompletableFuture<ObjectNode> save(Meta meta, Object entity);
+    CompletableFuture<ArrayNode> save(Meta meta, Object entity);
 
-    CompletableFuture<ObjectNode> saveAll(Meta meta, List<Object> entities);
+    CompletableFuture<ArrayNode> saveAll(Meta meta, Object entities);
 
     CompletableFuture<ObjectNode> update(Meta meta, UUID id, Object entity);
 

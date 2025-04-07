@@ -28,19 +28,20 @@ public class HttpUtils {
     }
 
     private static HttpRequest.Builder createRequestBuilder(String url, String token, String method) {
-        return HttpRequest.newBuilder()
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .header("Authorization", ensureBearerToken(token))
-                .header("Content-Type", "application/json")
-                .method(method, HttpRequest.BodyPublishers.noBody());
+                .header("Content-Type", "application/json");
+        if (token != null && !token.isBlank()) {
+            builder.header("Authorization", ensureBearerToken(token));
+        }
+        return builder.method(method, HttpRequest.BodyPublishers.noBody());
     }
+
 
     private static HttpRequest createRequest(String url, String token, String method, Object data) {
         HttpRequest.Builder builder = createRequestBuilder(url, token, method);
         if (data != null) {
             builder.method(method, HttpRequest.BodyPublishers.ofString(JsonUtils.toJson(data), StandardCharsets.UTF_8));
-        } else {
-            builder.method(method, HttpRequest.BodyPublishers.noBody());
         }
         return builder.build();
     }
@@ -84,34 +85,40 @@ public class HttpUtils {
     }
 
     public static CompletableFuture<ObjectNode> sendGetRequest(String token, String apiUrl, String path, Map<String, String> params) {
-        String fullUrl = buildUrlWithParams(apiUrl + "/" + path, params);
+        String fullUrl = buildUrlWithParams(apiUrl, path, params);
         return sendRequest(fullUrl, token, "GET", null);
     }
 
     public static CompletableFuture<ObjectNode> sendGetRequest(String token, String apiUrl, String path) {
-        String fullUrl = buildUrlWithParams(apiUrl + "/" + path, null);
+        String fullUrl = buildUrlWithParams(apiUrl, path, null);
         return sendRequest(fullUrl, token, "GET", null);
     }
 
     public static CompletableFuture<ObjectNode> sendPostRequest(String token, String apiUrl, String path, Object data) {
-        return sendRequest(apiUrl + "/" + path, token, "POST", data);
+        String fullUrl = buildUrlWithParams(apiUrl, path, null);
+        return sendRequest(fullUrl, token, "POST", data);
     }
 
     public static CompletableFuture<ObjectNode> sendPutRequest(String token, String apiUrl, String path, Object data) {
-        return sendRequest(apiUrl + "/" + path, token, "PUT", data);
+        String fullUrl = buildUrlWithParams(apiUrl, path, null);
+        return sendRequest(fullUrl, token, "PUT", data);
     }
 
     public static CompletableFuture<ObjectNode> sendDeleteRequest(String token, String apiUrl, String path) {
-        return sendRequest(apiUrl + "/" + path, token, "DELETE", null);
+        String fullUrl = buildUrlWithParams(apiUrl, path, null);
+        return sendRequest(fullUrl, token, "DELETE", null);
     }
 
-    private static String buildUrlWithParams(String baseUrl, Map<String, String> params) {
+    private static String buildUrlWithParams(String apiUrl, String path, Map<String, String> params) {
+        String baseUrl = apiUrl.endsWith("/") ? apiUrl.substring(0, apiUrl.length() - 1) : apiUrl;
+        String fullUrl = (path == null || path.isBlank()) ? baseUrl : baseUrl + "/" + path;
+
         if (params == null || params.isEmpty()) {
-            return baseUrl;
+            return fullUrl;
         }
         String queryString = params.entrySet().stream()
                 .map(entry -> entry.getKey() + "=" + URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8))
                 .collect(Collectors.joining("&"));
-        return baseUrl + "?" + queryString;
+        return fullUrl + "?" + queryString;
     }
 }
