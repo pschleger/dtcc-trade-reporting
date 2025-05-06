@@ -61,7 +61,11 @@ public class HttpUtils {
                         } else if (responseJson.isTextual()) {
                             try {
                                 JsonNode parsedJson = om.readTree(responseJson.asText());
-                                result.set("json", (ObjectNode) parsedJson);
+                                if (parsedJson.isObject()) {
+                                    result.set("json", (ObjectNode) parsedJson);
+                                } else {
+                                    result.set("json", parsedJson);
+                                }
                             } catch (Exception e) {
                                 result.put("json", responseJson.asText());
                             }
@@ -71,13 +75,14 @@ public class HttpUtils {
                         result.put("status", statusCode);
                         return result;
                     } catch (Exception e) {
-                        logger.error("Failed to parse response JSON: {}", e.getMessage(), e);
-                        return null;
+                        logger.warn("Failed to parse response JSON: {}", e.getMessage());
+                        result.put("status", statusCode);
+                        result.put("json", responseBody);
+                        return result;
                     }
                 })
                 .exceptionally(ex -> {
-                    logger.info("Error during " + method + " request to " + url, ex);
-                    ObjectNode errorResult = om.createObjectNode();
+                    logger.error("Error during {} request to {}", method, url, ex);
                     result.put("status", 500);
                     result.put("json", "Internal error: " + ex.getMessage());
                     return result;

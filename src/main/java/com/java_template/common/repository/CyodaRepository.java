@@ -89,7 +89,7 @@ public class CyodaRepository implements CrudRepository {
     }
 
     @Override
-    public CompletableFuture<ObjectNode> deleteAll(Meta meta) {
+    public CompletableFuture<ArrayNode> deleteAll(Meta meta) {
         return deleteAllByModel(meta);
     }
 
@@ -146,7 +146,7 @@ public class CyodaRepository implements CrudRepository {
     private CompletableFuture<ObjectNode> getById(Meta meta, UUID id) {
         String path = String.format("entity/%s", id);
         return httpUtils.sendGetRequest(meta.getToken(), CYODA_API_URL, path)
-                .thenApply(response -> { return (ObjectNode) response.get("json").get("data"); });
+                .thenApply(response -> { return (ObjectNode) response.get("json"); });
     }
 
     private CompletableFuture<ArrayNode> saveNewEntities(Meta meta, Object data) {
@@ -205,13 +205,13 @@ public class CyodaRepository implements CrudRepository {
     private CompletableFuture<ObjectNode> deleteEntity(Meta meta, UUID id) {
         String path = String.format("entity/%s", id);
 
-        return httpUtils.sendDeleteRequest(meta.getToken(), CYODA_API_URL, path);
+        return httpUtils.sendDeleteRequest(meta.getToken(), CYODA_API_URL, path).thenApply(response -> (ObjectNode) response.get("json"));
     }
 
-    private CompletableFuture<ObjectNode> deleteAllByModel(Meta meta) {
+    private CompletableFuture<ArrayNode> deleteAllByModel(Meta meta) {
         String path = String.format("entity/%s/%s", meta.getEntityModel(), meta.getEntityVersion());
 
-        return httpUtils.sendDeleteRequest(meta.getToken(), CYODA_API_URL, path);
+        return httpUtils.sendDeleteRequest(meta.getToken(), CYODA_API_URL, path).thenApply(response -> (ArrayNode) response.get("json"));
     }
 
     public CompletableFuture<Boolean> modelExists(String token, String modelName, String entityVersion) {

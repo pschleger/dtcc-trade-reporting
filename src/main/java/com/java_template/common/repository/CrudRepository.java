@@ -1,6 +1,5 @@
 package com.java_template.common.repository;
 
-//import com.datastax.oss.driver.api.core.uuid.Uuids;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.java_template.common.repository.dto.Meta;
@@ -19,7 +18,7 @@ public interface CrudRepository {
 
     CompletableFuture<ObjectNode> delete(Meta meta, Object entity);
 
-    CompletableFuture<ObjectNode> deleteAll(Meta meta);
+    CompletableFuture<ArrayNode> deleteAll(Meta meta);
 
     CompletableFuture<ObjectNode> deleteAllEntities(Meta meta, List<Object> entities);
 
