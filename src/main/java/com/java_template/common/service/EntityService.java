@@ -40,10 +40,10 @@ public interface EntityService {
     CompletableFuture<ArrayNode> addItemsAndReturnTransactionInfo(String entityModel, String entityVersion, Object entities);
 
     //     Update an existing item in the repository.
-    CompletableFuture<ObjectNode> updateItem(String entityModel, String entityVersion, UUID technicalId, Object entity);
+    CompletableFuture<UUID> updateItem(String entityModel, String entityVersion, UUID technicalId, Object entity);
 
     //     Delete an item by ID.
-    CompletableFuture<ObjectNode> deleteItem(String entityModel, String entityVersion, UUID technicalId);
+    CompletableFuture<UUID> deleteItem(String entityModel, String entityVersion, UUID technicalId);
 
     //     Delete all items by entityModel and entityVersion.
     CompletableFuture<ArrayNode> deleteItems(String entityModel, String entityVersion);

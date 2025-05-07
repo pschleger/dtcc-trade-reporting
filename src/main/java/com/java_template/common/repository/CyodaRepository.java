@@ -132,9 +132,8 @@ public class CyodaRepository implements CrudRepository {
         String path = String.format("entity/%s/%s", meta.getEntityModel(), meta.getEntityVersion());
         return httpUtils.sendGetRequest(meta.getToken(), CYODA_API_URL, path)
                 .thenApply(response -> {
-                    int statusCode = response.get("status").asInt();
                     JsonNode jsonNode = response.get("json");
-                    if (jsonNode != null && jsonNode.isArray() && statusCode >= 200 && statusCode < 300) {
+                    if (jsonNode != null && jsonNode.isArray()) {
                         return (ArrayNode) jsonNode;
                     } else {
                         logger.warn("Expected an ArrayNode under 'json', but got: {}", jsonNode);
@@ -155,10 +154,9 @@ public class CyodaRepository implements CrudRepository {
         return httpUtils.sendPostRequest(meta.getToken(), CYODA_API_URL, path, data)
                 .thenApply(response -> {
                     if (response != null) {
-                        int statusCode = response.get("status").asInt();
                         JsonNode jsonNode = response.get("json");
 
-                        if (jsonNode != null && jsonNode.isArray() && statusCode >= 200 && statusCode < 300) {
+                        if (jsonNode != null && jsonNode.isArray()) {
                             logger.info("Successfully saved new entities. Response: {}", response);
                             return (ArrayNode) jsonNode;
                         } else {
@@ -169,37 +167,13 @@ public class CyodaRepository implements CrudRepository {
                         logger.error("Failed to save new entity. Response is null");
                         throw new RuntimeException("Failed to save new entity: Response is null");
                     }
-                })
-                .exceptionally(ex -> {
-                    logger.error("An error occurred while saving new entities '{}' with version '{}': {}",
-                            meta.getEntityModel(), meta.getEntityVersion(), ex.getMessage());
-                    throw new CompletionException(ex);
                 });
     }
 
     private CompletableFuture<ObjectNode> updateEntity(Meta meta, UUID id, Object entity) {
         String path = String.format("entity/%s/%s/%s", FORMAT, id, meta.getUpdateTransition());
-
         return httpUtils.sendPutRequest(meta.getToken(), CYODA_API_URL, path, entity)
-                .thenApply(response -> {
-                    if (response != null) {
-                        int statusCode = response.get("status").asInt();
-                        if (statusCode >= 200 && statusCode < 300) {
-                            logger.info("Successfully updated entity with id '{}'. Status: {}, Response: {}", id, statusCode, response.get("json"));
-                        } else {
-                            logger.warn("Update request for entity with id '{}' returned non-success status: {}. Response: {}", id, statusCode, response.get("json"));
-                        }
-
-                        return (ObjectNode) response.get("json");
-                    } else {
-                        logger.error("Failed to update the entity with id '{}'. Response is null", id);
-                        throw new RuntimeException("Failed to save new entity.");
-                    }
-                })
-                .exceptionally(ex -> {
-                    logger.error("An error occurred while updating entity with id '{}': {}", id, ex.getMessage());
-                    throw new CompletionException(ex);
-                });
+                .thenApply(response -> (ObjectNode) response.get("json"));
     }
 
     private CompletableFuture<ObjectNode> deleteEntity(Meta meta, UUID id) {

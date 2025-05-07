@@ -119,15 +119,17 @@ public class EntityServiceImpl implements EntityService {
     }
 
     @Override
-    public CompletableFuture<ObjectNode> updateItem(String entityModel, String entityVersion, UUID technicalId, Object entity) {
+    public CompletableFuture<UUID> updateItem(String entityModel, String entityVersion, UUID technicalId, Object entity) {
         Meta meta = repository.getMeta(token, entityModel, entityVersion);
-        return repository.update(meta, technicalId, entity);
+        return repository.update(meta, technicalId, entity)
+                .thenApply(resultNode -> UUID.fromString(resultNode.get("entityIds").get(0).asText()));
     }
 
     @Override
-    public CompletableFuture<ObjectNode> deleteItem(String entityModel, String entityVersion, UUID technicalId) {
+    public CompletableFuture<UUID> deleteItem(String entityModel, String entityVersion, UUID technicalId) {
         Meta meta = repository.getMeta(token, entityModel, entityVersion);
-        return repository.deleteById(meta, technicalId);
+        return repository.deleteById(meta, technicalId)
+                .thenApply(resultNode -> UUID.fromString(resultNode.get("id").asText()));
     }
 
     @Override

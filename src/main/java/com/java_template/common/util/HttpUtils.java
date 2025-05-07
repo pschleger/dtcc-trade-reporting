@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -53,7 +55,19 @@ public class HttpUtils {
                 .thenApply(response -> {
                     int statusCode = response.statusCode();
                     String responseBody = response.body();
-                    logger.info("{} request to {} completed with status {}", method, url, statusCode);
+
+                    if (statusCode >= 200 && statusCode < 300) {
+                        logger.info("{} request to {} succeeded with status {}", method, url, statusCode);
+                    } else if (statusCode >= 300 && statusCode < 400) {
+                        logger.info("{} request to {} returned a redirect ({}): {}", method, url, statusCode, responseBody);
+                    } else if (statusCode >= 400 && statusCode < 500) {
+                        logger.warn("{} request to {} returned client error ({}): {}", method, url, statusCode, responseBody);
+                        throw new ResponseStatusException(HttpStatus.valueOf(statusCode), extractErrorMessage(responseBody));
+                    } else if (statusCode >= 500) {
+                        logger.error("{} request to {} returned server error ({}): {}", method, url, statusCode, responseBody);
+                        throw new ResponseStatusException(HttpStatus.valueOf(statusCode), extractErrorMessage(responseBody));
+                    }
+
                     try {
                         JsonNode responseJson = om.readTree(responseBody);
                         if (responseJson.isObject()) {
@@ -80,12 +94,6 @@ public class HttpUtils {
                         result.put("json", responseBody);
                         return result;
                     }
-                })
-                .exceptionally(ex -> {
-                    logger.error("Error during {} request to {}", method, url, ex);
-                    result.put("status", 500);
-                    result.put("json", "Internal error: " + ex.getMessage());
-                    return result;
                 });
     }
 
@@ -126,4 +134,19 @@ public class HttpUtils {
                 .collect(Collectors.joining("&"));
         return fullUrl + "?" + queryString;
     }
+
+    private static String extractErrorMessage(String responseBody) {
+        try {
+            JsonNode errorNode = om.readTree(responseBody);
+            if (errorNode.has("errorMessage")) {
+                return errorNode.get("errorMessage").asText();
+            } else if (errorNode.has("message")) {
+                return errorNode.get("message").asText();
+            } else if (errorNode.has("detail")) {
+                return errorNode.get("detail").asText();
+            }
+        } catch (Exception ignored) {}
+        return responseBody;
+    }
+
 }
