@@ -1,0 +1,6 @@
+#cyoda.host=
+#cyoda.name=
+#cyoda.password=
+#grpc.server.host=
+#grpc.server.port=443
+#grpc.server.tls=true
