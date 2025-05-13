@@ -3,7 +3,6 @@ package com.java_template.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.java_template.auxiliary.EntityGenerator;
-import com.java_template.auxiliary.Randomizer;
 import com.java_template.common.service.EntityService;
 import com.java_template.common.util.Condition;
 import com.java_template.common.util.SearchConditionRequest;
@@ -29,23 +28,19 @@ public class EntityServiceTest {
     private EntityGenerator entityGenerator;
     @Autowired
     private EntityService entityService;
-    @Autowired
-    private Randomizer random;
 
     private static String ENTITY_VERSION = "1";
     private static String EMPLOYEE = "employee";
     private static String EXPENSE_REPORT = "expense_report";
-//    private static String PAYMENT = "payment";
 
     @AfterEach
-    void deleteEntities() throws Exception {
+    void deleteEntities() {
         entityService.deleteItems(EXPENSE_REPORT, ENTITY_VERSION);
         entityService.deleteItems(EMPLOYEE, ENTITY_VERSION);
-//        entityService.deleteItems(PAYMENT, ENTITY_VERSION);
     }
 
     @Test
-    public void searchTest() throws Exception {
+    public void searchTest() {
         CompletableFuture<Void> f1 = CompletableFuture.runAsync(() -> entityService.deleteItems(EXPENSE_REPORT, ENTITY_VERSION));
         CompletableFuture<Void> f2 = CompletableFuture.runAsync(() -> entityService.deleteItems(EMPLOYEE, ENTITY_VERSION));
         CompletableFuture.allOf(f1, f2).join();
@@ -61,15 +56,7 @@ public class EntityServiceTest {
 
         var saveResult = entityService.addItems(EXPENSE_REPORT, ENTITY_VERSION, reports).join();
         assertThat(saveResult).isNotNull();
-        assertThat(saveResult.isArray()).isTrue();
-        int totalIdCount = 0;
-        for (JsonNode node : saveResult) {
-            JsonNode entityIdsNode = node.get("entityIds");
-            if (entityIdsNode != null && entityIdsNode.isArray()) {
-                totalIdCount += entityIdsNode.size();
-            }
-        }
-        assertThat(totalIdCount).isEqualTo(nReports);
+        assertThat(saveResult.size()).isEqualTo(nReports);
 
         var conditionRequest = new SearchConditionRequest();
         conditionRequest.setType("group");

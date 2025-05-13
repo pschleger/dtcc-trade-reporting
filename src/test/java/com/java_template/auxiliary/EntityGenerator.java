@@ -48,7 +48,7 @@ public class EntityGenerator {
         List<UUID> idList = new ArrayList<>();
         if (!fakeEmployeeId) {
             for (JsonNode node : items) {
-                idList.add(UUID.fromString(node.get("id").asText()));
+                idList.add(UUID.fromString(node.get("technicalId").asText()));
             }
         } else {
             idList = List.of(fakeUuid);
