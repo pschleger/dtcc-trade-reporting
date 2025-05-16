@@ -1,4 +1,4 @@
-package com.java_template.common;
+package com.java_template.common.tool;
 
 import com.java_template.common.auth.Authentication;
 import com.java_template.common.util.HttpUtils;
@@ -15,7 +15,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.java_template.common.config.Config.*;
-import static com.java_template.common.workflow.WorkflowEnricher.enrichWorkflow;
+import static com.java_template.common.tool.WorkflowConverter.parseAiWorkflowToDto;
+import static com.java_template.common.tool.WorkflowConverter.parseAiWorkflowToDtoJson;
+import static com.java_template.common.tool.WorkflowEnricher.enrichWorkflow;
 
 public class CyodaInit {
     private static final Logger logger = LoggerFactory.getLogger(CyodaInit.class);
@@ -28,7 +30,7 @@ public class CyodaInit {
     }
 
     public CompletableFuture<Void> initCyoda() {
-        logger.info("🚀 CyodaInit: initializing Cyoda...");
+        logger.info("CyodaInit: initializing Cyoda...");
         String token = authentication.getToken();
         return initEntitiesSchema(ENTITY_DIR, token)
                 .thenRun(() -> logger.info("✅ CyodaInit: Entities initialized successfully!"));
@@ -55,8 +57,9 @@ public class CyodaInit {
 
     private CompletableFuture<Void> processWorkflowFile(Path file, String token, String entityName) {
         try {
-            String dto = enrichWorkflow(Files.readString(file));
-            String workflowContents = dto
+            String enrichedWorkflow = enrichWorkflow(Files.readString(file));
+
+            String workflowContents = enrichedWorkflow
                     .replace("ENTITY_VERSION_VAR", ENTITY_VERSION)
                     .replace("ENTITY_MODEL_VAR", entityName)
                     .replace("CHAT_ID_VAR", CHAT_ID);
@@ -65,9 +68,8 @@ public class CyodaInit {
                     "workflow_json", workflowContents,
                     "class_name", ENTITY_CLASS_NAME
             );
-//            TODO add parse_ai_workflow_to_dto()
-
-            return HttpUtils.sendPostRequest(token, CYODA_API_URL, "platform-api/statemachine/import?needRewrite=true", workflowContents)
+            String dto = parseAiWorkflowToDtoJson(workflowContents);
+            return HttpUtils.sendPostRequest(token, CYODA_API_URL, "platform-api/statemachine/import?needRewrite=true", dto)
                     .thenApply(response -> null);
         } catch (IOException e) {
             logger.error("Error reading file: {}", e.getMessage());

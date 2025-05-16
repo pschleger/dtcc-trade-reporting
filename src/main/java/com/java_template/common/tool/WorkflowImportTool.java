@@ -1,6 +1,5 @@
 package com.java_template.common.tool;
 
-import com.java_template.common.CyodaInit;
 import com.java_template.common.auth.Authentication;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
