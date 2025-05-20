@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.java_template.common.config.Config.*;
-import static com.java_template.common.tool.WorkflowConverter.parseAiWorkflowToDto;
 import static com.java_template.common.tool.WorkflowConverter.parseAiWorkflowToDtoJson;
 import static com.java_template.common.tool.WorkflowEnricher.enrichWorkflow;
 
