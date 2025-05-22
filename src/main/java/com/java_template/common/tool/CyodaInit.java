@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import java.util.stream.Collectors;
@@ -29,10 +28,14 @@ public class CyodaInit {
     }
 
     public CompletableFuture<Void> initCyoda() {
-        logger.info("CyodaInit: initializing Cyoda...");
+        logger.info("🔄 Starting workflow import into Cyoda...");
         String token = authentication.getToken();
         return initEntitiesSchema(ENTITY_DIR, token)
-                .thenRun(() -> logger.info("✅ CyodaInit: Entities initialized successfully!"));
+                .thenRun(() -> logger.info("✅ All workflows imported into Cyoda successfully."))
+                .exceptionally(ex -> {
+                    logger.error("❌ Cyoda workflow import failed: {}", ex.getMessage(), ex);
+                    return null;
+                });
     }
 
     public CompletableFuture<Void> initEntitiesSchema(Path entityDir, String token) {
@@ -63,16 +66,23 @@ public class CyodaInit {
                     .replace("ENTITY_MODEL_VAR", entityName)
                     .replace("CHAT_ID_VAR", CHAT_ID);
 
-            Map<String, String> data = Map.of(
-                    "workflow_json", workflowContents,
-                    "class_name", ENTITY_CLASS_NAME
-            );
             String dto = parseAiWorkflowToDtoJson(workflowContents);
             return HttpUtils.sendPostRequest(token, CYODA_API_URL, "platform-api/statemachine/import?needRewrite=true", dto)
-                    .thenApply(response -> null);
+                    .thenApply(response -> {
+                        int statusCode = response.get("status").asInt();
+                        if (statusCode >= 200 && statusCode < 300) {
+                            logger.info("Successfully imported workflow for entity: {}", entityName);
+                            return null;
+                        } else {
+                            String body = response.path("json").toString();
+                            throw new RuntimeException("Failed to import workflow for entity " + entityName +
+                                    ". Status code: " + statusCode +
+                                    ", body: " + body);
+                        }
+                    });
         } catch (IOException e) {
-            logger.error("Error reading file: {}", e.getMessage());
-            return CompletableFuture.completedFuture(null);
+            logger.error("Error reading file {}: {}", file, e.getMessage(), e);
+            return CompletableFuture.failedFuture(e);
         }
     }
 }
