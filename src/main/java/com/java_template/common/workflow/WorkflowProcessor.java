@@ -69,7 +69,8 @@ public class WorkflowProcessor {
         Function<ObjectNode, CompletableFuture<ObjectNode>> processor = processDispatch.get(processorName);
         if (processor == null) {
             logger.warn("No process handler found for processor: {}", processorName);
-            return CompletableFuture.failedFuture(new IllegalArgumentException("Unknown processor: " + processorName));
+            payload.put("success", false);
+            return CompletableFuture.completedFuture(payload);
         }
 
         return processor.apply(payload);
