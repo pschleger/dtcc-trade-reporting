@@ -158,9 +158,12 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                         String processorName = request.getProcessorName();
                         ObjectNode payloadData = (ObjectNode) request.getPayload().getData();
                         logger.info("Processing {}: {}", CALC_REQ_EVENT_TYPE, processorName);
-                        CompletableFuture<ObjectNode> futureResult =  workflowProcessor.processEvent(processorName, payloadData);
+                        CompletableFuture<ObjectNode> futureResult = workflowProcessor.processEvent(processorName, payloadData);
                         futureResult.thenAccept(result -> {
                             try {
+                                boolean success = result.path("success").asBoolean(true);
+                                result.remove("success");
+                                response.setSuccess(success);
                                 response.getPayload().setData(JsonUtils.getJsonNode(result));
                                 sendEvent(response);
                             } catch (InvalidProtocolBufferException e) {
@@ -175,7 +178,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                         logger.info("[IN] Received event {}: \n{}", GREET_EVENT_TYPE, cloudEvent.getTextData());
                         break;
                     case KEEP_ALIVE_EVENT_TYPE:
-                        logger.debug("[IN] Received event {}: \n{}", KEEP_ALIVE_EVENT_TYPE, cloudEvent.getTextData());
+                        logger.info("[IN] Received event {}", KEEP_ALIVE_EVENT_TYPE);
                         EventAckResponse eventAckResponse = objectMapper.readValue(cloudEvent.getTextData(), EventAckResponse.class);
                         eventAckResponse.setSourceEventId(eventAckResponse.getId());
                         sendEvent(eventAckResponse);
@@ -213,10 +216,10 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
             throw new IllegalStateException("Stream observer is not initialized");
         }
 
-        if (cloudEvent.getType().equals(EVENT_ACK_TYPE)) {
-            logger.debug("[OUT] Sending event {}, success: {}", cloudEvent.getType(), event.getSuccess());
-        } else {
+        if (event.getSuccess()) {
             logger.info("[OUT] Sending event {}, success: {}", cloudEvent.getType(), event.getSuccess());
+        } else {
+            logger.warn("[OUT] Sending event {}, success: {}", cloudEvent.getType(), event.getSuccess());
         }
 
         // StreamObserver is not thread-safe. Current implementation uses synchronized block.
