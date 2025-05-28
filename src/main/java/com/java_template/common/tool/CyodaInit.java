@@ -14,12 +14,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.java_template.common.config.Config.*;
-import static com.java_template.common.tool.WorkflowConverter.parseAiWorkflowToDtoJson;
-import static com.java_template.common.tool.WorkflowEnricher.enrichWorkflow;
 
 public class CyodaInit {
     private static final Logger logger = LoggerFactory.getLogger(CyodaInit.class);
-    private static final Path ENTITY_DIR = Paths.get(System.getProperty("user.dir")).resolve("src/main/java/com/java_template/entity");
+    private static final Path WORKFLOW_DTO_DIR = Paths.get(System.getProperty("user.dir")).resolve("src/main/java/com/java_template/cyoda_dto");
 
     private final Authentication authentication;
 
@@ -30,7 +28,7 @@ public class CyodaInit {
     public CompletableFuture<Void> initCyoda() {
         logger.info("🔄 Starting workflow import into Cyoda...");
         String token = authentication.getToken();
-        return initEntitiesSchema(ENTITY_DIR, token)
+        return initEntitiesSchema(WORKFLOW_DTO_DIR, token)
                 .thenRun(() -> logger.info("✅ All workflows imported into Cyoda successfully."))
                 .exceptionally(ex -> {
                     logger.error("❌ Cyoda workflow import failed: {}", ex.getMessage(), ex);
@@ -43,7 +41,7 @@ public class CyodaInit {
             List<CompletableFuture<Void>> futures = jsonFiles
                     .filter(path -> path.toString().toLowerCase().endsWith("workflow.json"))
                     .filter(path -> path.getParent() != null && path.getParent().getParent() != null)
-                    .filter(path -> path.getParent().getParent().getFileName().toString().equals("entity"))
+                    .filter(path -> path.getParent().getParent().getFileName().toString().equals("cyoda_dto"))
                     .map(jsonFile -> {
                         String entityName = jsonFile.getParent().getFileName().toString();
                         return processWorkflowFile(jsonFile, token, entityName);
@@ -59,14 +57,7 @@ public class CyodaInit {
 
     private CompletableFuture<Void> processWorkflowFile(Path file, String token, String entityName) {
         try {
-            String enrichedWorkflow = enrichWorkflow(Files.readString(file));
-
-            String workflowContents = enrichedWorkflow
-                    .replace("ENTITY_VERSION_VAR", ENTITY_VERSION)
-                    .replace("ENTITY_MODEL_VAR", entityName)
-                    .replace("CHAT_ID_VAR", CHAT_ID);
-
-            String dto = parseAiWorkflowToDtoJson(workflowContents);
+            String dto = Files.readString(file);
             return HttpUtils.sendPostRequest(token, CYODA_API_URL, "platform-api/statemachine/import?needRewrite=true", dto)
                     .thenApply(response -> {
                         int statusCode = response.get("status").asInt();
