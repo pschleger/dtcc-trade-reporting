@@ -102,10 +102,10 @@ task bootJarPrototype(type: org.springframework.boot.gradle.tasks.bundling.BootJ
     dependsOn configurations.runtimeClasspath
 }
 
-task bootJarTool(type: org.springframework.boot.gradle.tasks.bundling.BootJar) {
+task bootJarWorkflowImport(type: org.springframework.boot.gradle.tasks.bundling.BootJar) {
     group = 'build'
     description = 'Boot JAR for Workflow Import Tool'
-    archiveClassifier.set("import-workflow")
+    archiveClassifier.set("workflow-import")
     mainClass.set("com.java_template.common.tool.WorkflowImportTool")
     destinationDirectory.set(layout.buildDirectory.dir("libs"))
     launchScript()
@@ -113,8 +113,4 @@ task bootJarTool(type: org.springframework.boot.gradle.tasks.bundling.BootJar) {
     mainClassName = "com.java_template.common.tool.WorkflowImportTool"
     targetJavaVersion = JavaVersion.VERSION_21
     dependsOn configurations.runtimeClasspath
-}
-
-tasks.named("build") {
-    dependsOn("bootJarPrototype", "bootJarTool")
 }
