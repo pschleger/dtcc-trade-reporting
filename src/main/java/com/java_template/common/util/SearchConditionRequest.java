@@ -11,4 +11,12 @@ public class SearchConditionRequest {
     private String type;
     private String operator;
     private List<Condition> conditions;
+
+    public static SearchConditionRequest group(String operator, Condition... conditions) {
+        SearchConditionRequest req = new SearchConditionRequest();
+        req.setType("group");
+        req.setOperator(operator);
+        req.setConditions(List.of(conditions));
+        return req;
+    }
 }

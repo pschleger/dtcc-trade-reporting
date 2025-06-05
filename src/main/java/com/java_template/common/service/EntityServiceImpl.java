@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -68,15 +69,39 @@ public class EntityServiceImpl implements EntityService {
     }
 
     @Override
-    public CompletableFuture<ArrayNode> getItemByCondition(String entityModel, String entityVersion, Object condition) {
+    public CompletableFuture<Optional<ObjectNode>> getFirstItemByCondition(String entityModel, String entityVersion, Object condition) {
         Meta meta = repository.getMeta(token, entityModel, entityVersion);
-        return repository.findAllByCriteria(meta, condition);
+        return repository.findAllByCriteria(meta, condition).thenApply(items -> {
+            if (items == null || items.isEmpty()) {
+                return Optional.empty();
+            }
+            JsonNode firstItem = items.get(0);
+            JsonNode dataNode = firstItem.path("data");
+
+            if (!dataNode.isObject()) {
+                return Optional.empty();
+            }
+            ObjectNode data = (ObjectNode) dataNode.deepCopy();
+            JsonNode technicalId = firstItem.at("/meta/id");
+            data.set("technicalId", technicalId);
+
+            return Optional.of(data);
+        });
     }
 
     @Override
     public CompletableFuture<ArrayNode> getItemsByCondition(String entityModel, String entityVersion, Object condition) {
         Meta meta = repository.getMeta(token, entityModel, entityVersion);
-        return repository.findAllByCriteria(meta, condition);
+        return repository.findAllByCriteria(meta, condition).thenApply(items -> {
+            ArrayNode simplifiedArray = JsonNodeFactory.instance.arrayNode();
+            for (JsonNode item : items) {
+                ObjectNode data = (ObjectNode) item.path("data").deepCopy();
+                JsonNode technicalId = item.at("/meta/id");
+                data.set("technicalId", technicalId);
+                simplifiedArray.add(data);
+            }
+            return simplifiedArray;
+        });
     }
 
     @Override
