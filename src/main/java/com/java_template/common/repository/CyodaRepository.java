@@ -23,13 +23,11 @@ import static com.java_template.common.config.Config.CYODA_API_URL;
 public class CyodaRepository implements CrudRepository {
     private final Logger logger = LoggerFactory.getLogger(CyodaRepository.class);
 
-    private final HttpUtils httpUtils;
     private final ObjectMapper objectMapper;
 
     private final String FORMAT = "JSON"; // or "XML"
 
-    public CyodaRepository(HttpUtils httpUtils, ObjectMapper objectMapper) {
-        this.httpUtils = httpUtils;
+    public CyodaRepository(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
@@ -125,7 +123,7 @@ public class CyodaRepository implements CrudRepository {
 
     private CompletableFuture<ArrayNode> getAllEntities(Meta meta) {
         String path = String.format("entity/%s/%s", meta.getEntityModel(), meta.getEntityVersion());
-        return httpUtils.sendGetRequest(meta.getToken(), CYODA_API_URL, path)
+        return HttpUtils.sendGetRequest(meta.getToken(), CYODA_API_URL, path)
                 .thenApply(response -> {
                     JsonNode jsonNode = response.get("json");
                     if (jsonNode != null && jsonNode.isArray()) {
@@ -139,14 +137,14 @@ public class CyodaRepository implements CrudRepository {
 
     private CompletableFuture<ObjectNode> getById(Meta meta, UUID id) {
         String path = String.format("entity/%s", id);
-        return httpUtils.sendGetRequest(meta.getToken(), CYODA_API_URL, path)
-                .thenApply(response -> { return (ObjectNode) response.get("json"); });
+        return HttpUtils.sendGetRequest(meta.getToken(), CYODA_API_URL, path)
+                .thenApply(response -> (ObjectNode) response.get("json"));
     }
 
     private CompletableFuture<ArrayNode> saveNewEntities(Meta meta, Object data) {
         String path = String.format("entity/%s/%s/%s", FORMAT, meta.getEntityModel(), meta.getEntityVersion());
 
-        return httpUtils.sendPostRequest(meta.getToken(), CYODA_API_URL, path, data)
+        return HttpUtils.sendPostRequest(meta.getToken(), CYODA_API_URL, path, data)
                 .thenApply(response -> {
                     if (response != null) {
                         JsonNode jsonNode = response.get("json");
@@ -167,20 +165,20 @@ public class CyodaRepository implements CrudRepository {
 
     private CompletableFuture<ObjectNode> updateEntity(Meta meta, UUID id, Object entity) {
         String path = String.format("entity/%s/%s/%s", FORMAT, id, meta.getUpdateTransition());
-        return httpUtils.sendPutRequest(meta.getToken(), CYODA_API_URL, path, entity)
+        return HttpUtils.sendPutRequest(meta.getToken(), CYODA_API_URL, path, entity)
                 .thenApply(response -> (ObjectNode) response.get("json"));
     }
 
     private CompletableFuture<ObjectNode> deleteEntity(Meta meta, UUID id) {
         String path = String.format("entity/%s", id);
 
-        return httpUtils.sendDeleteRequest(meta.getToken(), CYODA_API_URL, path).thenApply(response -> (ObjectNode) response.get("json"));
+        return HttpUtils.sendDeleteRequest(meta.getToken(), CYODA_API_URL, path).thenApply(response -> (ObjectNode) response.get("json"));
     }
 
     private CompletableFuture<ArrayNode> deleteAllByModel(Meta meta) {
         String path = String.format("entity/%s/%s", meta.getEntityModel(), meta.getEntityVersion());
 
-        return httpUtils.sendDeleteRequest(meta.getToken(), CYODA_API_URL, path).thenApply(response -> (ArrayNode) response.get("json"));
+        return HttpUtils.sendDeleteRequest(meta.getToken(), CYODA_API_URL, path).thenApply(response -> (ArrayNode) response.get("json"));
     }
 
     private CompletableFuture<ArrayNode> findAllByCondition(Meta meta, Object condition) {
@@ -219,7 +217,7 @@ public class CyodaRepository implements CrudRepository {
 
     private CompletableFuture<String> createSnapshotSearch(String token, String entityModel, String entityVersion, Object condition) {
         String searchPath = String.format("search/snapshot/%s/%s", entityModel, entityVersion);
-        return httpUtils.sendPostRequest(token, CYODA_API_URL, searchPath, condition)
+        return HttpUtils.sendPostRequest(token, CYODA_API_URL, searchPath, condition)
                 .thenApply(response -> response.get("json").asText());
     }
 
@@ -254,16 +252,16 @@ public class CyodaRepository implements CrudRepository {
         });
     }
 
-    private CompletableFuture<ObjectNode> getSnapshotStatus(String token, String snapshotId) throws IOException {
+    private CompletableFuture<ObjectNode> getSnapshotStatus(String token, String snapshotId) {
         String path = String.format("search/snapshot/%s/status", snapshotId);
-        return httpUtils.sendGetRequest(token, CYODA_API_URL, path);
+        return HttpUtils.sendGetRequest(token, CYODA_API_URL, path);
     }
 
     private CompletableFuture<ObjectNode> getSearchResult(String token, String snapshotId, int pageSize, int pageNumber) {
         String path = String.format("search/snapshot/%s", snapshotId);
         Map<String, String> params = Map.of("pageSize", String.valueOf(pageSize), "pageNumber", String.valueOf(pageNumber));
 
-        return httpUtils.sendGetRequest(token, CYODA_API_URL, path, params)
+        return HttpUtils.sendGetRequest(token, CYODA_API_URL, path, params)
                 .thenApply(response -> {
                     if (response != null) {
                         return response;

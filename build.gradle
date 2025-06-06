@@ -126,7 +126,7 @@ tasks.register('runApp', JavaExec) {
     description = 'Run arbitrary main class'
     classpath = sourceSets.main.runtimeClasspath
     def requestedMain = project.findProperty('mainClass') ?: 'com.java_template.Application'
-    mainClass.set(requestedMain)
+    mainClass.set(requestedMain.toString())
     javaLauncher.set(javaToolchains.launcherFor {
         languageVersion.set(JavaLanguageVersion.of(21))
     })

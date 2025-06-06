@@ -130,7 +130,7 @@ public class CyodaInit {
 
             for (JsonNode workflow : workflows) {
                 String name = workflow.path("name").asText();
-                Boolean active = workflow.path("active").asBoolean();
+                boolean active = workflow.path("active").asBoolean();
                 if (active && dtoWorkflowName.equals(name)) {
                     ((ObjectNode) workflow).put("active", false);
                     String workflowId = workflow.path("id").asText();
