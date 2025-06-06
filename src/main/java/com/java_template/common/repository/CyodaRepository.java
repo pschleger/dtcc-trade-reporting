@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.java_template.common.auth.Authentication;
 import com.java_template.common.repository.dto.Meta;
 import com.java_template.common.util.HttpUtils;
 import org.slf4j.Logger;
@@ -15,25 +14,21 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.java_template.common.config.Config.CYODA_API_URL;
 
 @Component
-//@ConditionalOnProperty(name = "repository.type", havingValue = "http")
 public class CyodaRepository implements CrudRepository {
     private final Logger logger = LoggerFactory.getLogger(CyodaRepository.class);
 
-    private final Authentication authentication;
     private final HttpUtils httpUtils;
     private final ObjectMapper objectMapper;
 
     private final String FORMAT = "JSON"; // or "XML"
 
-    public CyodaRepository(Authentication authentication, HttpUtils httpUtils, ObjectMapper objectMapper) {
-        this.authentication = authentication;
+    public CyodaRepository(HttpUtils httpUtils, ObjectMapper objectMapper) {
         this.httpUtils = httpUtils;
         this.objectMapper = objectMapper;
     }
@@ -188,15 +183,6 @@ public class CyodaRepository implements CrudRepository {
         return httpUtils.sendDeleteRequest(meta.getToken(), CYODA_API_URL, path).thenApply(response -> (ArrayNode) response.get("json"));
     }
 
-    public CompletableFuture<Boolean> modelExists(String token, String modelName, String entityVersion) {
-    String exportModelPath = String.format("model/export/SIMPLE_VIEW/%s/%s", modelName, entityVersion);
-    return httpUtils.sendGetRequest(token, CYODA_API_URL, exportModelPath)
-            .thenApply(response ->{
-                int status = response.get("status").asInt();
-                return status == 200;
-            });
-    }
-
     private CompletableFuture<ArrayNode> findAllByCondition(Meta meta, Object condition) {
         return searchEntities(meta, condition)
                 .thenApply(resp -> {
@@ -212,6 +198,10 @@ public class CyodaRepository implements CrudRepository {
     }
 
     private CompletableFuture<ObjectNode> searchEntities(Meta meta, Object condition) {
+        return searchEntities(meta, condition, 100, 0);
+    }
+
+    private CompletableFuture<ObjectNode> searchEntities(Meta meta, Object condition, int pageSize, int pageNumber) {
         return createSnapshotSearch(meta.getToken(), meta.getEntityModel(), meta.getEntityVersion(), condition)
                 .thenCompose(snapshotId -> {
                     if (snapshotId == null) {
@@ -219,8 +209,8 @@ public class CyodaRepository implements CrudRepository {
                         return CompletableFuture.completedFuture(objectMapper.createObjectNode());
                     }
                     try {
-                        return waitForSearchCompletion(meta.getToken(), snapshotId, 60, 300)
-                                .thenCompose(statusResponse -> getSearchResult(meta.getToken(), snapshotId, 100, 1));
+                        return waitForSearchCompletion(meta.getToken(), snapshotId, 10_000, 500)
+                                .thenCompose(statusResponse -> getSearchResult(meta.getToken(), snapshotId, pageSize, pageNumber));
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -271,8 +261,7 @@ public class CyodaRepository implements CrudRepository {
 
     private CompletableFuture<ObjectNode> getSearchResult(String token, String snapshotId, int pageSize, int pageNumber) {
         String path = String.format("search/snapshot/%s", snapshotId);
-//        Map<String, String> params = Map.of("pageSize", String.valueOf(pageSize), "pageNumber", String.valueOf(pageNumber));
-        Map<String, String> params = new HashMap<>();
+        Map<String, String> params = Map.of("pageSize", String.valueOf(pageSize), "pageNumber", String.valueOf(pageNumber));
 
         return httpUtils.sendGetRequest(token, CYODA_API_URL, path, params)
                 .thenApply(response -> {

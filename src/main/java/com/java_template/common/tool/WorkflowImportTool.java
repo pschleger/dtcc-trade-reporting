@@ -14,7 +14,7 @@ public class WorkflowImportTool {
         Authentication auth = context.getBean(Authentication.class);
 
         CyodaInit init = new CyodaInit(auth);
-        init.initCyoda().join();  // wait for completion
+        init.initCyoda().join();
 
         context.close();
     }
