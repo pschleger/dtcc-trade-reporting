@@ -9,12 +9,16 @@ public class Condition {
     private String type;
     private String jsonPath;
     private String operatorType;
-    private String value;
+    private Object value;
 
-    public Condition(String type, String jsonPath, String operatorType, String value) {
+    public Condition(String type, String jsonPath, String operatorType, Object value) {
         this.type = type;
         this.jsonPath = jsonPath;
         this.operatorType = operatorType;
         this.value = value;
+    }
+
+    public static Condition of(String jsonPath, String operatorType, Object value) {
+        return new Condition("simple", jsonPath, operatorType, value);
     }
 }

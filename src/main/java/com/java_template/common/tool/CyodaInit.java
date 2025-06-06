@@ -40,7 +40,7 @@ public class CyodaInit {
         logger.info("🔄 Starting workflow import into Cyoda...");
         String token = authentication.getToken();
         return initEntitiesSchema(WORKFLOW_DTO_DIR, token)
-                .thenRun(() -> logger.info("✅ All workflows imported into Cyoda successfully."))
+                .thenRun(() -> logger.info("✅ Workflow import process completed."))
                 .exceptionally(ex -> {
                     logger.error("❌ Cyoda workflow import failed: {}", ex.getMessage(), ex);
                     return null;
@@ -48,6 +48,11 @@ public class CyodaInit {
     }
 
     public CompletableFuture<Void> initEntitiesSchema(Path entityDir, String token) {
+        if (!Files.exists(entityDir)) {
+            logger.warn("📁 Directory '{}' does not exist. Skipping workflow import.", entityDir.toAbsolutePath());
+            return CompletableFuture.completedFuture(null);
+        }
+
         ExecutorService executor = Executors.newFixedThreadPool(3);
 
         CompletableFuture<JsonNode> workflowsFuture = HttpUtils
@@ -64,11 +69,20 @@ public class CyodaInit {
                     return json;
                 });
 
-        try (Stream<Path> jsonFiles = Files.walk(entityDir)) {
-            List<CompletableFuture<Void>> futures = jsonFiles
+        try (Stream<Path> jsonFilesStream = Files.walk(entityDir)) {
+            List<Path> jsonFiles = jsonFilesStream
                     .filter(path -> path.toString().toLowerCase().endsWith("workflow.json"))
                     .filter(path -> path.getParent() != null && path.getParent().getParent() != null)
                     .filter(path -> path.getParent().getParent().getFileName().toString().equals("cyoda_dto"))
+                    .collect(Collectors.toList());
+
+            if (jsonFiles.isEmpty()) {
+                logger.warn("⚠️ No workflow JSON files found in directory: {}", entityDir);
+                executor.shutdown();
+                return CompletableFuture.completedFuture(null);
+            }
+
+            List<CompletableFuture<Void>> futures = jsonFiles.stream()
                     .map(jsonFile -> {
                         String entityName = jsonFile.getParent().getFileName().toString();
                         String fileName = WORKFLOW_DTO_DIR.relativize(jsonFile).toString();
@@ -76,11 +90,11 @@ public class CyodaInit {
                         return workflowsFuture.thenCompose(workflows ->
                                 CompletableFuture.supplyAsync(() -> null, executor)
                                         .thenCompose(v -> processWorkflowFile(jsonFile, token, entityName, (ArrayNode) workflows)
-                                            .whenComplete((res, ex) -> {
-                                    if (ex == null) {
-                                        pendingFiles.remove(fileName);
-                                    }
-                                }))
+                                                .whenComplete((res, ex) -> {
+                                                    if (ex == null) {
+                                                        pendingFiles.remove(fileName);
+                                                    }
+                                                }))
                         );
                     })
                     .collect(Collectors.toList());
@@ -116,7 +130,7 @@ public class CyodaInit {
 
             for (JsonNode workflow : workflows) {
                 String name = workflow.path("name").asText();
-                Boolean active = workflow.path("active").asBoolean();
+                boolean active = workflow.path("active").asBoolean();
                 if (active && dtoWorkflowName.equals(name)) {
                     ((ObjectNode) workflow).put("active", false);
                     String workflowId = workflow.path("id").asText();

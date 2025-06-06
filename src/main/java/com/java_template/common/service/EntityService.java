@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -22,7 +23,7 @@ public interface EntityService {
     CompletableFuture<ArrayNode> getItemsWithMetaFields(String entityModel, String entityVersion);
 
     //     Retrieve an item based on a condition.
-    CompletableFuture<ArrayNode> getItemByCondition(String entityModel, String entityVersion, Object condition);
+    CompletableFuture<Optional<ObjectNode>> getFirstItemByCondition(String entityModel, String entityVersion, Object condition);
 
     //     Retrieve items based on a condition.
     CompletableFuture<ArrayNode> getItemsByCondition(String entityModel, String entityVersion, Object condition);
