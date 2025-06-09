@@ -1,3 +1,14 @@
 logging:
   level:
     root: INFO
+
+server:
+  port: 8080
+  forward-headers-strategy: framework
+
+springdoc:
+  swagger-ui:
+    use-root-path: true
+    try-it-out-enabled: true
+    csrf:
+      enabled: false
