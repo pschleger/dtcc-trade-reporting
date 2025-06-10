@@ -38,7 +38,7 @@ public class CyodaInit {
 
     public CompletableFuture<Void> initCyoda() {
         logger.info("🔄 Starting workflow import into Cyoda...");
-        String token = authentication.getToken();
+        String token = authentication.getAccessToken();
         return initEntitiesSchema(WORKFLOW_DTO_DIR, token)
                 .thenRun(() -> logger.info("✅ Workflow import process completed."))
                 .exceptionally(ex -> {
