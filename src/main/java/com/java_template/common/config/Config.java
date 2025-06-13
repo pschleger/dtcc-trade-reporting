@@ -11,8 +11,8 @@ public class Config {
     public static final String GRPC_ADDRESS = getEnv("GRPC_ADDRESS", "grpc-" + CYODA_HOST);
     public static final String GRPC_PROCESSOR_TAG = getEnv("GRPC_PROCESSOR_TAG", "cloud_manager_app");
 
-    public static final String API_KEY = new String(Base64.getDecoder().decode(getEnv("CYODA_API_KEY")));
-    public static final String API_SECRET = new String(Base64.getDecoder().decode(getEnv("CYODA_API_SECRET")));
+    public static final String CYODA_CLIENT_ID = getEnv("CYODA_CLIENT_ID");
+    public static final String CYODA_CLIENT_SECRET = getEnv("CYODA_CLIENT_SECRET");
 
     public static final String ENTITY_VERSION = getEnv("ENTITY_VERSION", "1000");
     public static final String CHAT_ID = dotenv.get("CHAT_ID");

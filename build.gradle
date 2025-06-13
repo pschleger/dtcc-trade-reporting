@@ -34,6 +34,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web:3.2.4'
     implementation 'org.springframework:spring-remoting:2.0.8'
     implementation 'org.springframework.boot:spring-boot-starter'
+    //todo
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
+
 
     implementation 'com.google.protobuf:protobuf-java:3.25.1'
     implementation 'io.grpc:grpc-protobuf:1.62.2'
