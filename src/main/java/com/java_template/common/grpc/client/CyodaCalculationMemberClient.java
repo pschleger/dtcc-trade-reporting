@@ -63,7 +63,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
     public CyodaCalculationMemberClient(ObjectMapper objectMapper, WorkflowProcessor workflowProcessor, Authentication authentication) {
         this.objectMapper = objectMapper;
         this.workflowProcessor = workflowProcessor;
-        this.token = authentication.getToken();
+        this.token = authentication.getAccessToken();
 
         if (this.token == null) {
             throw new IllegalStateException("Token is not initialized");
