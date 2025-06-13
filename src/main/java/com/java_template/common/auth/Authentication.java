@@ -10,10 +10,10 @@ import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.java_template.common.config.Config.*;
-
-import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 public class Authentication {
@@ -21,8 +21,9 @@ public class Authentication {
     private static final Logger logger = LoggerFactory.getLogger(Authentication.class);
 
     private final OAuth2AuthorizedClientManager authorizedClientManager;
-    private OAuth2AuthorizedClient cachedClient;
-    private final ReentrantLock lock = new ReentrantLock(); // 🔐 fine-grained lock
+    private final ConcurrentMap<String, CachedToken> tokenCache = new ConcurrentHashMap<>();
+
+    private static final String CACHE_KEY = "cyoda";
 
     public Authentication() {
         ClientRegistration registration = ClientRegistration.withRegistrationId("cyoda")
@@ -30,7 +31,7 @@ public class Authentication {
                 .clientId(CYODA_CLIENT_ID)
                 .clientSecret(CYODA_CLIENT_SECRET)
                 .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-                .scope("your-scope")
+                .scope("default")
                 .build();
 
         var registrationRepo = new InMemoryClientRegistrationRepository(registration);
@@ -40,20 +41,13 @@ public class Authentication {
         );
     }
 
+    /**
+     * Returns a valid access token, reusing it if still fresh.
+     */
     public String getAccessToken() {
-        Instant now = Instant.now();
-
-        // 🔍 Fast path: no lock needed if cached token is valid
-        if (isTokenValid(now)) {
-            return cachedClient.getAccessToken().getTokenValue();
-        }
-
-        // 🔐 Only block on token refresh
-        lock.lock();
-        try {
-            // Re-check inside lock (double-checked locking)
-            if (isTokenValid(Instant.now())) {
-                return cachedClient.getAccessToken().getTokenValue();
+        CachedToken token = tokenCache.compute(CACHE_KEY, (key, existing) -> {
+            if (existing != null && existing.isValid()) {
+                return existing;
             }
 
             logger.info("Fetching new OAuth2 access token");
@@ -61,34 +55,45 @@ public class Authentication {
                     .principal("cyoda-client")
                     .build();
 
-            cachedClient = authorizedClientManager.authorize(request);
-
-            if (cachedClient == null || cachedClient.getAccessToken() == null) {
+            OAuth2AuthorizedClient client = authorizedClientManager.authorize(request);
+            if (client == null || client.getAccessToken() == null) {
                 throw new IllegalStateException("Failed to obtain access token");
             }
 
-            OAuth2AccessToken token = cachedClient.getAccessToken();
-            logger.info("Obtained new access token, expires at: {}", token.getExpiresAt());
-            return token.getTokenValue();
-        } finally {
-            lock.unlock();
-        }
+            OAuth2AccessToken accessToken = client.getAccessToken();
+            logger.info("New token fetched, expires at: {}", accessToken.getExpiresAt());
+            return new CachedToken(accessToken.getTokenValue(), accessToken.getExpiresAt());
+        });
+
+        return token.getToken();
     }
 
+    /**
+     * Clears cached token so next call re-authenticates.
+     */
     public void invalidateTokens() {
-        lock.lock();
-        try {
-            logger.info("Invalidating cached OAuth2 access token");
-            cachedClient = null;
-        } finally {
-            lock.unlock();
-        }
+        tokenCache.remove(CACHE_KEY);
+        logger.info("Manually invalidated cached token");
     }
 
-    private boolean isTokenValid(Instant now) {
-        if (cachedClient == null) return false;
-        OAuth2AccessToken token = cachedClient.getAccessToken();
-        return token != null && token.getExpiresAt() != null &&
-                now.isBefore(token.getExpiresAt().minusSeconds(60));
+    /**
+     * Simple container for access token with expiry.
+     */
+    private static class CachedToken {
+        private final String token;
+        private final Instant expiresAt;
+
+        public CachedToken(String token, Instant expiresAt) {
+            this.token = token;
+            this.expiresAt = expiresAt;
+        }
+
+        public boolean isValid() {
+            return expiresAt != null && Instant.now().isBefore(expiresAt.minusSeconds(60));
+        }
+
+        public String getToken() {
+            return token;
+        }
     }
 }
