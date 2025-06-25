@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
 @EnableAsync
-@ComponentScan(basePackages = "com.java_template.entity")
+@ComponentScan(basePackages = "com.java_template.entity.prototype")
 public class Prototype {
     public static void main(String[] args) {
         SpringApplication.run(Prototype.class, args);

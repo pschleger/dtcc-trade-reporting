@@ -61,10 +61,8 @@ public class HttpUtils {
                     } else if (statusCode >= 300 && statusCode < 400) {
                         logger.info("{} request to {} returned a redirect ({}): {}", method, url, statusCode, responseBody);
                     } else if (statusCode >= 400 && statusCode < 500) {
-                        logger.warn("{} request to {} returned client error ({}): {}", method, url, statusCode, responseBody);
                         throw new ResponseStatusException(HttpStatus.valueOf(statusCode), extractErrorMessage(responseBody));
                     } else if (statusCode >= 500) {
-                        logger.error("{} request to {} returned server error ({}): {}", method, url, statusCode, responseBody);
                         throw new ResponseStatusException(HttpStatus.valueOf(statusCode), extractErrorMessage(responseBody));
                     }
 
