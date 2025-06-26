@@ -55,6 +55,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
     private static final String JOIN_EVENT_TYPE = "CalculationMemberJoinEvent";
     private static final String CALC_RESP_EVENT_TYPE = "EntityProcessorCalculationResponse";
     private static final String CALC_REQ_EVENT_TYPE = "EntityProcessorCalculationRequest";
+    private static final String CRIT_CALC_REQ_EVENT_TYPE = "EntityCriteriaCalculationRequest";
     private static final String GREET_EVENT_TYPE = "CalculationMemberGreetEvent";
     private static final String KEEP_ALIVE_EVENT_TYPE = "CalculationMemberKeepAliveEvent";
     private static final String EVENT_ACK_TYPE = "EventAckResponse";
@@ -166,6 +167,26 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                                 response.setSuccess(success);
                                 response.getPayload().setData(JsonUtils.getJsonNode(result));
                                 sendEvent(response);
+                            } catch (InvalidProtocolBufferException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
+                        break;
+                    case CRIT_CALC_REQ_EVENT_TYPE:
+                        logger.info("[IN] Received event {}: \n{}", CRIT_CALC_REQ_EVENT_TYPE, cloudEvent.getTextData());
+                        EntityCriteriaCalculationRequest req = objectMapper.readValue(cloudEvent.getTextData(), EntityCriteriaCalculationRequest.class);
+                        EntityCriteriaCalculationResponse res = objectMapper.readValue(cloudEvent.getTextData(), EntityCriteriaCalculationResponse.class);
+                        String criteriaName = req.getCriteriaName();
+                        ObjectNode payload = (ObjectNode) req.getPayload().getData();
+                        logger.info("Processing {}: {}", CRIT_CALC_REQ_EVENT_TYPE, criteriaName);
+                        CompletableFuture<ObjectNode> future = workflowProcessor.processEvent(criteriaName, payload);
+                        future.thenAccept(result -> {
+                            try {
+                                boolean success = result.path("success").asBoolean(false);
+                                result.remove("success");
+                                res.setSuccess(success);
+                                res.setMatches(success);
+                                sendEvent(res);
                             } catch (InvalidProtocolBufferException e) {
                                 throw new RuntimeException(e);
                             }
