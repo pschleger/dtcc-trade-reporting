@@ -30,17 +30,17 @@ public class WorkflowProcessor {
         logger.info("Registered workflow method: {}", methodKey);
     }
 
-    public CompletableFuture<ObjectNode> processEvent(String processorName, ObjectNode payload) {
+    public CompletableFuture<ObjectNode> processEvent(String eventName, ObjectNode payload) {
         ensureInitialized();
 
-        Function<ObjectNode, CompletableFuture<ObjectNode>> processor = processDispatch.get(processorName);
-        if (processor == null) {
-            logger.warn("No processor found: {}", processorName);
+        Function<ObjectNode, CompletableFuture<ObjectNode>> workflowMethod = processDispatch.get(eventName);
+        if (workflowMethod == null) {
+            logger.warn("No workflow method found: {}", eventName);
             payload.put("success", false);
             return CompletableFuture.completedFuture(payload);
         }
 
-        return processor.apply(payload);
+        return workflowMethod.apply(payload);
     }
 
     private synchronized void ensureInitialized() {
