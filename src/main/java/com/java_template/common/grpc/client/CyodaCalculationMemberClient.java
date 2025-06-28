@@ -48,6 +48,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
     private EventFormat eventFormat;
     private final ObjectMapper objectMapper;
     private final WorkflowProcessor workflowProcessor;
+    private final JsonUtils jsonUtils;
 
     private static final List<String> TAGS = List.of(GRPC_PROCESSOR_TAG);
     private static final String OWNER = "PLAY";
@@ -61,10 +62,11 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
     private static final String EVENT_ACK_TYPE = "EventAckResponse";
     private static final int GRPC_SERVER_PORT = 443;
 
-    public CyodaCalculationMemberClient(ObjectMapper objectMapper, WorkflowProcessor workflowProcessor, Authentication authentication) {
+    public CyodaCalculationMemberClient(ObjectMapper objectMapper, WorkflowProcessor workflowProcessor, Authentication authentication, JsonUtils jsonUtils) {
         this.objectMapper = objectMapper;
         this.workflowProcessor = workflowProcessor;
         this.token = authentication.getAccessToken();
+        this.jsonUtils = jsonUtils;
 
         if (this.token == null) {
             throw new IllegalStateException("Token is not initialized");
@@ -165,7 +167,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                                 boolean success = result.path("success").asBoolean(true);
                                 result.remove("success");
                                 response.setSuccess(success);
-                                response.getPayload().setData(JsonUtils.getJsonNode(result));
+                                response.getPayload().setData(jsonUtils.getJsonNode(result));
                                 sendEvent(response);
                             } catch (InvalidProtocolBufferException e) {
                                 throw new RuntimeException(e);

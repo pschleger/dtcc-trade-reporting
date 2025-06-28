@@ -21,15 +21,21 @@ import java.util.stream.Collectors;
 
 @Component
 public class HttpUtils {
-    private static final HttpClient client = HttpClient.newHttpClient();
-    private static final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
-    private static final ObjectMapper om = new ObjectMapper();
+    private final HttpClient client = HttpClient.newHttpClient();
+    private final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
+    private final ObjectMapper om;
+    private final JsonUtils jsonUtils;
 
-    private static String ensureBearerToken(String token) {
+    public HttpUtils(JsonUtils jsonUtils, ObjectMapper om) {
+        this.jsonUtils = jsonUtils;
+        this.om = om;
+    }
+
+    private String ensureBearerToken(String token) {
         return token.startsWith("Bearer") ? token : "Bearer " + token;
     }
 
-    private static HttpRequest.Builder createRequestBuilder(String url, String token, String method) {
+    private HttpRequest.Builder createRequestBuilder(String url, String token, String method) {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("Content-Type", "application/json");
@@ -40,15 +46,15 @@ public class HttpUtils {
     }
 
 
-    private static HttpRequest createRequest(String url, String token, String method, Object data) {
+    private HttpRequest createRequest(String url, String token, String method, Object data) {
         HttpRequest.Builder builder = createRequestBuilder(url, token, method);
         if (data != null) {
-            builder.method(method, HttpRequest.BodyPublishers.ofString(JsonUtils.toJson(data), StandardCharsets.UTF_8));
+            builder.method(method, HttpRequest.BodyPublishers.ofString(jsonUtils.toJson(data), StandardCharsets.UTF_8));
         }
         return builder.build();
     }
 
-    private static CompletableFuture<ObjectNode> sendRequest(String url, String token, String method, Object data) {
+    private CompletableFuture<ObjectNode> sendRequest(String url, String token, String method, Object data) {
         HttpRequest request = createRequest(url, token, method, data);
         ObjectNode result = om.createObjectNode();
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
@@ -57,9 +63,9 @@ public class HttpUtils {
                     String responseBody = response.body();
 
                     if (statusCode >= 200 && statusCode < 300) {
-                        logger.info("{} request to {} succeeded with status {}", method, url, statusCode);
+                        logger.info("[{}] {} {} succeeded", statusCode, method, url);
                     } else if (statusCode >= 300 && statusCode < 400) {
-                        logger.info("{} request to {} returned a redirect ({}): {}", method, url, statusCode, responseBody);
+                        logger.info("[{}] {} {} redirect: {}", statusCode, method, url, responseBody);
                     } else if (statusCode >= 400 && statusCode < 500) {
                         throw new ResponseStatusException(HttpStatus.valueOf(statusCode), extractErrorMessage(responseBody));
                     } else if (statusCode >= 500) {
@@ -95,32 +101,32 @@ public class HttpUtils {
                 });
     }
 
-    public static CompletableFuture<ObjectNode> sendGetRequest(String token, String apiUrl, String path, Map<String, String> params) {
+    public CompletableFuture<ObjectNode> sendGetRequest(String token, String apiUrl, String path, Map<String, String> params) {
         String fullUrl = buildUrlWithParams(apiUrl, path, params);
         return sendRequest(fullUrl, token, "GET", null);
     }
 
-    public static CompletableFuture<ObjectNode> sendGetRequest(String token, String apiUrl, String path) {
+    public CompletableFuture<ObjectNode> sendGetRequest(String token, String apiUrl, String path) {
         String fullUrl = buildUrlWithParams(apiUrl, path, null);
         return sendRequest(fullUrl, token, "GET", null);
     }
 
-    public static CompletableFuture<ObjectNode> sendPostRequest(String token, String apiUrl, String path, Object data) {
+    public CompletableFuture<ObjectNode> sendPostRequest(String token, String apiUrl, String path, Object data) {
         String fullUrl = buildUrlWithParams(apiUrl, path, null);
         return sendRequest(fullUrl, token, "POST", data);
     }
 
-    public static CompletableFuture<ObjectNode> sendPutRequest(String token, String apiUrl, String path, Object data) {
+    public CompletableFuture<ObjectNode> sendPutRequest(String token, String apiUrl, String path, Object data) {
         String fullUrl = buildUrlWithParams(apiUrl, path, null);
         return sendRequest(fullUrl, token, "PUT", data);
     }
 
-    public static CompletableFuture<ObjectNode> sendDeleteRequest(String token, String apiUrl, String path) {
+    public CompletableFuture<ObjectNode> sendDeleteRequest(String token, String apiUrl, String path) {
         String fullUrl = buildUrlWithParams(apiUrl, path, null);
         return sendRequest(fullUrl, token, "DELETE", null);
     }
 
-    private static String buildUrlWithParams(String apiUrl, String path, Map<String, String> params) {
+    private String buildUrlWithParams(String apiUrl, String path, Map<String, String> params) {
         String baseUrl = apiUrl.endsWith("/") ? apiUrl.substring(0, apiUrl.length() - 1) : apiUrl;
         String fullUrl = (path == null || path.isBlank()) ? baseUrl : baseUrl + "/" + path;
 
@@ -133,7 +139,7 @@ public class HttpUtils {
         return fullUrl + "?" + queryString;
     }
 
-    private static String extractErrorMessage(String responseBody) {
+    private String extractErrorMessage(String responseBody) {
         try {
             JsonNode errorNode = om.readTree(responseBody);
             if (errorNode.has("errorMessage")) {
@@ -146,5 +152,4 @@ public class HttpUtils {
         } catch (Exception ignored) {}
         return responseBody;
     }
-
 }
