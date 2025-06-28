@@ -28,11 +28,13 @@ public class CyodaInit {
     private static final Logger logger = LoggerFactory.getLogger(CyodaInit.class);
     private static final Path WORKFLOW_DTO_DIR = Paths.get(System.getProperty("user.dir")).resolve("src/main/java/com/java_template/cyoda_dto");
 
+    private final HttpUtils httpUtils;
     private final Authentication authentication;
 
     Set<String> pendingFiles = new HashSet<>();
 
-    public CyodaInit(Authentication authentication) {
+    public CyodaInit(HttpUtils httpUtils, Authentication authentication) {
+        this.httpUtils = httpUtils;
         this.authentication = authentication;
     }
 
@@ -55,7 +57,7 @@ public class CyodaInit {
 
         ExecutorService executor = Executors.newFixedThreadPool(3);
 
-        CompletableFuture<JsonNode> workflowsFuture = HttpUtils
+        CompletableFuture<JsonNode> workflowsFuture = httpUtils
                 .sendGetRequest(token, CYODA_API_URL, "platform-api/statemachine/workflows")
                 .thenApply(response -> {
                     int status = response.get("status").asInt();
@@ -137,7 +139,7 @@ public class CyodaInit {
                     String putPath = "platform-api/statemachine/persisted/workflows/" + workflowId;
                     String updatedWorkflowJson = workflow.toString();
 
-                    CompletableFuture<Void> deactivation = HttpUtils.sendPutRequest(
+                    CompletableFuture<Void> deactivation = httpUtils.sendPutRequest(
                                     token, CYODA_API_URL, putPath, updatedWorkflowJson)
                             .thenAccept(putResponse -> {
                                 int putStatus = putResponse.get("status").asInt();
@@ -150,7 +152,7 @@ public class CyodaInit {
             }
 
             return CompletableFuture.allOf(deactivationFutures.toArray(new CompletableFuture[0]))
-                    .thenCompose(ignored -> HttpUtils.sendPostRequest(
+                    .thenCompose(ignored -> httpUtils.sendPostRequest(
                             token, CYODA_API_URL, "platform-api/statemachine/import?needRewrite=true",
                             dtoContent))
                     .thenApply(response -> {
