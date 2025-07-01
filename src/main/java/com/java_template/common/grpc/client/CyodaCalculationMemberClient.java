@@ -34,6 +34,8 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import static com.java_template.common.config.Config.*;
 
@@ -61,6 +63,10 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
     private static final String KEEP_ALIVE_EVENT_TYPE = "CalculationMemberKeepAliveEvent";
     private static final String EVENT_ACK_TYPE = "EventAckResponse";
     private static final int GRPC_SERVER_PORT = 443;
+
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    private static final int MAX_RETRIES = 5;
+    private int retryCount = 0;
 
     public CyodaCalculationMemberClient(ObjectMapper objectMapper, WorkflowProcessor workflowProcessor, Authentication authentication, JsonUtils jsonUtils) {
         this.objectMapper = objectMapper;
@@ -103,6 +109,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
 
     @Override
     public void destroy() {
+        scheduler.shutdownNow();
         if (cloudEventStreamObserver != null) {
             cloudEventStreamObserver.onCompleted();
         }
@@ -123,30 +130,54 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
 
     @EventListener
     public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
+        connectToStream();
+    }
+
+    private void connectToStream() {
+        cloudEventStreamObserver = cloudEventsServiceStub.startStreaming(new StreamObserver<>() {
+            @Override
+            public void onNext(CloudEvent cloudEvent) {
+                handleCloudEvent(cloudEvent);
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                logger.error("Error received from remote backend, scheduling reconnect...", t);
+                scheduleReconnect();
+            }
+
+            @Override
+            public void onCompleted() {
+                logger.warn("Stream completed by remote backend, scheduling reconnect...");
+                scheduleReconnect();
+            }
+        });
+
+        retryCount = 0; // Reset retry count after successful connection
+        logger.info("Connected to gRPC event stream and awaiting events...");
+        sendJoinEvent();
+    }
+
+    private void scheduleReconnect() {
+        if (retryCount >= MAX_RETRIES) {
+            logger.error("Maximum reconnection attempts ({}) reached. Giving up.", MAX_RETRIES);
+            return;
+        }
+
+        int delaySeconds = (int) Math.pow(2, retryCount);
+        logger.info("Attempting to reconnect to gRPC stream in {} seconds (retry attempt {}).", delaySeconds, retryCount + 1);
+        scheduler.schedule(this::connectToStream, delaySeconds, TimeUnit.SECONDS);
+        retryCount++;
+    }
+
+    private void sendJoinEvent() {
+        CalculationMemberJoinEvent event = new CalculationMemberJoinEvent();
+        event.setOwner(OWNER);
+        event.setTags(TAGS);
         try {
-            cloudEventStreamObserver = cloudEventsServiceStub.startStreaming(new StreamObserver<>() {
-                @Override
-                public void onNext(CloudEvent cloudEvent) {
-                    handleCloudEvent(cloudEvent);
-                }
-
-                @Override
-                public void onError(Throwable t) {
-                    logger.error("Error received from remote backend", t);
-                }
-
-                @Override
-                public void onCompleted() {
-                    logger.info("Stream completed by remote backend");
-                }
-            });
-            logger.info("Connected to gRPC event stream and awaiting events...");
-            CalculationMemberJoinEvent event = new CalculationMemberJoinEvent();
-            event.setOwner(OWNER);
-            event.setTags(TAGS);
             sendEvent(event);
         } catch (Exception e) {
-            logger.error("Failed to connect to gRPC event stream", e);
+            logger.error("Failed to send join event", e);
         }
     }
 
