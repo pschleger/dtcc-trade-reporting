@@ -11,6 +11,7 @@ import io.cloudevents.v1.proto.CloudEvent;
 import org.cyoda.cloud.api.event.common.BaseEvent;
 import org.cyoda.cloud.api.event.common.EntityMetadata;
 import org.cyoda.cloud.api.event.common.Error;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +51,7 @@ public abstract class AbstractEventStrategy<TRequest extends BaseEvent, TRespons
      * @return TResponse
      */
     @Override
-    public CompletableFuture<TResponse> handleEvent(CloudEvent cloudEvent) {
+    public @NotNull CompletableFuture<TResponse> handleEvent(@NotNull CloudEvent cloudEvent) {
         return CompletableFuture.supplyAsync(() -> {
             String cloudEventType = cloudEvent.getType();
             logger.debug("[IN] Received event {}: \n{}", cloudEventType, cloudEvent.getTextData());

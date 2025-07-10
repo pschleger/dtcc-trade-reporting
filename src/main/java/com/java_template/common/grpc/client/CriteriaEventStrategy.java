@@ -3,16 +3,15 @@ package com.java_template.common.grpc.client;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.java_template.common.workflow.*;
+import org.cyoda.cloud.api.event.common.CloudEventType;
 import org.cyoda.cloud.api.event.common.EntityMetadata;
 import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationRequest;
 import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationResponse;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CriteriaEventStrategy extends AbstractEventStrategy<EntityCriteriaCalculationRequest, EntityCriteriaCalculationResponse, OperationSpecification.Criterion> {
-
-    private static final String CRIT_CALC_REQ_EVENT_TYPE = "EntityCriteriaCalculationRequest";
-    public static final String CRITERIA_EVENT_STRATEGY = "CriteriaEventStrategy";
 
     public CriteriaEventStrategy(
             OperationFactory operationFactory,
@@ -65,13 +64,8 @@ public class CriteriaEventStrategy extends AbstractEventStrategy<EntityCriteriaC
     }
 
     @Override
-    public boolean supports(String eventType) {
-        return CRIT_CALC_REQ_EVENT_TYPE.equals(eventType);
-    }
-
-    @Override
-    public String getStrategyName() {
-        return CRITERIA_EVENT_STRATEGY;
+    public boolean supports(@NotNull CloudEventType eventType) {
+        return CloudEventType.ENTITY_CRITERIA_CALCULATION_REQUEST.equals(eventType);
     }
 
 }

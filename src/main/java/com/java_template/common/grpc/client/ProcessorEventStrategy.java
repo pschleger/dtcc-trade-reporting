@@ -3,15 +3,15 @@ package com.java_template.common.grpc.client;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.java_template.common.workflow.*;
+import org.cyoda.cloud.api.event.common.CloudEventType;
 import org.cyoda.cloud.api.event.common.EntityMetadata;
 import org.cyoda.cloud.api.event.processing.EntityProcessorCalculationRequest;
 import org.cyoda.cloud.api.event.processing.EntityProcessorCalculationResponse;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ProcessorEventStrategy extends AbstractEventStrategy<EntityProcessorCalculationRequest, EntityProcessorCalculationResponse, OperationSpecification.Processor> {
-
-    private static final String CALC_REQ_EVENT_TYPE = "EntityProcessorCalculationRequest";
 
     public ProcessorEventStrategy(
             OperationFactory operationFactory,
@@ -56,13 +56,8 @@ public class ProcessorEventStrategy extends AbstractEventStrategy<EntityProcesso
     }
 
     @Override
-    public boolean supports(String eventType) {
-        return CALC_REQ_EVENT_TYPE.equals(eventType);
-    }
-
-    @Override
-    public String getStrategyName() {
-        return "ProcessorEventStrategy";
+    public boolean supports(@NotNull CloudEventType eventType) {
+        return CloudEventType.ENTITY_PROCESSOR_CALCULATION_REQUEST.equals(eventType);
     }
 
 }
