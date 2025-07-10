@@ -26,6 +26,8 @@ public class Config {
     public static final boolean SSL_TRUST_ALL = Boolean.parseBoolean(getEnv("SSL_TRUST_ALL", "false"));
     public static final String SSL_TRUSTED_HOSTS = getEnv("SSL_TRUSTED_HOSTS", "");
 
+    public static final boolean INCLUDE_DEFAULT_OPERATIONS = Boolean.parseBoolean(getEnv("INCLUDE_DEFAULT_OPERATIONS", "false"));
+
     /**
      * Get list of hosts that should be trusted even with self-signed certificates
      * @return List of trusted hosts

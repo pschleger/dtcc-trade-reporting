@@ -1,5 +1,7 @@
 package com.java_template.common.workflow.ops;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.java_template.application.serializer.CriteriaRequestSerializer;
 import com.java_template.common.workflow.CyodaEventContext;
 import com.java_template.common.workflow.OperationSpecification;
 import io.cloudevents.v1.proto.CloudEvent;
@@ -13,11 +15,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 class AlwaysTrueCriterionTest {
+    CriteriaRequestSerializer serializer = new CriteriaRequestSerializer(new ObjectMapper());
 
     @Test
     void testSupports() {
         // Given
-        AlwaysTrueCriterion criterion = new AlwaysTrueCriterion();
+        AlwaysTrueCriterion criterion = new AlwaysTrueCriterion(serializer);
         ModelSpec modeKey = new ModelSpec();
         modeKey.setName("model");
         modeKey.setVersion(1);
@@ -54,7 +57,8 @@ class AlwaysTrueCriterionTest {
     @Test
     void testCheck() {
         // Given
-        AlwaysTrueCriterion criterion = new AlwaysTrueCriterion();
+        AlwaysTrueCriterion criterion = new AlwaysTrueCriterion(serializer);
+
         CyodaEventContext<EntityCriteriaCalculationRequest> context = getEventContext();
 
         // When
@@ -70,10 +74,10 @@ class AlwaysTrueCriterionTest {
     @NotNull
     private static CyodaEventContext<EntityCriteriaCalculationRequest> getEventContext() {
         EntityCriteriaCalculationRequest request = new EntityCriteriaCalculationRequest();
-        request.setRequestId("123");
+        request.setId("123");
         request.setEntityId("456");
 
-        CyodaEventContext<EntityCriteriaCalculationRequest> context = new CyodaEventContext<>() {
+        return new CyodaEventContext<>() {
             @Override
             public CloudEvent getCloudEvent() {
                 return mock(CloudEvent.class);
@@ -84,6 +88,5 @@ class AlwaysTrueCriterionTest {
                 return request;
             }
         };
-        return context;
     }
 }
