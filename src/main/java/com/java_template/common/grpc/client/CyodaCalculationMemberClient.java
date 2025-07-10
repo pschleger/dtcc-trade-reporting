@@ -13,7 +13,6 @@ import io.cloudevents.core.provider.EventFormatProvider;
 import io.cloudevents.protobuf.ProtobufFormat;
 import io.cloudevents.v1.proto.CloudEvent;
 import io.grpc.ClientInterceptor;
-import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
 import org.cyoda.cloud.api.event.common.BaseEvent;
@@ -51,7 +50,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
     private EventFormat eventFormat;
     private final ObjectMapper objectMapper;
     private final List<EventHandlingStrategy<? extends BaseEvent>> eventHandlingStrategies;
-    private ScheduledExecutorService connectionMonitor;
+    private GrpcConnectionMonitor connectionMonitor;
 
     private static final List<String> TAGS = List.of(GRPC_PROCESSOR_TAG);
     private static final String SOURCE = "urn:cyoda:calculation-member:" + Config.GRPC_PROCESSOR_TAG;
@@ -91,8 +90,23 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                 throw new IllegalStateException("Unable to resolve protobuf event format for " + ProtobufFormat.PROTO_CONTENT_TYPE);
             }
 
-            // Start connection monitoring
-            startConnectionMonitoring();
+            // Initialize and start connection monitoring
+            connectionMonitor = new GrpcConnectionMonitor(
+                    managedChannel,
+                    memberStatusRef,
+                    new GrpcConnectionMonitor.StreamObserverProvider() {
+                        @Override
+                        public Object getCurrentStreamObserver() {
+                            return cloudEventStreamObserver;
+                        }
+
+                        @Override
+                        public void clearStreamObserver() {
+                            cloudEventStreamObserver = null;
+                        }
+                    }
+            );
+            connectionMonitor.startMonitoring();
 
             logger.info("gRPC client initialized successfully with server address: {} and port: {}", GRPC_ADDRESS, GRPC_SERVER_PORT);
         } catch (Exception e) {
@@ -105,16 +119,8 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
         scheduler.shutdownNow();
 
         // Stop connection monitoring
-        if (connectionMonitor != null && !connectionMonitor.isShutdown()) {
-            connectionMonitor.shutdown();
-            try {
-                if (!connectionMonitor.awaitTermination(5, TimeUnit.SECONDS)) {
-                    connectionMonitor.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                connectionMonitor.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
+        if (connectionMonitor != null) {
+            connectionMonitor.stopMonitoring();
         }
 
         if (cloudEventStreamObserver != null) {
@@ -207,7 +213,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
         CompletableFuture.runAsync(() -> {
             try {
                 // Find the appropriate strategy for this event type
-                CloudEventType cloudEventType = CloudEventType.valueOf(cloudEvent.getType());
+                CloudEventType cloudEventType = CloudEventType.fromValue(cloudEvent.getType());
                 eventHandlingStrategies.stream().filter(strategy -> strategy.supports(cloudEventType)).findFirst().ifPresentOrElse(strategy -> {
                     logger.debug("Using strategy '{}' for event type '{}'", strategy.getClass().getSimpleName(), cloudEventType);
 
@@ -233,7 +239,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
      * Handles event types that don't require specific strategies.
      */
     private void handleOtherEvents(CloudEvent cloudEvent) {
-        CloudEventType cloudEventType = CloudEventType.valueOf(cloudEvent.getType());
+        CloudEventType cloudEventType = CloudEventType.fromValue(cloudEvent.getType());
         logger.debug("[IN] Received event {}: \n{}", cloudEventType, cloudEvent.getTextData());
         switch (cloudEventType) {
             case CloudEventType.EVENT_ACK_RESPONSE -> {
@@ -336,95 +342,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
         }
     }
 
-    /**
-     * Start monitoring the gRPC connection state
-     */
-    private void startConnectionMonitoring() {
-        connectionMonitor = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "gRPC-Connection-Monitor");
-            t.setDaemon(true);
-            return t;
-        });
 
-        // Monitor connection state every 30 seconds
-        connectionMonitor.scheduleWithFixedDelay(() -> {
-            try {
-                ConnectivityState currentState = managedChannel.getState(false);
-                MemberStatus currentMemberStatus = memberStatusRef.get();
-                ConnectivityState lastKnownState = currentMemberStatus.lastKnownState();
-
-                if (currentState != lastKnownState) {
-                    logger.info("gRPC connection state changed: {} -> {} (member status: {})",
-                            lastKnownState, currentState, currentMemberStatus.state());
-                    // Update the connectivity state atomically
-                    memberStatusRef.updateAndGet(status -> status.withConnectivityState(currentState));
-
-                    switch (currentState) {
-                        case READY:
-                            logger.info("gRPC connection is READY - connected to {}:{} (member status: {})",
-                                    GRPC_ADDRESS, GRPC_SERVER_PORT, currentMemberStatus.state());
-                            break;
-                        case CONNECTING:
-                            logger.info("gRPC connection is CONNECTING to {}:{} (member status: {})",
-                                    GRPC_ADDRESS, GRPC_SERVER_PORT, currentMemberStatus.state());
-                            break;
-                        case IDLE:
-                            logger.info("gRPC connection is IDLE (member status: {})", currentMemberStatus.state());
-                            break;
-                        case TRANSIENT_FAILURE:
-                            logger.warn("gRPC connection is in TRANSIENT_FAILURE state - connection issues detected (member status: {})",
-                                    currentMemberStatus.state());
-                            logger.warn("Attempting to connect to: {}:{}", GRPC_ADDRESS, GRPC_SERVER_PORT);
-                            logger.warn("SSL trusted hosts: {}", Config.getTrustedHosts());
-                            logger.warn("Channel authority: {}", managedChannel.authority());
-                            break;
-                        case SHUTDOWN:
-                            logger.warn("gRPC connection is SHUTDOWN (member status: {})", currentMemberStatus.state());
-                            break;
-                    }
-                }
-
-                // If member status is OFFLINE, initiate clean shutdown
-                if (currentMemberStatus.state() == MemberStatus.MemberState.OFFLINE) {
-                    logger.warn("Member status is OFFLINE - initiating clean shutdown of gRPC connections");
-                    // Note: We don't call destroy() here to avoid recursive shutdown
-                    if (cloudEventStreamObserver != null) {
-                        try {
-                            cloudEventStreamObserver.onCompleted();
-                            cloudEventStreamObserver = null;
-                        } catch (Exception e) {
-                            logger.warn("Error completing stream observer during OFFLINE shutdown", e);
-                        }
-                    }
-                    return; // Exit monitoring loop early
-                }
-
-                // Check if stream observer is null (disconnected)
-                if (cloudEventStreamObserver == null && currentState == ConnectivityState.READY) {
-                    logger.warn("gRPC channel is READY but stream observer is null - connection may have been lost (member status: {})",
-                            currentMemberStatus.state());
-                }
-
-                // Log periodic status for debugging
-                if (logger.isDebugEnabled()) {
-                    logger.debug("gRPC connection status: state={}, streamObserver={}, memberStatus={}",
-                            currentState, cloudEventStreamObserver != null ? "connected" : "disconnected", currentMemberStatus.state());
-                }
-
-                // Log warning if keep alive isn't coming
-                long timeSinceLastKeepAlive = System.currentTimeMillis() - currentMemberStatus.lastKeepAliveTimestamp();
-                if (timeSinceLastKeepAlive > Config.KEEP_ALIVE_WARNING_THRESHOLD) {
-                    logger.warn("Last keep alive received {} seconds ago. Connection might be stale. (member status: {})",
-                            timeSinceLastKeepAlive / 1000, currentMemberStatus.state());
-                }
-
-            } catch (Exception e) {
-                logger.error("Error monitoring gRPC connection state", e);
-            }
-        }, 10, 30, TimeUnit.SECONDS); // Start after 10 seconds, then every 30 seconds
-
-        logger.info("Started gRPC connection monitoring");
-    }
 
     /**
      * Gets the current member status.

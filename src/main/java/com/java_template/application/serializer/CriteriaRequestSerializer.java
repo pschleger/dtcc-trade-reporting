@@ -56,10 +56,14 @@ public class CriteriaRequestSerializer extends BaseRequestSerializer<EntityCrite
 
     @Override
     public EntityCriteriaCalculationResponse createResponse(@NotNull EntityCriteriaCalculationRequest request) {
+
         EntityCriteriaCalculationResponse response = new EntityCriteriaCalculationResponse();
         response.setId(request.getId());
         // Note: EntityCriteriaCalculationResponse doesn't have setPayload method
         // The payload is not needed in the response for criteria checking
+        response.setMatches(true);
+        response.setEntityId(request.getEntityId());
+        response.setRequestId(request.getId());
         return response;
     }
 
@@ -98,6 +102,4 @@ public class CriteriaRequestSerializer extends BaseRequestSerializer<EntityCrite
         response.setMatches(matches);
         return response;
     }
-
-
 }

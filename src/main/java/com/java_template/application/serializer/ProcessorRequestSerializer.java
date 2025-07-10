@@ -65,6 +65,8 @@ public class ProcessorRequestSerializer extends BaseRequestSerializer<EntityProc
         EntityProcessorCalculationResponse response = new EntityProcessorCalculationResponse();
         response.setId(request.getId());
         response.setPayload(request.getPayload()); // Copy payload structure
+        response.setEntityId(request.getEntityId());
+        response.setRequestId(request.getRequestId());
         return response;
     }
 

@@ -1,22 +1,12 @@
 package com.java_template.common.grpc.client;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.java_template.common.workflow.CyodaContextFactory;
-import com.java_template.common.workflow.OperationFactory;
 import io.cloudevents.v1.proto.CloudEvent;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.lang.reflect.Method;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 /**
@@ -26,20 +16,12 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class AbstractEventStrategyTest {
 
-    @Mock
-    private OperationFactory operationFactory;
-
-    @Mock
-    private ObjectMapper objectMapper;
-
-    @Mock
-    private CyodaContextFactory eventContextFactory;
 
     @Mock
     private CloudEvent cloudEvent;
 
     @Test
-    void testRecoverRequestIdFromCloudEvent_ValidJsonWithQuotes() throws Exception {
+    void testRecoverRequestIdFromCloudEvent_ValidJsonWithQuotes() {
         // Given
         String jsonData = "{\"requestId\": \"12345678-1234-1234-1234-123456789abc\", \"entityId\": \"entity123\"}";
         when(cloudEvent.getTextData()).thenReturn(jsonData);
@@ -54,7 +36,7 @@ class AbstractEventStrategyTest {
     }
 
     @Test
-    void testRecoverRequestIdFromCloudEvent_ValidJsonNoSpaces() throws Exception {
+    void testRecoverRequestIdFromCloudEvent_ValidJsonNoSpaces() {
         // Given
         String jsonData = "{\"requestId\":\"test-request-id-456\",\"entityId\":\"entity123\"}";
         when(cloudEvent.getTextData()).thenReturn(jsonData);
@@ -69,7 +51,7 @@ class AbstractEventStrategyTest {
     }
 
     @Test
-    void testRecoverRequestIdFromCloudEvent_SingleQuotes() throws Exception {
+    void testRecoverRequestIdFromCloudEvent_SingleQuotes() {
         // Given
         String jsonData = "{'requestId': 'single-quote-id-789', 'entityId': 'entity123'}";
         when(cloudEvent.getTextData()).thenReturn(jsonData);
@@ -84,7 +66,7 @@ class AbstractEventStrategyTest {
     }
 
     @Test
-    void testRecoverRequestIdFromCloudEvent_MixedQuotes() throws Exception {
+    void testRecoverRequestIdFromCloudEvent_MixedQuotes() {
         // Given
         String jsonData = "{\"requestId\": 'mixed-quote-id-101', \"entityId\": \"entity123\"}";
         when(cloudEvent.getTextData()).thenReturn(jsonData);
@@ -99,7 +81,7 @@ class AbstractEventStrategyTest {
     }
 
     @Test
-    void testRecoverRequestIdFromCloudEvent_MultilineJson() throws Exception {
+    void testRecoverRequestIdFromCloudEvent_MultilineJson() {
         // Given
         String jsonData = "{\n  \"requestId\": \"multiline-id-202\",\n  \"entityId\": \"entity123\"\n}";
         when(cloudEvent.getTextData()).thenReturn(jsonData);
@@ -114,7 +96,7 @@ class AbstractEventStrategyTest {
     }
 
     @Test
-    void testRecoverRequestIdFromCloudEvent_UuidFallbackPattern() throws Exception {
+    void testRecoverRequestIdFromCloudEvent_UuidFallbackPattern() {
         // Given - corrupted JSON where quotes are missing but UUID is intact
         String jsonData = "{requestId: 12345678-1234-1234-1234-123456789abc, entityId: entity123}";
         when(cloudEvent.getTextData()).thenReturn(jsonData);
@@ -129,7 +111,7 @@ class AbstractEventStrategyTest {
     }
 
     @Test
-    void testRecoverRequestIdFromCloudEvent_GeneralPatternFallback() throws Exception {
+    void testRecoverRequestIdFromCloudEvent_GeneralPatternFallback() {
         // Given - corrupted JSON with non-UUID requestId
         String jsonData = "{requestId: simple-request-id-303, entityId: entity123}";
         when(cloudEvent.getTextData()).thenReturn(jsonData);
@@ -144,7 +126,7 @@ class AbstractEventStrategyTest {
     }
 
     @Test
-    void testRecoverRequestIdFromCloudEvent_CaseInsensitive() throws Exception {
+    void testRecoverRequestIdFromCloudEvent_CaseInsensitive() {
         // Given
         String jsonData = "{\"REQUESTID\": \"case-insensitive-id-404\", \"entityId\": \"entity123\"}";
         when(cloudEvent.getTextData()).thenReturn(jsonData);
@@ -159,7 +141,7 @@ class AbstractEventStrategyTest {
     }
 
     @Test
-    void testRecoverRequestIdFromCloudEvent_NullCloudEvent() throws Exception {
+    void testRecoverRequestIdFromCloudEvent_NullCloudEvent() {
         // When
         AbstractEventStrategy.RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(null);
 
@@ -169,7 +151,7 @@ class AbstractEventStrategyTest {
     }
 
     @Test
-    void testRecoverRequestIdFromCloudEvent_EmptyTextData() throws Exception {
+    void testRecoverRequestIdFromCloudEvent_EmptyTextData() {
         // Given
         when(cloudEvent.getTextData()).thenReturn("");
 
@@ -182,7 +164,7 @@ class AbstractEventStrategyTest {
     }
 
     @Test
-    void testRecoverRequestIdFromCloudEvent_NoRequestIdField() throws Exception {
+    void testRecoverRequestIdFromCloudEvent_NoRequestIdField() {
         // Given
         String jsonData = "{\"entityId\": \"entity123\", \"processorName\": \"test-processor\"}";
         when(cloudEvent.getTextData()).thenReturn(jsonData);
@@ -196,7 +178,7 @@ class AbstractEventStrategyTest {
     }
 
     @Test
-    void testRecoverRequestIdFromCloudEvent_CorruptedJsonWithPartialRequestId() throws Exception {
+    void testRecoverRequestIdFromCloudEvent_CorruptedJsonWithPartialRequestId() {
         // Given - heavily corrupted JSON but requestId is still extractable
         String jsonData = "{\"req corrupted but requestId: \"recoverable-id-505\" still here}";
         when(cloudEvent.getTextData()).thenReturn(jsonData);
@@ -211,7 +193,7 @@ class AbstractEventStrategyTest {
     }
 
     @Test
-    void testRecoverRequestIdFromCloudEvent_RequestIdWithSpecialCharacters() throws Exception {
+    void testRecoverRequestIdFromCloudEvent_RequestIdWithSpecialCharacters() {
         // Given
         String jsonData = "{\"requestId\": \"req-id_with.special@chars#606\", \"entityId\": \"entity123\"}";
         when(cloudEvent.getTextData()).thenReturn(jsonData);
