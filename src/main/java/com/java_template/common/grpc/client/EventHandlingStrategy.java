@@ -1,6 +1,7 @@
 package com.java_template.common.grpc.client;
 
 import io.cloudevents.v1.proto.CloudEvent;
+import org.cyoda.cloud.api.event.common.BaseEvent;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -14,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
  * Strategies are responsible for processing events and returning results.
  * The CyodaCalculationMemberClient handles sending responses based on the results.
  */
-public interface EventHandlingStrategy {
+public interface EventHandlingStrategy<TResponse extends BaseEvent> {
 
     /**
      * Handles the given CloudEvent and returns the result.
@@ -26,7 +27,7 @@ public interface EventHandlingStrategy {
      * @param cloudEvent the CloudEvent to handle
      * @return CompletableFuture containing the response object to be sent
      */
-    CompletableFuture<Object> handleEvent(CloudEvent cloudEvent);
+    CompletableFuture<TResponse> handleEvent(CloudEvent cloudEvent);
 
     /**
      * Checks if this strategy supports the given event type.

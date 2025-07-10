@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.java_template.common.util.JsonUtils;
 import com.java_template.common.workflow.CyodaEntity;
+import org.cyoda.cloud.api.event.common.Error;
 import org.cyoda.cloud.api.event.processing.EntityProcessorCalculationRequest;
 import org.cyoda.cloud.api.event.processing.EntityProcessorCalculationResponse;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 /**
@@ -43,16 +45,13 @@ public class ProcessorRequestSerializer extends BaseRequestSerializer<EntityProc
     // ========================================
 
     @Override
-    public ObjectNode extractPayload(EntityProcessorCalculationRequest request) {
+    public ObjectNode extractPayload(@NotNull EntityProcessorCalculationRequest request) {
         validateRequest(request);
         return (ObjectNode) request.getPayload().getData();
     }
 
     @Override
-    protected void validateRequest(EntityProcessorCalculationRequest request) {
-        if (request == null) {
-            throw new IllegalArgumentException("EntityProcessorCalculationRequest cannot be null");
-        }
+    protected void validateRequest(@NotNull EntityProcessorCalculationRequest request) {
         if (request.getPayload() == null) {
             throw new IllegalArgumentException("Request payload cannot be null");
         }
@@ -62,7 +61,7 @@ public class ProcessorRequestSerializer extends BaseRequestSerializer<EntityProc
     }
 
     @Override
-    public EntityProcessorCalculationResponse createResponse(EntityProcessorCalculationRequest request) {
+    public EntityProcessorCalculationResponse createResponse(@NotNull EntityProcessorCalculationRequest request) {
         EntityProcessorCalculationResponse response = new EntityProcessorCalculationResponse();
         response.setId(request.getId());
         response.setPayload(request.getPayload()); // Copy payload structure
@@ -70,20 +69,18 @@ public class ProcessorRequestSerializer extends BaseRequestSerializer<EntityProc
     }
 
     @Override
-    public EntityProcessorCalculationResponse createErrorResponse(EntityProcessorCalculationRequest request, String errorMessage) {
+    public EntityProcessorCalculationResponse createErrorResponse(
+            @NotNull EntityProcessorCalculationRequest request,
+            @NotNull String errorCode,
+            @NotNull String errorMessage
+    ) {
         EntityProcessorCalculationResponse response = createResponse(request);
         response.setSuccess(false);
 
-        if (errorMessage != null) {
-            // Optionally add error message to payload
-            ObjectNode errorPayload = objectMapper.createObjectNode();
-            errorPayload.put("error", errorMessage);
-            try {
-                response.getPayload().setData(jsonUtils.getJsonNode(errorPayload));
-            } catch (Exception e) {
-                logger.warn("Could not set error message in response", e);
-            }
-        }
+        Error error = new Error();
+        error.setCode(errorCode);
+        error.setMessage(errorMessage);
+        response.setError(error);
 
         return response;
     }
@@ -100,7 +97,7 @@ public class ProcessorRequestSerializer extends BaseRequestSerializer<EntityProc
      * @param entity the processed CyodaEntity
      * @return EntityProcessorCalculationResponse with the entity data
      */
-    public EntityProcessorCalculationResponse createSuccessResponse(EntityProcessorCalculationRequest request, CyodaEntity entity) {
+    public EntityProcessorCalculationResponse createSuccessResponse(@NotNull EntityProcessorCalculationRequest request, CyodaEntity entity) {
         try {
             EntityProcessorCalculationResponse response = createResponse(request);
             ObjectNode result = objectMapper.valueToTree(entity);
@@ -109,7 +106,7 @@ public class ProcessorRequestSerializer extends BaseRequestSerializer<EntityProc
             return response;
         } catch (Exception e) {
             logger.error("Error creating response from entity", e);
-            return createErrorResponse(request, "Failed to convert entity to response: " + e.getMessage());
+            return createErrorResponse(request, "JSON_PROCESSING_ERROR", "Failed to convert entity to response: " + e.getMessage());
         }
     }
 }

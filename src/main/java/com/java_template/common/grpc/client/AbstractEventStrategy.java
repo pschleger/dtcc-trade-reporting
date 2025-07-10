@@ -20,22 +20,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * ABOUTME: Result record for request ID recovery operations containing the recovered ID and any error message.
- */
-record RequestIdRecoveryResult(Optional<String> requestId, String error) {
-    public RequestIdRecoveryResult {
-        if (requestId == null) {
-            throw new IllegalArgumentException("requestId Optional cannot be null");
-        }
-    }
-}
-
-/**
  * ABOUTME: Abstract base class for event handling strategies that provides common functionality
  * for processing CloudEvents. Subclasses implement specific behavior for different event types.
  */
 public abstract class AbstractEventStrategy<TRequest extends BaseEvent, TResponse extends BaseEvent, TOperation extends OperationSpecification>
-        implements EventHandlingStrategy {
+        implements EventHandlingStrategy<TResponse> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractEventStrategy.class);
 
@@ -43,14 +32,25 @@ public abstract class AbstractEventStrategy<TRequest extends BaseEvent, TRespons
     protected final ObjectMapper objectMapper;
     protected final CyodaContextFactory eventContextFactory;
 
-    protected AbstractEventStrategy(OperationFactory operationFactory, ObjectMapper objectMapper, CyodaContextFactory eventContextFactory) {
+    protected AbstractEventStrategy(
+            OperationFactory operationFactory,
+            ObjectMapper objectMapper,
+            CyodaContextFactory eventContextFactory
+    ) {
         this.operationFactory = operationFactory;
         this.objectMapper = objectMapper;
         this.eventContextFactory = eventContextFactory;
     }
 
+    /**
+     * Handles the given CloudEvent and returns the result.
+     * Exception handling strategy is to catch all exceptions and return an error response.
+     *
+     * @param cloudEvent the CloudEvent to handle
+     * @return TResponse
+     */
     @Override
-    public CompletableFuture<Object> handleEvent(CloudEvent cloudEvent) {
+    public CompletableFuture<TResponse> handleEvent(CloudEvent cloudEvent) {
         return CompletableFuture.supplyAsync(() -> {
             String cloudEventType = cloudEvent.getType();
             logger.debug("[IN] Received event {}: \n{}", cloudEventType, cloudEvent.getTextData());
@@ -79,7 +79,7 @@ public abstract class AbstractEventStrategy<TRequest extends BaseEvent, TRespons
         });
     }
 
-    protected Object returnErrorResponseFor(TRequest request, Exception e) {
+    protected TResponse returnErrorResponseFor(TRequest request, Exception e) {
         TResponse errorResponse = createErrorResponse();
         errorResponse.setSuccess(false);
         setRequestIdInErrorResponse(errorResponse, request.getId());
@@ -95,10 +95,10 @@ public abstract class AbstractEventStrategy<TRequest extends BaseEvent, TRespons
      * Handles JsonProcessingException with error recovery.
      * Attempts to recover the requestId from potentially corrupted JSON.
      */
-    protected Object returnErrorResponseFor(CloudEvent cloudEvent, JsonProcessingException e) {
+    protected TResponse returnErrorResponseFor(CloudEvent cloudEvent, JsonProcessingException e) {
         TResponse errorResponse = createErrorResponse();
 
-        RequestIdRecoveryResult recoveryResult = recoverRequestIdFromCloudEvent(cloudEvent);
+        AbstractEventStrategy.RequestIdRecoveryResult recoveryResult = recoverRequestIdFromCloudEvent(cloudEvent);
         if (recoveryResult.requestId().isPresent()) {
             String requestId = recoveryResult.requestId().get();
             setRequestIdInErrorResponse(errorResponse, requestId);
@@ -128,14 +128,14 @@ public abstract class AbstractEventStrategy<TRequest extends BaseEvent, TRespons
      * @param cloudEvent the CloudEvent containing potentially corrupted JSON data
      * @return RequestIdRecoveryResult containing the requestId if found and any error message
      */
-    public static RequestIdRecoveryResult recoverRequestIdFromCloudEvent(CloudEvent cloudEvent) {
+    public static AbstractEventStrategy.RequestIdRecoveryResult recoverRequestIdFromCloudEvent(CloudEvent cloudEvent) {
         if (cloudEvent == null) {
-            return new RequestIdRecoveryResult(Optional.empty(), "CloudEvent is null, cannot recover requestId");
+            return new AbstractEventStrategy.RequestIdRecoveryResult(Optional.empty(), "CloudEvent is null, cannot recover requestId");
         }
 
         String textData = cloudEvent.getTextData();
         if (textData.trim().isEmpty()) {
-            return new RequestIdRecoveryResult(Optional.empty(), "CloudEvent text data is empty, cannot recover requestId");
+            return new AbstractEventStrategy.RequestIdRecoveryResult(Optional.empty(), "CloudEvent text data is empty, cannot recover requestId");
         }
 
         // Pattern to match "requestId" field with various quote styles and whitespace
@@ -148,7 +148,7 @@ public abstract class AbstractEventStrategy<TRequest extends BaseEvent, TRespons
         Matcher matcher = requestIdPattern.matcher(textData);
         if (matcher.find()) {
             String requestId = matcher.group(1);
-            return new RequestIdRecoveryResult(Optional.of(requestId), null);
+            return new AbstractEventStrategy.RequestIdRecoveryResult(Optional.of(requestId), null);
         }
 
         // Fallback: try to find any UUID-like pattern near "requestId" text
@@ -161,7 +161,7 @@ public abstract class AbstractEventStrategy<TRequest extends BaseEvent, TRespons
         Matcher fallbackMatcher = fallbackPattern.matcher(textData);
         if (fallbackMatcher.find()) {
             String requestId = fallbackMatcher.group(1);
-            return new RequestIdRecoveryResult(Optional.of(requestId), null);
+            return new AbstractEventStrategy.RequestIdRecoveryResult(Optional.of(requestId), null);
         }
 
         // Final fallback: look for any string value after "requestId" that looks like an identifier
@@ -173,10 +173,10 @@ public abstract class AbstractEventStrategy<TRequest extends BaseEvent, TRespons
         Matcher generalMatcher = generalPattern.matcher(textData);
         if (generalMatcher.find()) {
             String requestId = generalMatcher.group(1);
-            return new RequestIdRecoveryResult(Optional.of(requestId), null);
+            return new AbstractEventStrategy.RequestIdRecoveryResult(Optional.of(requestId), null);
         }
 
-        return new RequestIdRecoveryResult(Optional.empty(), "Could not recover requestId from CloudEvent text data. No matching patterns found.");
+        return new AbstractEventStrategy.RequestIdRecoveryResult(Optional.empty(), "Could not recover requestId from CloudEvent text data. No matching patterns found.");
     }
 
     /**
@@ -185,6 +185,11 @@ public abstract class AbstractEventStrategy<TRequest extends BaseEvent, TRespons
     protected void enrichErrorResponse(TResponse errorResponse) {
         // No-op by default, can be overridden by subclasses
     }
+
+    /**
+     * Result record for request ID recovery operations containing the recovered ID and any error message.
+     */
+    public record RequestIdRecoveryResult(Optional<String> requestId, String error) { }
 
     // Abstract methods that subclasses must implement
 

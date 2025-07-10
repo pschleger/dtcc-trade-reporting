@@ -38,6 +38,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.java_template.common.config.Config.*;
 
@@ -51,7 +52,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
     private StreamObserver<CloudEvent> cloudEventStreamObserver;
     private EventFormat eventFormat;
     private final ObjectMapper objectMapper;
-    private final List<EventHandlingStrategy> eventHandlingStrategies;
+    private final List<EventHandlingStrategy<? extends BaseEvent>> eventHandlingStrategies;
     private ScheduledExecutorService connectionMonitor;
     private volatile ConnectivityState lastKnownState = ConnectivityState.IDLE;
 
@@ -67,10 +68,10 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private static final int MAX_RETRIES = 5;
-    volatile private int retryCount = 0;
+    private final AtomicInteger retryCount = new AtomicInteger(0);
 
     public CyodaCalculationMemberClient(ObjectMapper objectMapper,
-                                        List<EventHandlingStrategy> eventHandlingStrategies,
+                                        List<EventHandlingStrategy<? extends BaseEvent>> eventHandlingStrategies,
                                         Authentication authentication
     ) {
         this.objectMapper = objectMapper;
@@ -169,27 +170,29 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
             }
         });
 
-        retryCount = 0; // Reset retry count after successful connection
+        retryCount.set(0); // Reset retry count after successful connection
         logger.info("Connected to gRPC event stream and awaiting events...");
         sendJoinEvent();
     }
 
     private void scheduleReconnect() {
-        if (retryCount >= MAX_RETRIES) {
+        int currentRetries = retryCount.get();
+        if (currentRetries >= MAX_RETRIES) {
             logger.error("Maximum reconnection attempts ({}) reached. Giving up.", MAX_RETRIES);
             return;
         }
 
-        int delaySeconds = (int) Math.pow(2, retryCount);
-        logger.info("Attempting to reconnect to gRPC stream in {} seconds (retry attempt {}).", delaySeconds, retryCount + 1);
+        int delaySeconds = (int) Math.pow(2, currentRetries);
+        int nextRetryCount = retryCount.incrementAndGet();
+        logger.info("Attempting to reconnect to gRPC stream in {} seconds (retry attempt {}).", delaySeconds, nextRetryCount);
         scheduler.schedule(this::connectToStream, delaySeconds, TimeUnit.SECONDS);
-        retryCount++;
     }
 
     private void sendJoinEvent() {
         CalculationMemberJoinEvent event = new CalculationMemberJoinEvent();
         event.setTags(TAGS);
-        event.setId(UUID.randomUUID().toString());
+        String joinEventId = UUID.randomUUID().toString();
+        event.setId(joinEventId);
         try {
             sendEvent(event);
         } catch (Exception e) {
@@ -208,15 +211,15 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                     // Handle the event and send the response
                     strategy.handleEvent(cloudEvent).thenAccept(response -> {
                         if (response != null) {
-                            sendEvent((BaseEvent) response);
+                            sendEvent(response);
                         }
                     }).exceptionally(throwable -> {
                         logger.error("Error in strategy '{}' for event type '{}'", strategy.getStrategyName(), cloudEvent.getType(), throwable);
 
                         // Create and send error response based on event type
-                        Object errorResponse = createErrorResponse(cloudEvent, throwable.getMessage());
+                        BaseEvent errorResponse = createErrorResponse(cloudEvent, throwable.getMessage());
                         if (errorResponse != null) {
-                            sendEvent((BaseEvent) errorResponse);
+                            sendEvent(errorResponse);
                         }
 
                         return null;
@@ -243,7 +246,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                     if (eventAckResponse.getSuccess()) {
                         logger.info("Received event ack for event ID: {}", eventAckResponse.getSourceEventId());
                     } else {
-                        logger.error("Received failed event ack for event ID: {}", eventAckResponse.getSourceEventId());
+                        throw new IllegalStateException("Received failed event ack for event ID: " + eventAckResponse.getSourceEventId());
                     }
                 });
             }
@@ -316,7 +319,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
      * @param errorMessage the error message to include
      * @return the appropriate error response object, or null if event type is unknown
      */
-    private Object createErrorResponse(CloudEvent cloudEvent, String errorMessage) {
+    private BaseEvent createErrorResponse(CloudEvent cloudEvent, String errorMessage) {
         try {
             String eventType = cloudEvent.getType();
 

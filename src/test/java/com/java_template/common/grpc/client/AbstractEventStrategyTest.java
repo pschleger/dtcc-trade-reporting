@@ -45,7 +45,7 @@ class AbstractEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
+        AbstractEventStrategy.RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
         assertTrue(result.requestId().isPresent());
@@ -60,7 +60,7 @@ class AbstractEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
+        AbstractEventStrategy.RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
         assertTrue(result.requestId().isPresent());
@@ -75,7 +75,7 @@ class AbstractEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
+        AbstractEventStrategy.RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
         assertTrue(result.requestId().isPresent());
@@ -90,7 +90,7 @@ class AbstractEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
+        AbstractEventStrategy.RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
         assertTrue(result.requestId().isPresent());
@@ -105,7 +105,7 @@ class AbstractEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
+        AbstractEventStrategy.RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
         assertTrue(result.requestId().isPresent());
@@ -120,7 +120,7 @@ class AbstractEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
+        AbstractEventStrategy.RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
         assertTrue(result.requestId().isPresent());
@@ -135,7 +135,7 @@ class AbstractEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
+        AbstractEventStrategy.RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
         assertTrue(result.requestId().isPresent());
@@ -150,7 +150,7 @@ class AbstractEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
+        AbstractEventStrategy.RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
         assertTrue(result.requestId().isPresent());
@@ -161,7 +161,7 @@ class AbstractEventStrategyTest {
     @Test
     void testRecoverRequestIdFromCloudEvent_NullCloudEvent() throws Exception {
         // When
-        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(null);
+        AbstractEventStrategy.RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(null);
 
         // Then
         assertFalse(result.requestId().isPresent());
@@ -174,7 +174,7 @@ class AbstractEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn("");
 
         // When
-        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
+        AbstractEventStrategy.RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
         assertFalse(result.requestId().isPresent());
@@ -188,7 +188,7 @@ class AbstractEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
+        AbstractEventStrategy.RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
         assertFalse(result.requestId().isPresent());
@@ -202,7 +202,7 @@ class AbstractEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
+        AbstractEventStrategy.RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
         assertTrue(result.requestId().isPresent());
@@ -217,7 +217,7 @@ class AbstractEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
+        AbstractEventStrategy.RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
         assertTrue(result.requestId().isPresent());
