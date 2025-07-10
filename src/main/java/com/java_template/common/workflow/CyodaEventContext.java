@@ -1,6 +1,5 @@
 package com.java_template.common.workflow;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.cloudevents.v1.proto.CloudEvent;
 import org.cyoda.cloud.api.event.common.BaseEvent;
 
@@ -10,7 +9,7 @@ import org.cyoda.cloud.api.event.common.BaseEvent;
  */
 public interface CyodaEventContext<T extends BaseEvent>  {
     CloudEvent getCloudEvent();
-    T getEvent() throws JsonProcessingException;
+    T getEvent();
 
     // TODO: add gRPC access object to Cyoda
 }

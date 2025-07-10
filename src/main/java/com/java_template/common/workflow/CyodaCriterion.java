@@ -4,8 +4,6 @@ package com.java_template.common.workflow;
 import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationRequest;
 import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationResponse;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Interface for criteria checking components.
 
@@ -35,25 +33,19 @@ public interface CyodaCriterion {
      * This gives criteria checkers complete control over data marshalling and evaluation approach.
      *
      * @param request the EntityCriteriaCalculationRequest to evaluate (MUST NOT be modified)
-     * @return CompletableFuture containing the EntityCriteriaCalculationResponse with evaluation result
+     * @return the EntityCriteriaCalculationResponse with evaluation result
      */
-    CompletableFuture<EntityCriteriaCalculationResponse> check(EntityCriteriaCalculationRequest request);
+    EntityCriteriaCalculationResponse check(CyodaEventContext<EntityCriteriaCalculationRequest> request);
 
     /**
      * Checks if this criteria checker supports the given model key.
      * Used to filter criteria checkers based on entity operationName and version
      * from event metadata before selecting by criteria operationName.
      *
-     * @param modelKey the model key containing entity operationName and version
+     * @param opsSpec the model key containing entity operationName and version
      * @return true if this criteria checker supports the given model key, false otherwise
      */
-    boolean supports(OperationSpecification modelKey);
+    boolean supports(OperationSpecification opsSpec);
 
-    /**
-     * Gets the criteria checker operationName for identification and logging.
-     * This should typically match the Spring bean operationName.
-     *
-     * @return the criteria checker operationName
-     */
-    String getName();
+
 }

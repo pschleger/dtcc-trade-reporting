@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cloudevents.v1.proto.CloudEvent;
 import org.cyoda.cloud.api.event.common.BaseEvent;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,7 +19,9 @@ public class CyodaContextFactory {
     public <T extends BaseEvent> CyodaEventContext<T> createCyodaEventContext(
             CloudEvent cloudEvent,
             Class<T> eventClass
-    ) {
+    )  throws JsonProcessingException {
+        T event = objectMapper.readValue(cloudEvent.getTextData(), eventClass);
+
         return new CyodaEventContext<T>() {
             @Override
             public CloudEvent getCloudEvent() {
@@ -26,8 +29,8 @@ public class CyodaContextFactory {
             }
 
             @Override
-            public T getEvent() throws JsonProcessingException {
-                return objectMapper.readValue(cloudEvent.getTextData(), eventClass);
+            public @NotNull T getEvent() {
+                return event;
             }
         };
     }

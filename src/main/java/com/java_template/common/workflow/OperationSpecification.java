@@ -1,12 +1,12 @@
 package com.java_template.common.workflow;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.cyoda.cloud.api.event.common.EntityMetadata;
+import org.cyoda.cloud.api.event.common.ModelSpec;
 import org.cyoda.cloud.api.event.common.statemachine.TransitionInfo;
 import org.cyoda.cloud.api.event.common.statemachine.WorkflowInfo;
 import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationRequest;
 import org.cyoda.cloud.api.event.processing.EntityProcessorCalculationRequest;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -16,14 +16,20 @@ import java.util.Optional;
 public sealed class OperationSpecification
     permits OperationSpecification.Entity, OperationSpecification.Criterion, OperationSpecification.Processor {
 
-    private final @NotNull ModelKey modelKey;
+    private final @NotNull ModelSpec modelKey;
+    private final @NotNull String operationName;
 
-    protected OperationSpecification(@NotNull ModelKey modelKey) {
+    protected OperationSpecification(@NotNull ModelSpec modelKey, @NotNull String operationName) {
         this.modelKey = modelKey;
+        this.operationName = operationName;
     }
 
-    public @NotNull ModelKey modelKey() {
+    public @NotNull ModelSpec modelKey() {
         return modelKey;
+    }
+
+    public @NotNull String operationName() {
+        return operationName;
     }
 
     /**
@@ -31,8 +37,8 @@ public sealed class OperationSpecification
      */
     public static final class Entity extends OperationSpecification {
 
-        public Entity(@NotNull ModelKey modelKey) {
-            super(modelKey);
+        public Entity(@NotNull ModelSpec modelKey, @NotNull String operationName) {
+            super(modelKey, operationName);
         }
     }
 
@@ -40,29 +46,34 @@ public sealed class OperationSpecification
      * Represents a criterion-based transition operation.
      */
     public static final class Criterion extends OperationSpecification {
-        private final @NotNull String criterionName;
-        private final @Nullable String transitionName;
-        private final @Nullable String workflowName;
+        private final @NotNull String stateName;
+        private final @NotNull String transitionName;
+        private final @NotNull String workflowName;
 
-        public Criterion(@NotNull ModelKey modelKey,
+        public Criterion(@NotNull ModelSpec modeKey,
                          @NotNull String criterionName,
-                         @Nullable String transitionName,
-                         @Nullable String workflowName) {
-            super(modelKey);
-            this.criterionName = criterionName;
+                         @NotNull String stateName,
+                         @NotNull String transitionName,
+                         @NotNull String workflowName) {
+            super(modeKey, criterionName);
+            this.stateName = stateName;
             this.transitionName = transitionName;
             this.workflowName = workflowName;
         }
 
         public @NotNull String criterionName() {
-            return criterionName;
+            return operationName();
         }
 
-        public @Nullable String transitionName() {
+        public @NotNull String stateName() {
+            return stateName;
+        }
+
+        public @NotNull String transitionName() {
             return transitionName;
         }
 
-        public @Nullable String workflowName() {
+        public @NotNull String workflowName() {
             return workflowName;
         }
 
@@ -79,29 +90,34 @@ public sealed class OperationSpecification
      * Represents a processor-based transition operation.
      */
     public static final class Processor extends OperationSpecification {
-        private final @NotNull String processorName;
-        private final @Nullable String transitionName;
-        private final @Nullable String workflowName;
+        private final @NotNull String stateName;
+        private final @NotNull String transitionName;
+        private final @NotNull String workflowName;
 
-        public Processor(@NotNull ModelKey modelKey,
+        public Processor(@NotNull ModelSpec modelKey,
                          @NotNull String processorName,
-                         @Nullable String transitionName,
-                         @Nullable String workflowName) {
-            super(modelKey);
-            this.processorName = processorName;
+                         @NotNull String stateName,
+                         @NotNull String transitionName,
+                         @NotNull String workflowName) {
+            super(modelKey,processorName);
+            this.stateName = stateName;
             this.transitionName = transitionName;
             this.workflowName = workflowName;
         }
 
         public @NotNull String processorName() {
-            return processorName;
+            return operationName();
         }
 
-        public @Nullable String transitionName() {
+        public @NotNull String stateName() {
+            return stateName;
+        }
+
+        public @NotNull String transitionName() {
             return transitionName;
         }
 
-        public @Nullable String workflowName() {
+        public @NotNull String workflowName() {
             return workflowName;
         }
 
@@ -114,55 +130,35 @@ public sealed class OperationSpecification
         }
     }
 
-    public static Processor create(EntityProcessorCalculationRequest request) {
-        ModelKey modelKey = extractModelKey(request);
+    public static Processor create(EntityProcessorCalculationRequest request, EntityMetadata metadata) {
 
         // TODO This is just a suggestion of things to add. Need to agree what we really should pack up.
         String processorName = request.getProcessorName();
-        String transitionName = Optional.ofNullable(request.getTransition()).map(TransitionInfo::getName).orElse(null);
-        String workflowName = Optional.ofNullable(request.getWorkflow()).map(WorkflowInfo::getName).orElse(null);
 
-        return new Processor(modelKey, processorName, transitionName, workflowName);
+        String stateName = metadata.getState();
+        String transitionName = Optional.ofNullable(request.getTransition()).map(TransitionInfo::getName).orElseThrow(
+                () -> new IllegalStateException("Transition name is required for processor operation")
+        );
+        String workflowName = Optional.ofNullable(request.getWorkflow()).map(WorkflowInfo::getName).orElseThrow(
+                () -> new IllegalStateException("Workflow name is required for processor operation")
+        );
+
+        return new Processor(metadata.getModelKey(), processorName, stateName, transitionName, workflowName);
     }
 
-    public static Criterion create(EntityCriteriaCalculationRequest request) {
-        ModelKey modelKey = extractModelKey(request);
+    public static Criterion create(EntityCriteriaCalculationRequest request, EntityMetadata metadata) {
 
         // TODO This is just a suggestion of things to add. Need to agree what we really should pack up.
         String criteriaName = request.getCriteriaName();
-        String transitionName = Optional.ofNullable(request.getTransition()).map(TransitionInfo::getName).orElse(null);
-        String workflowName = Optional.ofNullable(request.getWorkflow()).map(WorkflowInfo::getName).orElse(null);
+        String stateName = metadata.getState();
+        String transitionName = Optional.ofNullable(request.getTransition()).map(TransitionInfo::getName).orElseThrow(
+                () -> new IllegalStateException("Transition name is required for this operation")
+        );
+        String workflowName = Optional.ofNullable(request.getWorkflow()).map(WorkflowInfo::getName).orElseThrow(
+                () -> new IllegalStateException("Workflow name is required for this operation")
+        );
 
-        return new Criterion(modelKey, criteriaName, transitionName, workflowName);
-    }
-
-    private static @NotNull ModelKey extractModelKey(EntityProcessorCalculationRequest request) {
-        ObjectNode payload = (ObjectNode) request.getPayload().getData();
-        return getModelKey(payload);
-    }
-
-    private static @NotNull ModelKey extractModelKey(EntityCriteriaCalculationRequest request) {
-        ObjectNode payload = (ObjectNode) request.getPayload().getData();
-        return getModelKey(payload);
-    }
-
-    @NotNull
-    private static ModelKey getModelKey(ObjectNode payload) {
-        if (!payload.has("metadata")) {
-            throw new IllegalArgumentException("Payload does not contain metadata");
-        }
-        if (!payload.has("entityName")) {
-            throw new IllegalArgumentException("Payload does not have entityName in metadata");
-        }
-        if (!payload.has("entityVersion")) {
-            throw new IllegalArgumentException("Payload does not have entityVersion in metadata");
-        }
-
-        ObjectNode metadata = (ObjectNode) payload.get("metadata");
-        String entityName = metadata.path("entityName").asText(null);
-        String entityVersion = metadata.path("entityVersion").asText(null);
-
-        return new ModelKey(entityName, entityVersion);
+        return new Criterion(metadata.getModelKey(), criteriaName, stateName, transitionName, workflowName);
     }
 
 }

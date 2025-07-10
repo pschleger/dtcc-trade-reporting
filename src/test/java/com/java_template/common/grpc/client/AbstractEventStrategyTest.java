@@ -11,16 +11,20 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Method;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.when;
 
 /**
- * ABOUTME: Tests for ProcessorEventStrategy, focusing on the recoverRequestIdFromCloudEvent method
+ * ABOUTME: Tests for AbstractEventStrategy, focusing on the recoverRequestIdFromCloudEvent method
  * which handles string-based parsing of potentially corrupted JSON to extract request IDs.
  */
 @ExtendWith(MockitoExtension.class)
-class ProcessorEventStrategyTest {
+class AbstractEventStrategyTest {
 
     @Mock
     private OperationFactory operationFactory;
@@ -34,18 +38,6 @@ class ProcessorEventStrategyTest {
     @Mock
     private CloudEvent cloudEvent;
 
-    private ProcessorEventStrategy processorEventStrategy;
-    private Method recoverRequestIdMethod;
-
-    @BeforeEach
-    void setUp() throws Exception {
-        processorEventStrategy = new ProcessorEventStrategy(operationFactory, objectMapper, eventContextFactory);
-
-        // Get access to the private method for testing
-        recoverRequestIdMethod = ProcessorEventStrategy.class.getDeclaredMethod("recoverRequestIdFromCloudEvent", CloudEvent.class);
-        recoverRequestIdMethod.setAccessible(true);
-    }
-
     @Test
     void testRecoverRequestIdFromCloudEvent_ValidJsonWithQuotes() throws Exception {
         // Given
@@ -53,10 +45,12 @@ class ProcessorEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        String result = (String) recoverRequestIdMethod.invoke(processorEventStrategy, cloudEvent);
+        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
-        assertEquals("12345678-1234-1234-1234-123456789abc", result);
+        assertTrue(result.requestId().isPresent());
+        assertEquals("12345678-1234-1234-1234-123456789abc", result.requestId().get());
+        assertNull(result.error());
     }
 
     @Test
@@ -66,10 +60,12 @@ class ProcessorEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        String result = (String) recoverRequestIdMethod.invoke(processorEventStrategy, cloudEvent);
+        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
-        assertEquals("test-request-id-456", result);
+        assertTrue(result.requestId().isPresent());
+        assertEquals("test-request-id-456", result.requestId().get());
+        assertNull(result.error());
     }
 
     @Test
@@ -79,10 +75,12 @@ class ProcessorEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        String result = (String) recoverRequestIdMethod.invoke(processorEventStrategy, cloudEvent);
+        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
-        assertEquals("single-quote-id-789", result);
+        assertTrue(result.requestId().isPresent());
+        assertEquals("single-quote-id-789", result.requestId().get());
+        assertNull(result.error());
     }
 
     @Test
@@ -92,10 +90,12 @@ class ProcessorEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        String result = (String) recoverRequestIdMethod.invoke(processorEventStrategy, cloudEvent);
+        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
-        assertEquals("mixed-quote-id-101", result);
+        assertTrue(result.requestId().isPresent());
+        assertEquals("mixed-quote-id-101", result.requestId().get());
+        assertNull(result.error());
     }
 
     @Test
@@ -105,10 +105,12 @@ class ProcessorEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        String result = (String) recoverRequestIdMethod.invoke(processorEventStrategy, cloudEvent);
+        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
-        assertEquals("multiline-id-202", result);
+        assertTrue(result.requestId().isPresent());
+        assertEquals("multiline-id-202", result.requestId().get());
+        assertNull(result.error());
     }
 
     @Test
@@ -118,10 +120,12 @@ class ProcessorEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        String result = (String) recoverRequestIdMethod.invoke(processorEventStrategy, cloudEvent);
+        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
-        assertEquals("12345678-1234-1234-1234-123456789abc", result);
+        assertTrue(result.requestId().isPresent());
+        assertEquals("12345678-1234-1234-1234-123456789abc", result.requestId().get());
+        assertNull(result.error());
     }
 
     @Test
@@ -131,10 +135,12 @@ class ProcessorEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        String result = (String) recoverRequestIdMethod.invoke(processorEventStrategy, cloudEvent);
+        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
-        assertEquals("simple-request-id-303", result);
+        assertTrue(result.requestId().isPresent());
+        assertEquals("simple-request-id-303", result.requestId().get());
+        assertNull(result.error());
     }
 
     @Test
@@ -144,31 +150,22 @@ class ProcessorEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        String result = (String) recoverRequestIdMethod.invoke(processorEventStrategy, cloudEvent);
+        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
-        assertEquals("case-insensitive-id-404", result);
+        assertTrue(result.requestId().isPresent());
+        assertEquals("case-insensitive-id-404", result.requestId().get());
+        assertNull(result.error());
     }
 
     @Test
     void testRecoverRequestIdFromCloudEvent_NullCloudEvent() throws Exception {
         // When
-        String result = (String) recoverRequestIdMethod.invoke(processorEventStrategy, (CloudEvent) null);
+        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(null);
 
         // Then
-        assertNull(result);
-    }
-
-    @Test
-    void testRecoverRequestIdFromCloudEvent_NullTextData() throws Exception {
-        // Given
-        when(cloudEvent.getTextData()).thenReturn(null);
-
-        // When
-        String result = (String) recoverRequestIdMethod.invoke(processorEventStrategy, cloudEvent);
-
-        // Then
-        assertNull(result);
+        assertFalse(result.requestId().isPresent());
+        assertEquals("CloudEvent is null, cannot recover requestId", result.error());
     }
 
     @Test
@@ -177,10 +174,11 @@ class ProcessorEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn("");
 
         // When
-        String result = (String) recoverRequestIdMethod.invoke(processorEventStrategy, cloudEvent);
+        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
-        assertNull(result);
+        assertFalse(result.requestId().isPresent());
+        assertEquals("CloudEvent text data is empty, cannot recover requestId", result.error());
     }
 
     @Test
@@ -190,10 +188,11 @@ class ProcessorEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        String result = (String) recoverRequestIdMethod.invoke(processorEventStrategy, cloudEvent);
+        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
-        assertNull(result);
+        assertFalse(result.requestId().isPresent());
+        assertEquals("Could not recover requestId from CloudEvent text data. No matching patterns found.", result.error());
     }
 
     @Test
@@ -203,10 +202,12 @@ class ProcessorEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        String result = (String) recoverRequestIdMethod.invoke(processorEventStrategy, cloudEvent);
+        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
-        assertEquals("recoverable-id-505", result);
+        assertTrue(result.requestId().isPresent());
+        assertEquals("recoverable-id-505", result.requestId().get());
+        assertNull(result.error());
     }
 
     @Test
@@ -216,9 +217,11 @@ class ProcessorEventStrategyTest {
         when(cloudEvent.getTextData()).thenReturn(jsonData);
 
         // When
-        String result = (String) recoverRequestIdMethod.invoke(processorEventStrategy, cloudEvent);
+        RequestIdRecoveryResult result = AbstractEventStrategy.recoverRequestIdFromCloudEvent(cloudEvent);
 
         // Then
-        assertEquals("req-id_with.special@chars#606", result);
+        assertTrue(result.requestId().isPresent());
+        assertEquals("req-id_with.special@chars#606", result.requestId().get());
+        assertNull(result.error());
     }
 }

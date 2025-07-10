@@ -36,7 +36,7 @@ public class OperationFactory {
             log.debug("Searching for processor for OperationSpecification {}", opsSpec);
             for (CyodaProcessor processor : processors) {
                 if (processor.supports(opsSpec)) {
-                    String processorName = processor.getProcessorName();
+                    String processorName = opsSpec.processorName();
                     log.debug("Found processor '{}' (class: {}) for OperationSpecification {}",
                             processorName, processor.getClass().getSimpleName(), opsSpec);
                     return processor;
@@ -51,7 +51,7 @@ public class OperationFactory {
             log.debug("Searching for criteria for OperationSpecification {}", opsSpec);
             for (CyodaCriterion criterion : criteria) {
                 if (criterion.supports(opsSpec)) {
-                    String criteriaName = criterion.getName();
+                    String criteriaName = opsSpec.criterionName();
                     log.debug("Found criteria '{}' (class: {}) for OperationSpecification {}",
                             criteriaName, criterion.getClass().getSimpleName(), opsSpec);
                     return criterion;
