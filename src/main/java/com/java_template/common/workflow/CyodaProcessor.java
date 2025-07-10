@@ -1,7 +1,6 @@
 package com.java_template.common.workflow;
 
-import org.cyoda.cloud.api.event.EntityProcessorCalculationRequest;
-import org.cyoda.cloud.api.event.EntityProcessorCalculationResponse;
+import org.cyoda.cloud.api.event.processing.EntityProcessorCalculationResponse;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -26,26 +25,25 @@ public interface CyodaProcessor {
 
      * This gives processors complete control over data marshalling and processing approach.
      *
-     * @param request the EntityProcessorCalculationRequest to process
+     * @param context the CyodaEventContext to process
      * @return CompletableFuture containing the EntityProcessorCalculationResponse
      */
-    CompletableFuture<EntityProcessorCalculationResponse> process(EntityProcessorCalculationRequest request);
+    CompletableFuture<EntityProcessorCalculationResponse> process(CyodaEventContext context);
 
     /**
      * Checks if this processor supports the given model key.
-     * Used to filter processors based on entity name and version
-     * from event metadata before selecting by processor name.
+     * Used to filter processors based on entity operationName and version
+     * from event metadata before selecting by processor operationName.
      *
-     * @param modelKey the model key containing entity name and version
+     * @param modelKey the model key containing entity operationName and version
      * @return true if this processor supports the given model key, false otherwise
      */
-    boolean supports(ModelKey modelKey);
+    boolean supports(OperationSpecification modelKey);
 
     /**
-     * Gets the processor name for identification and logging.
-     * This should typically match the Spring bean name.
+     * Gets the processor operationName for identification and logging.
      *
-     * @return the processor name
+     * @return the processor operationName
      */
-    String getName();
+    String getProcessorName();
 }

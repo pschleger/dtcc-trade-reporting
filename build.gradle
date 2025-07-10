@@ -26,6 +26,7 @@ sourceSets {
         java {
             srcDirs += "$buildDir/generated/source/proto/main/java"
             srcDirs += "$buildDir/generated/source/proto/main/grpc"
+            srcDirs += "$buildDir/generated-sources/js2p"
         }
     }
 }
@@ -67,7 +68,20 @@ test {
 }
 
 jsonSchema2Pojo {
+    source = files("src/main/resources/schema")
+    targetDirectory = file("$buildDir/generated-sources/js2p")
     targetPackage = 'org.cyoda.cloud.api.event'
+    generateBuilders = true
+    usePrimitives = false
+    includeAdditionalProperties = false
+    includeHashcodeAndEquals = true
+    includeToString = true
+    annotationStyle = 'jackson2'
+    sourceType = 'jsonschema'
+    removeOldOutput = true
+    includeConstructors = false
+    includeRequiredPropertiesConstructor = false
+    includeAllPropertiesConstructor = true
 }
 
 protobuf {
@@ -89,7 +103,10 @@ protobuf {
 }
 
 ["bootRun", "build", "compileJava"].each { taskName ->
-    tasks.named(taskName).configure { dependsOn("generateProto") }
+    tasks.named(taskName).configure {
+        dependsOn("generateProto")
+        dependsOn("generateJsonSchema2Pojo")
+    }
 }
 
 bootJar {

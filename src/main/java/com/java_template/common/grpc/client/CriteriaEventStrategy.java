@@ -1,13 +1,10 @@
 package com.java_template.common.grpc.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.java_template.common.workflow.CriteriaChecker;
-import com.java_template.common.workflow.CriteriaFactory;
-import com.java_template.common.workflow.ModelKey;
-import org.cyoda.cloud.api.event.EntityCriteriaCalculationRequest;
-import org.cyoda.cloud.api.event.EntityCriteriaCalculationResponse;
+import com.java_template.common.workflow.*;
 import io.cloudevents.v1.proto.CloudEvent;
+import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationRequest;
+import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -17,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Strategy for handling EntityCriteriaCalculationRequest events.
- * This strategy parses the CloudEvent, finds the appropriate CriteriaChecker,
+ * This strategy parses the CloudEvent, finds the appropriate CyodaCriterion,
  * and delegates directly to the criteria checker. The criteria checker handles its own
  * request/response conversion using serializers as needed.
  */
@@ -28,12 +25,14 @@ public class CriteriaEventStrategy implements EventHandlingStrategy {
     private static final String CRIT_CALC_REQ_EVENT_TYPE = "EntityCriteriaCalculationRequest";
     public static final String CRITERIA_EVENT_STRATEGY = "CriteriaEventStrategy";
 
-    private final CriteriaFactory criteriaFactory;
+    private final OperationFactory operationFactory;
     private final ObjectMapper objectMapper;
+    private final CyodaContextFactory eventContextFactory;
 
-    public CriteriaEventStrategy(CriteriaFactory criteriaFactory, ObjectMapper objectMapper) {
-        this.criteriaFactory = criteriaFactory;
+    public CriteriaEventStrategy(OperationFactory operationFactory, ObjectMapper objectMapper, CyodaContextFactory eventContextFactory) {
+        this.operationFactory = operationFactory;
         this.objectMapper = objectMapper;
+        this.eventContextFactory = eventContextFactory;
     }
 
     @Override
@@ -42,24 +41,19 @@ public class CriteriaEventStrategy implements EventHandlingStrategy {
             try {
                 logger.info("[IN] Received event {}: \n{}", CRIT_CALC_REQ_EVENT_TYPE, cloudEvent.getTextData());
 
-                // Parse the request
-                EntityCriteriaCalculationRequest request = objectMapper.readValue(cloudEvent.getTextData(), EntityCriteriaCalculationRequest.class);
-                String criteriaName = request.getCriteriaName();
+                CyodaEventContext<EntityCriteriaCalculationRequest> context = eventContextFactory.createCyodaEventContext(cloudEvent, EntityCriteriaCalculationRequest.class);
 
-                logger.info("Processing {}: {}", CRIT_CALC_REQ_EVENT_TYPE, criteriaName);
+                EntityCriteriaCalculationRequest request = context.getEvent();
+                OperationSpecification.Criterion criterionOperation = OperationSpecification.create(request);
+                String criterionName = criterionOperation.getCriterionName();
 
-                // Extract ModelKey from payload for criteria selection
-                ObjectNode payloadData = (ObjectNode) request.getPayload().getData();
-                ModelKey modelKey = ModelKey.extractFromPayload(payloadData);
+                logger.info("running Criterion {}: {}", CRIT_CALC_REQ_EVENT_TYPE, criterionName);
 
-                // Get criteria checker that supports this ModelKey
-                CriteriaChecker criteriaChecker = criteriaFactory.getCriteriaForModel(criteriaName, modelKey);
-                if (criteriaChecker == null) {
-                    throw new IllegalArgumentException("No criteria checker found for name '" + criteriaName + "' that supports ModelKey " + modelKey);
-                }
+                // Get a criterion checker that supports this OperationSpecification
+                CyodaCriterion cyodaCriterion = operationFactory.getCriteriaForModel(criterionOperation);
 
                 // Delegate directly to criteria checker - it handles its own serialization
-                CompletableFuture<EntityCriteriaCalculationResponse> futureResponse = criteriaChecker.check(request);
+                CompletableFuture<EntityCriteriaCalculationResponse> futureResponse = cyodaCriterion.check(request);
                 try {
                     return futureResponse.get(); // Wait for completion
                 } catch (InterruptedException e) {

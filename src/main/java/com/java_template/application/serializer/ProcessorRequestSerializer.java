@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.java_template.common.util.JsonUtils;
 import com.java_template.common.workflow.CyodaEntity;
-import org.cyoda.cloud.api.event.EntityProcessorCalculationRequest;
-import org.cyoda.cloud.api.event.EntityProcessorCalculationResponse;
+import org.cyoda.cloud.api.event.processing.EntityProcessorCalculationRequest;
+import org.cyoda.cloud.api.event.processing.EntityProcessorCalculationResponse;
 import org.springframework.stereotype.Component;
 
 /**

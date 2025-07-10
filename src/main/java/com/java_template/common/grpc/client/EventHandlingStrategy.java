@@ -37,9 +37,9 @@ public interface EventHandlingStrategy {
     boolean supports(String eventType);
 
     /**
-     * Gets the name of this strategy for logging and identification.
+     * Gets the operationName of this strategy for logging and identification.
      *
-     * @return the strategy name
+     * @return the strategy operationName
      */
     String getStrategyName();
 }

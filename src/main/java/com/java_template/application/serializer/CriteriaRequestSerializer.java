@@ -2,8 +2,8 @@ package com.java_template.application.serializer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.cyoda.cloud.api.event.EntityCriteriaCalculationRequest;
-import org.cyoda.cloud.api.event.EntityCriteriaCalculationResponse;
+import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationRequest;
+import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationResponse;
 import org.springframework.stereotype.Component;
 
 /**

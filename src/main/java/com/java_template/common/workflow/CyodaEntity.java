@@ -7,11 +7,11 @@ package com.java_template.common.workflow;
 public interface CyodaEntity {
 
     /**
-     * Gets the model key for this entity, containing both model name and version.
+     * Gets the model key for this entity, containing both model operationName and version.
      * This is used for processor selection and entity identification.
-     * @return the ModelKey containing model name and version
+     * @return the OperationSpecification containing model operationName and version
      */
-    ModelKey getModelKey();
+    OperationSpecification getModelKey();
 
     /**
      * Validates the entity data.
