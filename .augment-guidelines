@@ -1,1 +1,3 @@
-This is a gradle project. Don't use maven.
+This is a gradle project.
+
+When catching exceptions, you either log and handle the exception or throw it without logging. Never do both.
