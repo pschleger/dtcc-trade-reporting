@@ -1,8 +1,10 @@
 package com.java_template.common.grpc.client;
 
 import com.java_template.common.config.Config;
+import io.cloudevents.v1.proto.CloudEvent;
 import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
+import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +32,7 @@ public class GrpcConnectionMonitor {
         /**
          * Gets the current stream observer, may be null if disconnected.
          */
-        Object getCurrentStreamObserver();
+        StreamObserver<CloudEvent> getCurrentStreamObserver();
 
         /**
          * Clears the current stream observer (sets it to null).
@@ -41,13 +43,13 @@ public class GrpcConnectionMonitor {
     /**
      * Creates a new gRPC connection monitor.
      *
-     * @param managedChannel the gRPC managed channel to monitor
-     * @param memberStatusRef atomic reference to the member status
+     * @param managedChannel         the gRPC managed channel to monitor
+     * @param memberStatusRef        atomic reference to the member status
      * @param streamObserverProvider provider for accessing the current stream observer
      */
     public GrpcConnectionMonitor(ManagedChannel managedChannel,
-                                AtomicReference<MemberStatus> memberStatusRef,
-                                StreamObserverProvider streamObserverProvider) {
+                                 AtomicReference<MemberStatus> memberStatusRef,
+                                 StreamObserverProvider streamObserverProvider) {
         this.managedChannel = managedChannel;
         this.memberStatusRef = memberStatusRef;
         this.streamObserverProvider = streamObserverProvider;
@@ -162,15 +164,13 @@ public class GrpcConnectionMonitor {
      * Handles the offline state by cleaning up stream observer.
      */
     private void handleOfflineState() {
-        logger.warn("Member status is OFFLINE - initiating clean shutdown of gRPC connections");
+        logger.warn("Member status is OFFLINE. Cannot recover from this state. You need to restart this node.");
         // Note: We don't call destroy() here to avoid recursive shutdown
-        Object streamObserver = streamObserverProvider.getCurrentStreamObserver();
+        StreamObserver<CloudEvent> streamObserver = streamObserverProvider.getCurrentStreamObserver();
         if (streamObserver != null) {
+            logger.warn("Initiating shutdown of gRPC stream observer due to OFFLINE status");
             try {
-                // [Inference] Assuming the stream observer has an onCompleted method
-                if (streamObserver instanceof io.grpc.stub.StreamObserver) {
-                    ((io.grpc.stub.StreamObserver<?>) streamObserver).onCompleted();
-                }
+                streamObserver.onCompleted();
                 streamObserverProvider.clearStreamObserver();
             } catch (Exception e) {
                 logger.warn("Error completing stream observer during OFFLINE shutdown", e);
@@ -193,10 +193,14 @@ public class GrpcConnectionMonitor {
      * Logs periodic status information for debugging.
      */
     private void logPeriodicStatus(ConnectivityState currentState, MemberStatus currentMemberStatus) {
-        if (logger.isDebugEnabled()) {
-            Object streamObserver = streamObserverProvider.getCurrentStreamObserver();
-            logger.debug("gRPC connection status: state={}, streamObserver={}, memberStatus={}",
-                    currentState, streamObserver != null ? "connected" : "disconnected", currentMemberStatus.state());
+        Object streamObserver = streamObserverProvider.getCurrentStreamObserver();
+        String logMsgTemplate = "gRPC connection status: state={}, streamObserver={}, memberStatus={}";
+        String streamObserverState = streamObserver != null ? "connected" : "disconnected";
+
+        if (currentState == ConnectivityState.READY || currentState == ConnectivityState.IDLE) {
+            logger.debug(logMsgTemplate, currentState, streamObserverState, currentMemberStatus.state());
+        } else {
+            logger.warn(logMsgTemplate, currentState, streamObserverState, currentMemberStatus.state());
         }
     }
 

@@ -16,22 +16,22 @@ public record MemberStatus(MemberState state, String lastJoinEventId, int retryC
          * Initial state during client initialization.
          */
         STARTING,
-        
+
         /**
          * Sent join request, awaiting response.
          */
         JOINING,
-        
+
         /**
          * Successfully joined the calculation network.
          */
         JOINED,
-        
+
         /**
          * Join request was explicitly rejected.
          */
         REJECTED,
-        
+
         /**
          * Final state after max retries or explicit shutdown.
          */
@@ -95,10 +95,12 @@ public record MemberStatus(MemberState state, String lastJoinEventId, int retryC
     }
 
     /**
-     * Creates a new MemberStatus with JOINING state and updated join event ID, resetting retry count.
+     * Creates a new MemberStatus with JOINING state and updated join event ID, resetting retry count
+     * if the prior state was NOT JOINING and NOT OFFLINE.
      */
     public MemberStatus joiningWithEventId(String joinEventId) {
-        return new MemberStatus(MemberState.JOINING, joinEventId, 0, this.lastKeepAliveTimestamp, this.lastKnownState);
+        int cnt = this.state == MemberState.JOINING || this.state == MemberState.OFFLINE ? this.retryCount : 0;
+        return new MemberStatus(MemberState.JOINING, joinEventId, cnt, this.lastKeepAliveTimestamp, this.lastKnownState);
     }
 
     /**

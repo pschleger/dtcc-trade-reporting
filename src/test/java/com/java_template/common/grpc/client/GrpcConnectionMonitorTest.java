@@ -1,5 +1,6 @@
 package com.java_template.common.grpc.client;
 
+import io.cloudevents.v1.proto.CloudEvent;
 import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
@@ -23,7 +24,7 @@ class GrpcConnectionMonitorTest {
     private ManagedChannel managedChannel;
 
     @Mock
-    private StreamObserver<Object> streamObserver;
+    private StreamObserver<CloudEvent> streamObserver;
 
     private AtomicReference<MemberStatus> memberStatusRef;
     private GrpcConnectionMonitor.StreamObserverProvider streamObserverProvider;
@@ -34,21 +35,21 @@ class GrpcConnectionMonitorTest {
     void setUp() {
         closeable = MockitoAnnotations.openMocks(this);
         memberStatusRef = new AtomicReference<>(MemberStatus.starting());
-        
+
         streamObserverProvider = new GrpcConnectionMonitor.StreamObserverProvider() {
-            private Object currentObserver = streamObserver;
-            
+            private StreamObserver<CloudEvent> currentObserver = streamObserver;
+
             @Override
-            public Object getCurrentStreamObserver() {
+            public StreamObserver<CloudEvent> getCurrentStreamObserver() {
                 return currentObserver;
             }
-            
+
             @Override
             public void clearStreamObserver() {
                 currentObserver = null;
             }
         };
-        
+
         connectionMonitor = new GrpcConnectionMonitor(managedChannel, memberStatusRef, streamObserverProvider);
     }
 
@@ -76,7 +77,7 @@ class GrpcConnectionMonitorTest {
     void testStopMonitoring() {
         connectionMonitor.startMonitoring();
         assertTrue(connectionMonitor.isMonitoring());
-        
+
         connectionMonitor.stopMonitoring();
         assertFalse(connectionMonitor.isMonitoring());
     }
@@ -85,7 +86,7 @@ class GrpcConnectionMonitorTest {
     void testStartMonitoringWhenAlreadyRunning() {
         connectionMonitor.startMonitoring();
         assertTrue(connectionMonitor.isMonitoring());
-        
+
         // Starting again should not cause issues
         connectionMonitor.startMonitoring();
         assertTrue(connectionMonitor.isMonitoring());
@@ -94,7 +95,7 @@ class GrpcConnectionMonitorTest {
     @Test
     void testStopMonitoringWhenNotRunning() {
         assertFalse(connectionMonitor.isMonitoring());
-        
+
         // Stopping when not running should not cause issues
         connectionMonitor.stopMonitoring();
         assertFalse(connectionMonitor.isMonitoring());
@@ -105,7 +106,7 @@ class GrpcConnectionMonitorTest {
         // Test getting current stream observer
         Object observer = streamObserverProvider.getCurrentStreamObserver();
         assertEquals(streamObserver, observer);
-        
+
         // Test clearing stream observer
         streamObserverProvider.clearStreamObserver();
         assertNull(streamObserverProvider.getCurrentStreamObserver());
@@ -115,7 +116,7 @@ class GrpcConnectionMonitorTest {
     void testMemberStatusReference() {
         // Test that the monitor uses the provided member status reference
         assertEquals(MemberStatus.MemberState.STARTING, memberStatusRef.get().state());
-        
+
         // Update member status and verify it's reflected
         memberStatusRef.set(MemberStatus.joining("test-event-id"));
         assertEquals(MemberStatus.MemberState.JOINING, memberStatusRef.get().state());

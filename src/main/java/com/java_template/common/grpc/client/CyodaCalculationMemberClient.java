@@ -2,6 +2,8 @@ package com.java_template.common.grpc.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.java_template.common.auth.Authentication;
 import com.java_template.common.config.Config;
@@ -41,7 +43,7 @@ import static com.java_template.common.config.Config.*;
 
 @Component
 public class CyodaCalculationMemberClient implements DisposableBean, InitializingBean {
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final Authentication authentication;
     private ManagedChannel managedChannel;
@@ -56,9 +58,21 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
     private static final String SOURCE = "urn:cyoda:calculation-member:" + Config.GRPC_PROCESSOR_TAG;
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    private static final int MAX_RETRIES = 5;
+    private static final int MAX_RETRIES = 3;
 
     private final AtomicReference<MemberStatus> memberStatusRef = new AtomicReference<>(MemberStatus.starting());
+
+    private record EventAndTrigger(BaseEvent baseEvent, CloudEventType triggerEvent) {
+    }
+
+    // Cache for tracking sent events by their ID for correlation with acknowledgments
+    private final Cache<String, EventAndTrigger> sentEventsCache = Caffeine.newBuilder()
+            .maximumSize(1000)
+            .expireAfterWrite(5, TimeUnit.MINUTES)
+            .build();
+
+    // The greet event we got when joining. It contains some member information
+    private CalculationMemberGreetEvent greetEvent = null;
 
     public CyodaCalculationMemberClient(ObjectMapper objectMapper,
                                         List<EventHandlingStrategy<? extends BaseEvent>> eventHandlingStrategies,
@@ -72,13 +86,13 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
     @Override
     public void afterPropertiesSet() {
         try {
-            logger.info("Initializing gRPC client with address: {}:{}", GRPC_ADDRESS, GRPC_SERVER_PORT);
-            logger.debug("SSL trusted hosts: {}", Config.getTrustedHosts());
-            logger.debug("SSL trust all: {}", Config.SSL_TRUST_ALL);
+            log.info("Initializing gRPC client with address: {}:{}", GRPC_ADDRESS, GRPC_SERVER_PORT);
+            log.debug("SSL trusted hosts: {}", Config.getTrustedHosts());
+            log.debug("SSL trust all: {}", Config.SSL_TRUST_ALL);
 
             managedChannel = SslUtils.createGrpcChannelBuilder(GRPC_ADDRESS, GRPC_SERVER_PORT).build();
 
-            logger.debug("Created gRPC channel with authority: {}", managedChannel.authority());
+            log.debug("Created gRPC channel with authority: {}", managedChannel.authority());
 
             // Create a dynamic auth interceptor that gets fresh tokens
             ClientInterceptor authInterceptor = new ClientAuthorizationInterceptor(authentication);
@@ -96,7 +110,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                     memberStatusRef,
                     new GrpcConnectionMonitor.StreamObserverProvider() {
                         @Override
-                        public Object getCurrentStreamObserver() {
+                        public StreamObserver<CloudEvent> getCurrentStreamObserver() {
                             return cloudEventStreamObserver;
                         }
 
@@ -108,7 +122,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
             );
             connectionMonitor.startMonitoring();
 
-            logger.info("gRPC client initialized successfully with server address: {} and port: {}", GRPC_ADDRESS, GRPC_SERVER_PORT);
+            log.info("gRPC client initialized successfully with server address: {} and port: {}", GRPC_ADDRESS, GRPC_SERVER_PORT);
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize gRPC client", e);
         }
@@ -130,12 +144,12 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
             try {
                 managedChannel.shutdown().awaitTermination(100, TimeUnit.SECONDS);
                 if (!managedChannel.isTerminated()) {
-                    logger.warn("Forcing gRPC channel shutdown");
+                    log.warn("Forcing gRPC channel shutdown");
                     managedChannel.shutdownNow();
                 }
-                logger.info("gRPC channel shut down successfully");
+                log.info("gRPC channel shut down successfully");
             } catch (InterruptedException e) {
-                logger.error("Interrupted while shutting down gRPC channel", e);
+                log.error("Interrupted while shutting down gRPC channel", e);
                 Thread.currentThread().interrupt();
             }
         }
@@ -144,33 +158,44 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
     @SuppressWarnings("unused")
     @EventListener
     public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
-        connectToStream();
+        try {
+            connectToStream();
+        } catch (Exception e) {
+            log.error("Failed to connect to gRPC stream. Scheduling Reconnect", e);
+            scheduleReconnect();
+        }
     }
 
     private void connectToStream() {
-        cloudEventStreamObserver = cloudEventsServiceStub.startStreaming(new StreamObserver<>() {
-            @Override
-            public void onNext(CloudEvent cloudEvent) {
-                handleCloudEvent(cloudEvent);
-            }
+        if (cloudEventStreamObserver != null) {
+            cloudEventStreamObserver.onCompleted();
+        }
 
-            @Override
-            public void onError(Throwable t) {
-                logger.error("gRPC stream error - connection lost to remote backend. Error type: {}, message: {}",
-                        t.getClass().getSimpleName(), t.getMessage(), t);
-                scheduleReconnect();
-            }
+        try {
+            cloudEventStreamObserver = cloudEventsServiceStub.startStreaming(new StreamObserver<>() {
+                @Override
+                public void onNext(CloudEvent cloudEvent) {
+                    handleCloudEvent(cloudEvent);
+                }
 
-            @Override
-            public void onCompleted() {
-                logger.warn("Stream completed by remote backend, scheduling reconnect...");
-                scheduleReconnect();
-            }
-        });
+                @Override
+                public void onError(Throwable t) {
+                    log.error("gRPC stream error - connection lost to remote backend. Error type: {}, message: {}",
+                            t.getClass().getSimpleName(), t.getMessage(), t);
+                    scheduleReconnect();
+                }
 
-        // Reset retry count after successful connection
-        memberStatusRef.updateAndGet(status -> status.withRetryCount(0));
-        logger.info("Connected to gRPC event stream and awaiting events...");
+                @Override
+                public void onCompleted() {
+                    log.warn("Stream completed by remote backend, scheduling reconnect...");
+                    scheduleReconnect();
+                }
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        log.info("Connected to gRPC event stream and awaiting events...");
         sendJoinEvent();
     }
 
@@ -180,15 +205,16 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
 
         if (currentRetries >= MAX_RETRIES) {
             memberStatusRef.updateAndGet(MemberStatus::offline);
-            logger.error("Maximum reconnection attempts ({}) reached. Member status updated to OFFLINE. Giving up.", MAX_RETRIES);
+            log.error("Maximum reconnection attempts ({}) reached. Member status updated to OFFLINE. Giving up.", MAX_RETRIES);
             return;
         }
 
         int delaySeconds = (int) Math.pow(2, currentRetries);
         MemberStatus updatedStatus = memberStatusRef.updateAndGet(MemberStatus::withIncrementedRetryCount);
-        logger.info("Attempting to reconnect to gRPC stream in {} seconds (retry attempt {}) - current member status: {}",
+        log.info("Attempting to reconnect to gRPC stream in {} seconds (retry attempt {}) - current member status: {}",
                 delaySeconds, updatedStatus.retryCount(), updatedStatus.state());
         scheduler.schedule(this::connectToStream, delaySeconds, TimeUnit.SECONDS);
+        log.info("Reconnect scheduled in {} seconds", delaySeconds);
     }
 
     private void sendJoinEvent() {
@@ -199,12 +225,12 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
 
         // Update member status to JOINING and store the join event ID
         memberStatusRef.updateAndGet(status -> status.joiningWithEventId(joinEventId));
-        logger.info("Member status updated to JOINING with join event ID: {}", joinEventId);
+        log.info("Member status updated to JOINING with join event ID: {}", joinEventId);
 
         try {
-            sendEvent(event);
+            sendEvent(event, CloudEventType.CALCULATION_MEMBER_JOIN_EVENT);
         } catch (Exception e) {
-            logger.error("Failed to send join event. Will schedule a reconnect.", e);
+            log.error("Failed to send join event. Will schedule a reconnect.", e);
             scheduleReconnect();
         }
     }
@@ -215,14 +241,14 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                 // Find the appropriate strategy for this event type
                 CloudEventType cloudEventType = CloudEventType.fromValue(cloudEvent.getType());
                 eventHandlingStrategies.stream().filter(strategy -> strategy.supports(cloudEventType)).findFirst().ifPresentOrElse(strategy -> {
-                    logger.debug("Using strategy '{}' for event type '{}'", strategy.getClass().getSimpleName(), cloudEventType);
+                    log.debug("Using strategy '{}' for event type '{}'", strategy.getClass().getSimpleName(), cloudEventType);
 
                     // Handle the event and send the response.
                     // The contract on handleEvent is that it does not throw Exceptions,
                     // but handles them internally and returns an error response.
                     strategy.handleEvent(cloudEvent).thenAccept(response -> {
                         if (response != null) {
-                            sendEvent(response);
+                            sendEvent(response,cloudEventType);
                         }
                     });
                 }, () -> {
@@ -230,7 +256,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                     handleOtherEvents(cloudEvent);
                 });
             } catch (Exception e) {
-                logger.error("Error processing event: {}", cloudEvent, e);
+                log.error("Error processing event: {}", cloudEvent, e);
             }
         });
     }
@@ -240,7 +266,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
      */
     private void handleOtherEvents(CloudEvent cloudEvent) {
         CloudEventType cloudEventType = CloudEventType.fromValue(cloudEvent.getType());
-        logger.debug("[IN] Received event {}: \n{}", cloudEventType, cloudEvent.getTextData());
+        log.debug("[IN] Received event {}: \n{}", cloudEventType, cloudEvent.getTextData());
         switch (cloudEventType) {
             case CloudEventType.EVENT_ACK_RESPONSE -> {
                 Optional<EventAckResponse> response = parseCloudEvent(cloudEvent, EventAckResponse.class);
@@ -253,34 +279,49 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                     if (sourceEventId != null && sourceEventId.equals(currentStatus.lastJoinEventId())) {
                         if (success) {
                             memberStatusRef.updateAndGet(MemberStatus::joined);
-                            logger.info("Member status updated to JOINED - successfully joined calculation network (event ID: {})", sourceEventId);
+                            log.info("Member status updated to JOINED - successfully joined calculation network (event ID: {})", sourceEventId);
                         } else {
                             memberStatusRef.updateAndGet(MemberStatus::rejected);
-                            logger.warn("Member status updated to REJECTED - join request was rejected (event ID: {})", sourceEventId);
+                            log.warn("Member status updated to REJECTED - join request was rejected (event ID: {})", sourceEventId);
                             // Schedule another join attempt
                             scheduleReconnect();
                         }
                     } else {
                         // Handle other event acknowledgments
-                        if (success) {
-                            logger.info("Received event ack for event ID: {}", sourceEventId);
+                        // Try to find and remove the correlated outgoing event from cache
+                        EventAndTrigger cachedEvent = sentEventsCache.getIfPresent(sourceEventId);
+                        if (cachedEvent != null) {
+                            sentEventsCache.invalidate(sourceEventId);
+                            log.debug("Removed {} with {} from cache",
+                                    cachedEvent.triggerEvent(),success ? "ACK" : "NACK");
                         } else {
-                            throw new IllegalStateException("Received failed event ack for event ID: " + sourceEventId);
+                            log.warn("ACK for event ID: {} not found in cache", sourceEventId);
+                        }
+                        if (success) {
+                            log.debug("Received event ACK for event ID: {}", sourceEventId);
+                        } else {
+                            throw new IllegalStateException("Received event NACK for event ID: " + sourceEventId);
                         }
                     }
                 });
             }
-            case CloudEventType.CALCULATION_MEMBER_GREET_EVENT ->
-                    logger.debug("[IN] Received event {}: \n{}", cloudEventType, cloudEvent.getTextData());
+            case CloudEventType.CALCULATION_MEMBER_GREET_EVENT -> {
+                    log.debug("[IN] Received event {}: \n{}", cloudEventType, cloudEvent.getTextData());
+                    parseCloudEvent(cloudEvent, CalculationMemberGreetEvent.class).ifPresent(greetEvent -> {
+                        this.greetEvent = greetEvent;
+                        memberStatusRef.updateAndGet(MemberStatus::joined);
+                        log.info("Received greet event: {}", this.greetEvent);
+                    });
+            }
             case CloudEventType.CALCULATION_MEMBER_KEEP_ALIVE_EVENT -> {
                 Optional<EventAckResponse> response = parseCloudEvent(cloudEvent, EventAckResponse.class);
                 response.ifPresent(eventAckResponse -> {
                     eventAckResponse.setSourceEventId(eventAckResponse.getId());
                     memberStatusRef.updateAndGet(status -> status.withKeepAliveTimestamp(System.currentTimeMillis()));
-                    sendEvent(eventAckResponse);
+                    sendEvent(eventAckResponse, CloudEventType.CALCULATION_MEMBER_KEEP_ALIVE_EVENT);
                 });
             }
-            default -> logger.warn("[IN] Received UNHANDLED event type {}: \n{}",
+            default -> log.warn("[IN] Received UNHANDLED event type {}: \n{}",
                     cloudEventType, cloudEvent.getTextData());
         }
     }
@@ -290,13 +331,13 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
         try {
             return Optional.of(objectMapper.readValue(cloudEvent.getTextData(), clazz));
         } catch (JsonProcessingException e) {
-            logger.error("Error parsing cloud event. This shouldn't happen unless the systems are misaligned {}",
+            log.error("Error parsing cloud event. This shouldn't happen unless the systems are misaligned {}",
                     cloudEvent, e);
             return Optional.empty();
         }
     }
 
-    public void sendEvent(BaseEvent event) {
+    public void sendEvent(BaseEvent event, CloudEventType cloudEventType) {
         CloudEvent cloudEvent;
         try {
             cloudEvent = CloudEvent.parseFrom(
@@ -318,7 +359,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                     )
             );
         } catch (InvalidProtocolBufferException e) {
-            logger.error("Failed to parse cloud event", e);
+            log.error("Failed to parse cloud event", e);
             // TODO: Define the strategy for handling serialization errors. For now we just log it.
             return;
         }
@@ -330,9 +371,15 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
         }
 
         if (event.getSuccess()) {
-            logger.debug("[OUT] Sending event {}, success: {}", cloudEvent.getType(), event.getSuccess());
+            log.debug("[OUT] Sending event {}, success: {}", cloudEvent.getType(), event.getSuccess());
         } else {
-            logger.warn("[OUT] Sending event {}, success: {}", cloudEvent.getType(), event.getSuccess());
+            log.warn("[OUT] Sending event {}, success: {}", cloudEvent.getType(), event.getSuccess());
+        }
+
+        // Cache the event for correlation with acknowledgments
+        if (event.getId() != null) {
+            sentEventsCache.put(event.getId(), new EventAndTrigger(event, cloudEventType));
+            log.debug("Cached sent event with ID: {}", event.getId());
         }
 
         // StreamObserver is not thread-safe. Current implementation uses synchronized block.
