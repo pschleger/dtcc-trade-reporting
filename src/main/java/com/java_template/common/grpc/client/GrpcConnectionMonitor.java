@@ -1,5 +1,6 @@
 package com.java_template.common.grpc.client;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.java_template.common.config.Config;
 import io.cloudevents.v1.proto.CloudEvent;
 import io.grpc.ConnectivityState;
@@ -23,6 +24,7 @@ public class GrpcConnectionMonitor {
     private final ManagedChannel managedChannel;
     private final AtomicReference<MemberStatus> memberStatusRef;
     private final StreamObserverProvider streamObserverProvider;
+    private final Cache<String, CyodaCalculationMemberClient.EventAndTrigger> sentEventsCache;
     private ScheduledExecutorService monitorExecutor;
 
     /**
@@ -46,13 +48,17 @@ public class GrpcConnectionMonitor {
      * @param managedChannel         the gRPC managed channel to monitor
      * @param memberStatusRef        atomic reference to the member status
      * @param streamObserverProvider provider for accessing the current stream observer
+     * @param sentEventsCache        the Cache of sent events. This should not grow.
      */
     public GrpcConnectionMonitor(ManagedChannel managedChannel,
                                  AtomicReference<MemberStatus> memberStatusRef,
-                                 StreamObserverProvider streamObserverProvider) {
+                                 StreamObserverProvider streamObserverProvider,
+                                 Cache<String, CyodaCalculationMemberClient.EventAndTrigger> sentEventsCache
+    ) {
         this.managedChannel = managedChannel;
         this.memberStatusRef = memberStatusRef;
         this.streamObserverProvider = streamObserverProvider;
+        this.sentEventsCache = sentEventsCache;
     }
 
     /**
@@ -126,8 +132,21 @@ public class GrpcConnectionMonitor {
             // Log warning if keep alive isn't coming
             checkKeepAliveStatus(currentMemberStatus);
 
+            // Log warning if sentEventsCache is growing unchecked
+            checkSentEventsCacheSize();
+
         } catch (Exception e) {
             logger.error("Error monitoring gRPC connection state", e);
+        }
+    }
+
+    private void checkSentEventsCacheSize() {
+        if (sentEventsCache.estimatedSize() > CyodaCalculationMemberClient.SENT_EVENTS_CACHE_MAX_SIZE/10) {
+            logger.warn("Sent events cache is growing. Current size: {}", sentEventsCache.estimatedSize());
+        } else if (sentEventsCache.estimatedSize() > CyodaCalculationMemberClient.SENT_EVENTS_CACHE_MAX_SIZE/2) {
+            logger.error("Sent events cache is growing unchecked. Current size: {}", sentEventsCache.estimatedSize());
+        } else {
+            logger.debug("Sent events cache size: {}", sentEventsCache.estimatedSize());
         }
     }
 

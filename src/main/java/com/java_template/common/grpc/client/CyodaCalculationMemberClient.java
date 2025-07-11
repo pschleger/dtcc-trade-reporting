@@ -43,6 +43,7 @@ import static com.java_template.common.config.Config.*;
 
 @Component
 public class CyodaCalculationMemberClient implements DisposableBean, InitializingBean {
+    public static final int SENT_EVENTS_CACHE_MAX_SIZE = 100;
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final Authentication authentication;
@@ -58,20 +59,20 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
     private static final String SOURCE = "urn:cyoda:calculation-member:" + Config.GRPC_PROCESSOR_TAG;
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    private static final int MAX_RETRIES = 3;
+    private static final int MAX_RETRIES = 10;
 
     private final AtomicReference<MemberStatus> memberStatusRef = new AtomicReference<>(MemberStatus.starting());
 
-    private record EventAndTrigger(BaseEvent baseEvent, CloudEventType triggerEvent) {
-    }
+    public record EventAndTrigger(BaseEvent baseEvent, CloudEventType triggerEvent) { }
 
-    // Cache for tracking sent events by their ID for correlation with acknowledgments
+    // Cache for tracking sent events by their ID for correlation with acknowledgments, so that we can monitor that
+    // we are actually getting ACKs from the stuff we send out
     private final Cache<String, EventAndTrigger> sentEventsCache = Caffeine.newBuilder()
-            .maximumSize(1000)
+            .maximumSize(SENT_EVENTS_CACHE_MAX_SIZE)
             .expireAfterWrite(5, TimeUnit.MINUTES)
             .build();
 
-    // The greet event we got when joining. It contains some member information
+    // There is member information in the GREET event. Keeping it, in case we need it later.
     private CalculationMemberGreetEvent greetEvent = null;
 
     public CyodaCalculationMemberClient(ObjectMapper objectMapper,
@@ -94,7 +95,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
 
             log.debug("Created gRPC channel with authority: {}", managedChannel.authority());
 
-            // Create a dynamic auth interceptor that gets fresh tokens
+            // Create a dynamic auth interceptor that gets fresh tokens when old ones expire, so that we never run out.
             ClientInterceptor authInterceptor = new ClientAuthorizationInterceptor(authentication);
 
             cloudEventsServiceStub = CloudEventsServiceGrpc.newStub(managedChannel).withWaitForReady().withInterceptors(authInterceptor);
@@ -104,7 +105,6 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                 throw new IllegalStateException("Unable to resolve protobuf event format for " + ProtobufFormat.PROTO_CONTENT_TYPE);
             }
 
-            // Initialize and start connection monitoring
             connectionMonitor = new GrpcConnectionMonitor(
                     managedChannel,
                     memberStatusRef,
@@ -118,7 +118,8 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                         public void clearStreamObserver() {
                             cloudEventStreamObserver = null;
                         }
-                    }
+                    },
+                    sentEventsCache
             );
             connectionMonitor.startMonitoring();
 
@@ -223,7 +224,6 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
         String joinEventId = UUID.randomUUID().toString();
         event.setId(joinEventId);
 
-        // Update member status to JOINING and store the join event ID
         memberStatusRef.updateAndGet(status -> status.joiningWithEventId(joinEventId));
         log.info("Member status updated to JOINING with join event ID: {}", joinEventId);
 
@@ -238,12 +238,10 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
     private void handleCloudEvent(CloudEvent cloudEvent) {
         CompletableFuture.runAsync(() -> {
             try {
-                // Find the appropriate strategy for this event type
                 CloudEventType cloudEventType = CloudEventType.fromValue(cloudEvent.getType());
                 eventHandlingStrategies.stream().filter(strategy -> strategy.supports(cloudEventType)).findFirst().ifPresentOrElse(strategy -> {
                     log.debug("Using strategy '{}' for event type '{}'", strategy.getClass().getSimpleName(), cloudEventType);
 
-                    // Handle the event and send the response.
                     // The contract on handleEvent is that it does not throw Exceptions,
                     // but handles them internally and returns an error response.
                     strategy.handleEvent(cloudEvent).thenAccept(response -> {
@@ -252,7 +250,6 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                         }
                     });
                 }, () -> {
-                    // Handle other event types that don't need strategies
                     handleOtherEvents(cloudEvent);
                 });
             } catch (Exception e) {
@@ -292,8 +289,14 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                         EventAndTrigger cachedEvent = sentEventsCache.getIfPresent(sourceEventId);
                         if (cachedEvent != null) {
                             sentEventsCache.invalidate(sourceEventId);
-                            log.debug("Removed {} with {} from cache",
-                                    cachedEvent.triggerEvent(),success ? "ACK" : "NACK");
+                            if ( log.isDebugEnabled()) {
+                                long estimatedSize = sentEventsCache.estimatedSize();
+                                log.debug("Removed {} with {} from cache. There are {} events left in cache.",
+                                        cachedEvent.triggerEvent(),
+                                        success ? "ACK" : "NACK",
+                                        estimatedSize
+                                );
+                            }
                         } else {
                             log.warn("ACK for event ID: {} not found in cache", sourceEventId);
                         }
@@ -376,8 +379,9 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
             log.warn("[OUT] Sending event {}, success: {}", cloudEvent.getType(), event.getSuccess());
         }
 
-        // Cache the event for correlation with acknowledgments
-        if (event.getId() != null) {
+        // Cache the event for correlation with acknowledgments.
+        // Join events are not ACKED directly, we get a GREET event instead.
+        if (event.getId() != null && cloudEventType != CloudEventType.CALCULATION_MEMBER_JOIN_EVENT) {
             sentEventsCache.put(event.getId(), new EventAndTrigger(event, cloudEventType));
             log.debug("Cached sent event with ID: {}", event.getId());
         }
@@ -389,13 +393,6 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
         }
     }
 
-
-
-    /**
-     * Gets the current member status.
-     *
-     * @return the current MemberStatus containing state, join event ID, retry count, and keep alive timestamp
-     */
     public MemberStatus getMemberStatus() {
         return memberStatusRef.get();
     }

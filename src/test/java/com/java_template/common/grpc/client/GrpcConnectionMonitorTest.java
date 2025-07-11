@@ -50,7 +50,7 @@ class GrpcConnectionMonitorTest {
             }
         };
 
-        connectionMonitor = new GrpcConnectionMonitor(managedChannel, memberStatusRef, streamObserverProvider);
+        connectionMonitor = new GrpcConnectionMonitor(managedChannel, memberStatusRef, streamObserverProvider, sentEventsCache);
     }
 
     @AfterEach
