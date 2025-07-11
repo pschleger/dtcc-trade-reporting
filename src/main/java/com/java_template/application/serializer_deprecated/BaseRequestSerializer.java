@@ -1,4 +1,4 @@
-package com.java_template.application.serializer;
+package com.java_template.application.serializer_deprecated;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

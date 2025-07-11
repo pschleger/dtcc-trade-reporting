@@ -1,4 +1,4 @@
-package com.java_template.application.serializer;
+package com.java_template.application.serializer_deprecated;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
