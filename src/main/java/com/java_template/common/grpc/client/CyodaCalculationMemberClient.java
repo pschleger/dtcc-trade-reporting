@@ -21,6 +21,7 @@ import org.cyoda.cloud.api.event.common.BaseEvent;
 import org.cyoda.cloud.api.event.common.CloudEventType;
 import org.cyoda.cloud.api.event.processing.*;
 import org.cyoda.cloud.api.grpc.CloudEventsServiceGrpc;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
@@ -67,10 +68,15 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
 
     // Cache for tracking sent events by their ID for correlation with acknowledgments, so that we can monitor that
     // we are actually getting ACKs from the stuff we send out
-    private final Cache<String, EventAndTrigger> sentEventsCache = Caffeine.newBuilder()
-            .maximumSize(SENT_EVENTS_CACHE_MAX_SIZE)
-            .expireAfterWrite(5, TimeUnit.MINUTES)
-            .build();
+    private final Cache<String, EventAndTrigger> sentEventsCache = setupSentEventsCache();
+
+    @NotNull
+    static Cache<String, EventAndTrigger> setupSentEventsCache() {
+        return Caffeine.newBuilder()
+                .maximumSize(SENT_EVENTS_CACHE_MAX_SIZE)
+                .expireAfterWrite(5, TimeUnit.MINUTES)
+                .build();
+    }
 
     // There is member information in the GREET event. Keeping it, in case we need it later.
     private CalculationMemberGreetEvent greetEvent = null;

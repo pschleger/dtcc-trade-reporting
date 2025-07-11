@@ -1,5 +1,6 @@
 package com.java_template.common.grpc.client;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import io.cloudevents.v1.proto.CloudEvent;
 import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
@@ -50,6 +51,7 @@ class GrpcConnectionMonitorTest {
             }
         };
 
+        Cache<String, CyodaCalculationMemberClient.EventAndTrigger> sentEventsCache = CyodaCalculationMemberClient.setupSentEventsCache();
         connectionMonitor = new GrpcConnectionMonitor(managedChannel, memberStatusRef, streamObserverProvider, sentEventsCache);
     }
 

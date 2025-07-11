@@ -64,7 +64,7 @@ class MemberStatusTest {
         String joinEventId = "test-join-event-123";
         MemberStatus joiningStatus = MemberStatus.joining(joinEventId);
         MemberStatus offlineStatus = joiningStatus.offline();
-        
+
         assertEquals(MemberStatus.MemberState.OFFLINE, offlineStatus.state());
         assertEquals(joinEventId, offlineStatus.lastJoinEventId());
     }
@@ -74,16 +74,16 @@ class MemberStatusTest {
         // Test complete lifecycle
         MemberStatus starting = MemberStatus.starting();
         assertEquals(MemberStatus.MemberState.STARTING, starting.state());
-        
+
         String joinEventId = "test-event-456";
         MemberStatus joining = MemberStatus.joining(joinEventId);
         assertEquals(MemberStatus.MemberState.JOINING, joining.state());
         assertEquals(joinEventId, joining.lastJoinEventId());
-        
+
         MemberStatus joined = joining.joined();
         assertEquals(MemberStatus.MemberState.JOINED, joined.state());
         assertEquals(joinEventId, joined.lastJoinEventId());
-        
+
         MemberStatus offline = joined.offline();
         assertEquals(MemberStatus.MemberState.OFFLINE, offline.state());
         assertEquals(joinEventId, offline.lastJoinEventId());
@@ -94,7 +94,7 @@ class MemberStatusTest {
         String joinEventId = "test-event-789";
         MemberStatus status1 = MemberStatus.joining(joinEventId);
         MemberStatus status2 = MemberStatus.joining(joinEventId);
-        
+
         assertEquals(status1, status2);
         assertEquals(status1.hashCode(), status2.hashCode());
     }
@@ -148,7 +148,7 @@ class MemberStatusTest {
 
         assertEquals(MemberStatus.MemberState.JOINING, updatedStatus.state());
         assertEquals(newEventId, updatedStatus.lastJoinEventId());
-        assertEquals(0, updatedStatus.retryCount()); // Should reset retry count
+        assertEquals(5, updatedStatus.retryCount()); // Should not reset retry count if previous state was JOINING
         assertEquals(ConnectivityState.IDLE, updatedStatus.lastKnownState());
     }
 
