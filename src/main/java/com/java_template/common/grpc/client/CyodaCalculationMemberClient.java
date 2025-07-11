@@ -255,9 +255,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                             sendEvent(response,cloudEventType);
                         }
                     });
-                }, () -> {
-                    handleOtherEvents(cloudEvent);
-                });
+                }, () -> handleOtherEvents(cloudEvent));
             } catch (Exception e) {
                 log.error("Error processing event: {}", cloudEvent, e);
             }
