@@ -287,7 +287,7 @@ public class CyodaCalculationMemberClient implements DisposableBean, Initializin
                             // Schedule another join attempt
                             scheduleReconnect();
                         }
-                    } else {
+                    } else if (sourceEventId != null) {
                         // Handle other event acknowledgments
                         // Try to find and remove the correlated outgoing event from cache
                         EventAndTrigger cachedEvent = sentEventsCache.getIfPresent(sourceEventId);
