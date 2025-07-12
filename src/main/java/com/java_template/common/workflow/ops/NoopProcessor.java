@@ -2,6 +2,7 @@ package com.java_template.common.workflow.ops;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.java_template.application.serializer.ProcessorSerializer;
+import com.java_template.application.serializer.ResponseBuilder;
 import com.java_template.application.serializer.SerializerFactory;
 import com.java_template.common.config.Config;
 import com.java_template.common.workflow.CyodaEventContext;
@@ -43,8 +44,8 @@ public class NoopProcessor implements CyodaProcessor {
             JsonNode originalPayload = serializer.extractPayload(request);
 
             // Use the new Jackson serializer with sealed interfaces
-            return serializer.successResponse(request)
-                .withSuccess()
+            ResponseBuilder.ProcessorBuilder processorBuilder = serializer.successResponse(request);
+            return processorBuilder
                 .withJsonData(originalPayload)
                 .build();
 
