@@ -109,13 +109,15 @@ public abstract sealed class ResponseBuilder
             response.setId(request.getId());
             response.setRequestId(request.getRequestId());
             response.setEntityId(request.getEntityId());
-            response.setSuccess(success);
 
-            // Set payload if we have JSON data
+            // TODO: Decide if this is an issue, since this is in theory risky, because we are not cloning the payload object.
+            // Unfortunately, the jsonSchema2Pojo tool does not have a clone feature.
+            // See: https://github.com/joelittlejohn/jsonschema2pojo/issues/230
+            response.setPayload(request.getPayload());
+
+            // Set payload data if we have JSON data
             if (jsonData != null) {
-                DataPayload payload = new DataPayload();
-                payload.setData(jsonData);
-                response.setPayload(payload);
+                response.getPayload().setData(jsonData);
             }
 
             // Set error information if present
