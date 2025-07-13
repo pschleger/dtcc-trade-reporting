@@ -39,23 +39,7 @@ public class NoopProcessor implements CyodaProcessor {
         EntityProcessorCalculationRequest request = context.getEvent();
         logger.debug("NoopProcessor processing request: {}", request.getId());
 
-        try {
-            // Extract the original payload and pass it through unchanged
-            JsonNode originalPayload = serializer.extractPayload(request);
-
-            // Use the new Jackson serializer with sealed interfaces
-            ResponseBuilder.ProcessorBuilder processorBuilder = serializer.successResponse(request);
-            return processorBuilder
-                .withJsonData(originalPayload)
-                .build();
-
-        } catch (Exception e) {
-            logger.error("Error in NoopProcessor for request {}", request.getId(), e);
-            return serializer.errorResponse(request)
-                .withError("NOOP_PROCESSING_ERROR", "Failed to process no-op request")
-                .withAdditionalErrorDetails("Exception: " + e.getMessage())
-                .build();
-        }
+        return serializer.withRequest(request).complete();
     }
 
     @Override

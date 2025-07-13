@@ -38,13 +38,8 @@ public class JacksonCriterionSerializer extends BaseJacksonSerializer<EntityCrit
     }
 
     @Override
-    public ResponseBuilder.CriterionBuilder matchResponse(EntityCriteriaCalculationRequest request) {
-        return new ResponseBuilder.CriterionBuilder.MatchBuilder(request);
-    }
-
-    @Override
-    public ResponseBuilder.CriterionBuilder errorResponse(EntityCriteriaCalculationRequest request) {
-        return new ResponseBuilder.CriterionBuilder.ErrorBuilder(request);
+    public ResponseBuilder.CriterionResponseBuilder responseBuilder(EntityCriteriaCalculationRequest request) {
+        return ResponseBuilder.forCriterion(request);
     }
 
     @Override

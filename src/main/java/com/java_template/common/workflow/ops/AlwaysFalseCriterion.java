@@ -38,7 +38,7 @@ public class AlwaysFalseCriterion implements CyodaCriterion {
         logger.debug("AlwaysFalseCriterion check for request: {}", request.getId());
 
         // Use the new Jackson serializer with sealed interfaces - always returns non-match
-        return serializer.matchResponse(request).withSuccessfulNonMatch("AlwaysFalseCriterion never matches").build();
+        return serializer.responseBuilder(request).withNonMatch("AlwaysFalseCriterion never matches").build();
     }
 
     @Override

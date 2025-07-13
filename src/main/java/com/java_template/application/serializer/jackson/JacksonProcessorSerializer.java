@@ -38,13 +38,8 @@ public class JacksonProcessorSerializer extends BaseJacksonSerializer<EntityProc
     }
 
     @Override
-    public ResponseBuilder.ProcessorBuilder successResponse(EntityProcessorCalculationRequest request) {
-        return new ResponseBuilder.ProcessorBuilder.SuccessBuilder(request);
-    }
-
-    @Override
-    public ResponseBuilder.ProcessorBuilder errorResponse(EntityProcessorCalculationRequest request) {
-        return new ResponseBuilder.ProcessorBuilder.ErrorBuilder(request);
+    public ResponseBuilder.ProcessorResponseBuilder responseBuilder(EntityProcessorCalculationRequest request) {
+        return ResponseBuilder.forProcessor(request);
     }
 
     @Override

@@ -3,6 +3,10 @@ package com.java_template.application.serializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.java_template.common.workflow.CyodaEntity;
 import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationRequest;
+import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationResponse;
+
+import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
 /**
  * Criterion serializer interface that integrates with sealed response builders.
@@ -41,15 +45,169 @@ public interface CriterionSerializer {
     }
 
     /**
-     * Creates a match-focused response builder for the given request.
-     * This builder is optimized for match result construction.
+     * Creates a response builder for the given request.
+     * This builder provides a simplified API for both match and error responses.
      */
-    ResponseBuilder.CriterionBuilder matchResponse(EntityCriteriaCalculationRequest request);
+    ResponseBuilder.CriterionResponseBuilder responseBuilder(EntityCriteriaCalculationRequest request);
 
     /**
-     * Creates an error-focused response builder for the given request.
-     * This builder is optimized for error response construction.
+     * Starts a fluent criterion evaluation chain with the given request.
+     * This allows for a more expressive and chainable API.
      */
-    ResponseBuilder.CriterionBuilder errorResponse(EntityCriteriaCalculationRequest request);
+    default FluentCriterion withRequest(EntityCriteriaCalculationRequest request) {
+        return new FluentCriterionImpl(this, request);
+    }
 
+    /**
+     * Fluent API for criterion operations.
+     * Provides a chainable interface for evaluating criteria and building responses.
+     */
+    interface FluentCriterion {
+        /**
+         * Evaluates the criterion using the provided predicate on the JSON payload.
+         * @param evaluator Predicate to evaluate the JSON payload
+         * @param matchMessage Message to include when criterion matches
+         * @param nonMatchMessage Message to include when criterion doesn't match
+         * @return FluentCriterion for chaining
+         */
+        FluentCriterion evaluate(Predicate<JsonNode> evaluator, String matchMessage, String nonMatchMessage);
+
+        /**
+         * Evaluates the criterion using the provided predicate on the extracted entity.
+         * @param clazz Entity class to extract
+         * @param evaluator Predicate to evaluate the entity
+         * @param matchMessage Message to include when criterion matches
+         * @param nonMatchMessage Message to include when criterion doesn't match
+         * @return FluentCriterion for chaining
+         */
+        <T extends CyodaEntity> FluentCriterion evaluateEntity(Class<T> clazz, Predicate<T> evaluator,
+                                                              String matchMessage, String nonMatchMessage);
+
+        /**
+         * Completes the evaluation chain and returns the appropriate response.
+         * @return The criterion response
+         */
+        EntityCriteriaCalculationResponse complete();
+
+        /**
+         * Provides error handling for the evaluation chain.
+         * @param errorHandler Function to handle errors and create error responses
+         * @return The criterion response (match, non-match, or error)
+         */
+        EntityCriteriaCalculationResponse orElseFail(BiFunction<Throwable, JsonNode, ErrorInfo> errorHandler);
+    }
+
+    /**
+     * Error information for response building.
+     */
+    class ErrorInfo {
+        private final String code;
+        private final String message;
+
+        public ErrorInfo(String code, String message) {
+            this.code = code;
+            this.message = message;
+        }
+
+        public String code() {
+            return code;
+        }
+
+        public String message() {
+            return message;
+        }
+    }
+
+    /**
+     * Implementation of the FluentCriterion interface.
+     */
+    class FluentCriterionImpl implements FluentCriterion {
+        private final CriterionSerializer serializer;
+        private final EntityCriteriaCalculationRequest request;
+        private JsonNode payload;
+        private Throwable error;
+        private Boolean matches;
+        private String resultMessage;
+
+        FluentCriterionImpl(CriterionSerializer serializer, EntityCriteriaCalculationRequest request) {
+            this.serializer = serializer;
+            this.request = request;
+            try {
+                this.payload = serializer.extractPayload(request);
+            } catch (Exception e) {
+                this.error = e;
+            }
+        }
+
+        @Override
+        public FluentCriterion evaluate(Predicate<JsonNode> evaluator, String matchMessage, String nonMatchMessage) {
+            if (error == null && matches == null) {
+                try {
+                    matches = evaluator.test(payload);
+                    resultMessage = matches ? matchMessage : nonMatchMessage;
+                } catch (Exception e) {
+                    error = e;
+                }
+            }
+            return this;
+        }
+
+        @Override
+        public <T extends CyodaEntity> FluentCriterion evaluateEntity(Class<T> clazz, Predicate<T> evaluator,
+                                                                     String matchMessage, String nonMatchMessage) {
+            if (error == null && matches == null) {
+                try {
+                    T entity = serializer.extractEntity(request, clazz);
+                    matches = evaluator.test(entity);
+                    resultMessage = matches ? matchMessage : nonMatchMessage;
+                } catch (Exception e) {
+                    error = e;
+                }
+            }
+            return this;
+        }
+
+        @Override
+        public EntityCriteriaCalculationResponse complete() {
+            if (error != null) {
+                return serializer.responseBuilder(request)
+                        .withError("EVALUATION_ERROR", error.getMessage())
+                        .build();
+            }
+
+            if (matches == null) {
+                return serializer.responseBuilder(request)
+                        .withError("EVALUATION_ERROR", "No evaluation was performed")
+                        .build();
+            }
+
+            return matches ?
+                serializer.responseBuilder(request).withMatch(resultMessage).build() :
+                serializer.responseBuilder(request).withNonMatch(resultMessage).build();
+        }
+
+        @Override
+        public EntityCriteriaCalculationResponse orElseFail(BiFunction<Throwable, JsonNode, ErrorInfo> errorHandler) {
+            if (error != null) {
+                ErrorInfo errorInfo = errorHandler.apply(error, payload);
+                return serializer.responseBuilder(request)
+                        .withError(errorInfo.code(), errorInfo.message())
+                        .build();
+            }
+
+            if (matches == null) {
+                ErrorInfo errorInfo = errorHandler.apply(
+                    new IllegalStateException("No evaluation was performed"),
+                    payload
+                );
+                return serializer.responseBuilder(request)
+                        .withError(errorInfo.code(), errorInfo.message())
+                        .build();
+            }
+
+            return matches ?
+                serializer.responseBuilder(request).withMatch(resultMessage).build() :
+                serializer.responseBuilder(request).withNonMatch(resultMessage).build();
+        }
+    }
 }

@@ -37,8 +37,13 @@ public class AlwaysTrueCriterion implements CyodaCriterion {
         EntityCriteriaCalculationRequest request = context.getEvent();
         logger.debug("AlwaysTrueCriterion check for request: {}", request.getId());
 
-        // Use the new Jackson serializer with sealed interfaces
-        return serializer.matchResponse(request).withSuccessfulMatch("AlwaysTrueCriterion always matches").build();
+        return serializer.withRequest(request)
+            .evaluate(
+                jsonNode -> true, // Always returns true
+                "AlwaysTrueCriterion always matches",
+                "This message should never appear"
+            )
+            .complete();
     }
 
     @Override

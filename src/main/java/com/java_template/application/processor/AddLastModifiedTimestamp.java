@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 @Component
 public class AddLastModifiedTimestamp implements CyodaProcessor {
 
-    private static final Logger logger = LoggerFactory.getLogger(AddLastModifiedTimestamp.class);
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     // Business constants
     private static final Set<String> VALID_STATUSES = Set.of("available", "pending", "sold");
@@ -69,10 +69,10 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
 
         } catch (Exception e) {
             logger.error("Unexpected error processing Pet timestamp for request {}", request.getId(), e);
-            return serializer.errorResponse(request)
-                .withError("PROCESSING_ERROR", "Unexpected error during Pet processing")
-                .withAdditionalErrorDetails("Exception: " + e.getMessage())
-                .build();
+            return serializer.responseBuilder(request)
+                    .withError("PROCESSING_ERROR", "Unexpected error during Pet processing")
+                    .withAdditionalErrorDetails("Exception: " + e.getMessage())
+                    .build();
         }
     }
 
@@ -81,7 +81,7 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
         if (modelKey instanceof OperationSpecification.Entity entitySpec) {
             ModelSpec modelSpec = entitySpec.modelKey();
             return "pet".equals(modelSpec.getName()) &&
-                   Integer.parseInt(Config.ENTITY_VERSION) == modelSpec.getVersion();
+                    Integer.parseInt(Config.ENTITY_VERSION) == modelSpec.getVersion();
         }
         return false;
     }
@@ -103,19 +103,18 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
             Pet processedPet = applyPetBusinessLogic(pet);
             processedPet.addLastModifiedTimestamp();
 
-            // Clean approach: Use withEntity method with serializer's entityToJsonNode converter
+            // Clean approach: Use withSuccess method with entity and converter
             // This is the recommended approach for simple entity responses
-            return serializer.successResponse(request)
-                .withSuccess()
-                .withEntity(processedPet, serializer::entityToJsonNode)  // Clean entity conversion using interface method
-                .build();
+            return serializer.responseBuilder(request)
+                    .withSuccess(processedPet, serializer::entityToJsonNode)  // Clean entity conversion using interface method
+                    .build();
 
         } catch (Exception e) {
             logger.error("Failed to process Pet entity for request {}", request.getId(), e);
-            return serializer.errorResponse(request)
-                .withError("PROCESSING_ERROR", "Failed to process Pet entity")
-                .withAdditionalErrorDetails("Processing error: " + e.getMessage())
-                .build();
+            return serializer.responseBuilder(request)
+                    .withError("PROCESSING_ERROR", "Failed to process Pet entity")
+                    .withAdditionalErrorDetails("Processing error: " + e.getMessage())
+                    .build();
         }
     }
 
@@ -136,10 +135,10 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
             List<String> businessValidationErrors = validatePetBusinessRules(processedPet);
             if (!businessValidationErrors.isEmpty()) {
                 String errorDetails = String.join("; ", businessValidationErrors);
-                return serializer.errorResponse(request)
-                    .withError("BUSINESS_VALIDATION_ERROR", "Pet entity failed business validation")
-                    .withAdditionalErrorDetails(errorDetails)
-                    .build();
+                return serializer.responseBuilder(request)
+                        .withError("BUSINESS_VALIDATION_ERROR", "Pet entity failed business validation")
+                        .withAdditionalErrorDetails(errorDetails)
+                        .build();
             }
 
             // Add timestamp
@@ -150,10 +149,9 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
             // Approach 1: Simple entity response using withEntity method
             // This is cleaner when you just need to return the processed entity
             if (shouldUseSimpleResponse(request)) {
-                return serializer.successResponse(request)
-                    .withSuccess()
-                    .withEntity(processedPet, serializer::entityToJsonNode)  // Use interface method
-                    .build();
+                return serializer.responseBuilder(request)
+                        .withSuccess(processedPet, serializer::entityToJsonNode)  // Use interface method
+                        .build();
             }
 
             // Approach 2: Enhanced response with metadata using withJsonData method
@@ -164,24 +162,23 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
             List<String> finalValidationErrors = performFinalPetValidation(enhancedData);
             if (!finalValidationErrors.isEmpty()) {
                 String errorDetails = String.join("; ", finalValidationErrors);
-                return serializer.errorResponse(request)
-                    .withError("FINAL_VALIDATION_ERROR", "Pet entity failed final validation")
-                    .withAdditionalErrorDetails(errorDetails)
-                    .build();
+                return serializer.responseBuilder(request)
+                        .withError("FINAL_VALIDATION_ERROR", "Pet entity failed final validation")
+                        .withAdditionalErrorDetails(errorDetails)
+                        .build();
             }
 
             // Return successful response with enhanced JSON data
-            return serializer.successResponse(request)
-                .withSuccess()
-                .withJsonData(enhancedData)
-                .build();
+            return serializer.responseBuilder(request)
+                    .withSuccess(enhancedData)
+                    .build();
 
         } catch (Exception e) {
             logger.error("Failed to process Pet entity for request {}", request.getId(), e);
-            return serializer.errorResponse(request)
-                .withError("PROCESSING_ERROR", "Failed to process Pet entity")
-                .withAdditionalErrorDetails("Processing error: " + e.getMessage())
-                .build();
+            return serializer.responseBuilder(request)
+                    .withError("PROCESSING_ERROR", "Failed to process Pet entity")
+                    .withAdditionalErrorDetails("Processing error: " + e.getMessage())
+                    .build();
         }
     }
 
@@ -194,10 +191,10 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
         List<String> validationErrors = validateRequest(request);
         String errorDetails = String.join("; ", validationErrors);
 
-        return serializer.errorResponse(request)
-            .withError("INVALID_PET_REQUEST", "Pet entity validation failed")
-            .withAdditionalErrorDetails(errorDetails)
-            .build();
+        return serializer.responseBuilder(request)
+                .withError("INVALID_PET_REQUEST", "Pet entity validation failed")
+                .withAdditionalErrorDetails(errorDetails)
+                .build();
     }
 
     // ========================================
@@ -228,21 +225,21 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
         // 3. Clean and validate tags
         if (processedPet.getTags() != null) {
             List<String> cleanedTags = processedPet.getTags().stream()
-                .filter(tag -> tag != null && !tag.trim().isEmpty())
-                .map(String::trim)
-                .map(String::toLowerCase)
-                .distinct()
-                .limit(MAX_TAGS)
-                .collect(Collectors.toList());
+                    .filter(tag -> tag != null && !tag.trim().isEmpty())
+                    .map(String::trim)
+                    .map(String::toLowerCase)
+                    .distinct()
+                    .limit(MAX_TAGS)
+                    .collect(Collectors.toList());
             processedPet.setTags(cleanedTags);
         }
 
         // 4. Validate and clean photo URLs
         if (processedPet.getPhotoUrls() != null) {
             List<String> validUrls = processedPet.getPhotoUrls().stream()
-                .filter(this::isValidUrl)
-                .limit(MAX_PHOTO_URLS)
-                .collect(Collectors.toList());
+                    .filter(this::isValidUrl)
+                    .limit(MAX_PHOTO_URLS)
+                    .collect(Collectors.toList());
             processedPet.setPhotoUrls(validUrls);
         }
 
@@ -318,7 +315,7 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
 
         } catch (Exception e) {
             logger.debug("Request validation failed for request: {}",
-                request != null ? request.getId() : "null", e);
+                    request != null ? request.getId() : "null", e);
             return false;
         }
     }
