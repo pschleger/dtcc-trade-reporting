@@ -1,9 +1,7 @@
 package com.java_template.common.workflow.ops;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.java_template.application.serializer.ProcessorSerializer;
-import com.java_template.application.serializer.ResponseBuilder;
-import com.java_template.application.serializer.SerializerFactory;
+import com.java_template.common.serializer.ProcessorSerializer;
+import com.java_template.common.serializer.SerializerFactory;
 import com.java_template.common.config.Config;
 import com.java_template.common.workflow.CyodaEventContext;
 import com.java_template.common.workflow.CyodaProcessor;

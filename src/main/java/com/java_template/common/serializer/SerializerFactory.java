@@ -1,4 +1,4 @@
-package com.java_template.application.serializer;
+package com.java_template.common.serializer;
 
 import org.springframework.stereotype.Component;
 
@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentMap;
 
 @Component
 public class SerializerFactory {
-    
+
     private final ConcurrentMap<String, ProcessorSerializer> processorSerializers;
     private final ConcurrentMap<String, CriterionSerializer> criterionSerializers;
 

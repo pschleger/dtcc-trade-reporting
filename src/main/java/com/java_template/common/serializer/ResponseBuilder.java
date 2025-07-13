@@ -1,4 +1,4 @@
-package com.java_template.application.serializer;
+package com.java_template.common.serializer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.java_template.common.workflow.CyodaEntity;

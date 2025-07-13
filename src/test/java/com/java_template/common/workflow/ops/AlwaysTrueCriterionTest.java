@@ -1,9 +1,9 @@
 package com.java_template.common.workflow.ops;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.java_template.application.serializer.CriterionSerializer;
-import com.java_template.application.serializer.SerializerFactory;
-import com.java_template.application.serializer.jackson.JacksonCriterionSerializer;
+import com.java_template.common.serializer.CriterionSerializer;
+import com.java_template.common.serializer.SerializerFactory;
+import com.java_template.common.serializer.jackson.JacksonCriterionSerializer;
 import com.java_template.common.workflow.CyodaEventContext;
 import com.java_template.common.workflow.OperationSpecification;
 import io.cloudevents.v1.proto.CloudEvent;

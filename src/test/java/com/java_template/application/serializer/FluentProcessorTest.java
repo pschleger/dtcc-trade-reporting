@@ -3,6 +3,8 @@ package com.java_template.application.serializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.java_template.common.serializer.ProcessorSerializer;
+import com.java_template.common.serializer.ResponseBuilder;
 import com.java_template.common.workflow.CyodaEntity;
 import com.java_template.common.workflow.OperationSpecification;
 import lombok.Setter;

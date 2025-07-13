@@ -1,8 +1,8 @@
 package com.java_template.application.criteria;
 
 import com.java_template.application.entity.pet.Pet;
-import com.java_template.application.serializer.CriterionSerializer;
-import com.java_template.application.serializer.SerializerFactory;
+import com.java_template.common.serializer.CriterionSerializer;
+import com.java_template.common.serializer.SerializerFactory;
 import com.java_template.common.config.Config;
 import com.java_template.common.workflow.CyodaCriterion;
 import com.java_template.common.workflow.CyodaEventContext;

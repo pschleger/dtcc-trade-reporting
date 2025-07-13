@@ -1,4 +1,4 @@
-package com.java_template.application.serializer.jackson;
+package com.java_template.common.serializer.jackson;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;

@@ -1,10 +1,10 @@
-package com.java_template.application.serializer.jackson;
+package com.java_template.common.serializer.jackson;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.java_template.application.serializer.SerializerEnum;
-import com.java_template.application.serializer.ResponseBuilder;
-import com.java_template.application.serializer.ProcessorSerializer;
+import com.java_template.common.serializer.SerializerEnum;
+import com.java_template.common.serializer.ResponseBuilder;
+import com.java_template.common.serializer.ProcessorSerializer;
 import com.java_template.common.workflow.CyodaEntity;
 import org.cyoda.cloud.api.event.processing.EntityProcessorCalculationRequest;
 import org.jetbrains.annotations.NotNull;

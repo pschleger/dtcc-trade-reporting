@@ -1,4 +1,4 @@
-package com.java_template.application.serializer;
+package com.java_template.common.serializer;
 
 import lombok.Getter;
 
