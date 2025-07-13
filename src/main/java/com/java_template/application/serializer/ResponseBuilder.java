@@ -53,7 +53,6 @@ public final class ResponseBuilder {
         private final EntityCriteriaCalculationRequest request;
         private boolean success = false;
         private boolean matches = false;
-        private String matchDetails;
         private ErrorInfo errorInfo;
 
         CriterionResponseBuilder(EntityCriteriaCalculationRequest request) {
@@ -63,20 +62,18 @@ public final class ResponseBuilder {
         /**
          * Creates a successful match response.
          */
-        public CriterionResponseBuilder withMatch(String details) {
+        public CriterionResponseBuilder withMatch() {
             this.success = true;
             this.matches = true;
-            this.matchDetails = details;
             return this;
         }
 
         /**
          * Creates a successful non-match response.
          */
-        public CriterionResponseBuilder withNonMatch(String details) {
+        public CriterionResponseBuilder withNonMatch() {
             this.success = true;
             this.matches = false;
-            this.matchDetails = details;
             return this;
         }
 

@@ -194,20 +194,17 @@ class FluentProcessorTest {
     }
 
     @Test
-    @DisplayName("mapEntity should extract and transform entity")
-    void testMapEntityTransformation() {
+    @DisplayName("toEntity should extract entity and initiate entity flow")
+    void testToEntityTransformation() {
         // Given
-        Function<TestEntity, JsonNode> entityMapper = entity -> {
-            ObjectNode result = objectMapper.createObjectNode();
-            result.put("entityId", entity.id());
-            result.put("entityName", entity.name().toUpperCase());
-            result.put("processed", true);
-            return result;
+        Function<TestEntity, TestEntity> entityMapper = entity -> {
+            return new TestEntity(entity.id(), entity.name().toUpperCase(), "processed", entity.category());
         };
 
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
-                .mapEntity(TestEntity.class, entityMapper)
+                .toEntity(TestEntity.class)
+                .map(entityMapper)
                 .complete();
 
         // Then
@@ -284,17 +281,18 @@ class FluentProcessorTest {
     }
 
     @Test
-    @DisplayName("Error during mapEntity operation should be handled by complete()")
-    void testErrorDuringMapEntityOperation() {
+    @DisplayName("Error during toEntity operation should be handled by complete()")
+    void testErrorDuringToEntityOperation() {
         // Given
         RuntimeException entityError = new RuntimeException("Entity extraction failed");
         testSerializer.setShouldThrowOnExtractEntity(entityError);
 
-        Function<TestEntity, JsonNode> entityMapper = entity -> objectMapper.createObjectNode();
+        Function<TestEntity, TestEntity> entityMapper = entity -> entity;
 
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
-                .mapEntity(TestEntity.class, entityMapper)
+                .toEntity(TestEntity.class)
+                .map(entityMapper)
                 .complete();
 
         // Then
@@ -353,28 +351,27 @@ class FluentProcessorTest {
     // ========================================
 
     @Test
-    @DisplayName("Practical example: TestEntity status normalization with fluent API")
+    @DisplayName("Practical example: TestEntity status normalization with entity flow")
     void testEntityStatusNormalizationPattern() {
         // Given - A TestEntity with uppercase status that needs normalization
         TestEntity entityWithUppercaseStatus = new TestEntity(456L, "Rex", "AVAILABLE", "DOG");
 
         testSerializer.setCustomEntity(entityWithUppercaseStatus);
 
-        Function<TestEntity, JsonNode> entityNormalizer = entity -> {
+        Function<TestEntity, TestEntity> entityNormalizer = entity -> {
             // Normalize the entity data
-            ObjectNode normalized = objectMapper.createObjectNode();
-            normalized.put("id", entity.id());
-            normalized.put("name", entity.name());
-            normalized.put("status", entity.status().toLowerCase()); // Normalize status
-            normalized.put("category", entity.category().toLowerCase()); // Normalize category
-            normalized.put("processed", true);
-            normalized.put("processingTimestamp", System.currentTimeMillis());
-            return normalized;
+            return new TestEntity(
+                entity.id(),
+                entity.name(),
+                entity.status().toLowerCase(), // Normalize status
+                entity.category().toLowerCase() // Normalize category
+            );
         };
 
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
-                .mapEntity(TestEntity.class, entityNormalizer)
+                .toEntity(TestEntity.class)
+                .map(entityNormalizer)
                 .complete();
 
         // Then
@@ -430,23 +427,19 @@ class FluentProcessorTest {
 
         testSerializer.setCustomEntity(invalidEntity);
 
-        Function<TestEntity, JsonNode> entityValidator = entity -> {
+        Function<TestEntity, TestEntity> entityValidator = entity -> {
             if (entity.id() == null) {
                 throw new IllegalArgumentException("TestEntity ID cannot be null");
             }
             if (entity.name() == null || entity.name().trim().isEmpty()) {
                 throw new IllegalArgumentException("TestEntity name cannot be empty");
             }
-            // If validation passes, return processed data
-            ObjectNode result = objectMapper.createObjectNode();
-            result.put("id", entity.id());
-            result.put("name", entity.name());
-            result.put("validated", true);
-            return result;
+            // If validation passes, return processed entity
+            return new TestEntity(entity.id(), entity.name(), "validated", entity.category());
         };
 
-        BiFunction<Throwable, JsonNode, ProcessorSerializer.ErrorInfo> validationErrorHandler =
-                (error, data) -> {
+        BiFunction<Throwable, TestEntity, ProcessorSerializer.ErrorInfo> validationErrorHandler =
+                (error, entity) -> {
                     if (error instanceof IllegalArgumentException) {
                         return new ProcessorSerializer.ErrorInfo("VALIDATION_ERROR",
                                 "TestEntity validation failed: " + error.getMessage());
@@ -457,7 +450,8 @@ class FluentProcessorTest {
 
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
-                .mapEntity(TestEntity.class, entityValidator)
+                .toEntity(TestEntity.class)
+                .map(entityValidator)
                 .orElseFail(validationErrorHandler);
 
         // Then
@@ -467,9 +461,13 @@ class FluentProcessorTest {
     }
 
     @Test
-    @DisplayName("Practical example: Mixed entity and JSON processing")
+    @DisplayName("Practical example: Mixed entity and JSON processing with toJsonFlow")
     void testMixedEntityAndJsonProcessing() {
-        // Given - Process entity first, then apply JSON transformations
+        // Given - Process entity first, then switch to JSON flow
+        Function<TestEntity, TestEntity> entityProcessor = entity -> {
+            return new TestEntity(entity.id(), entity.name().toUpperCase(), "processed", entity.category());
+        };
+
         Function<TestEntity, JsonNode> entityToJson = entity -> {
             ObjectNode petJson = objectMapper.createObjectNode();
             petJson.put("petId", entity.id());
@@ -486,9 +484,11 @@ class FluentProcessorTest {
             return enhanced;
         };
 
-        // When
+        // When - Entity flow then JSON flow
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
-                .mapEntity(TestEntity.class, entityToJson)
+                .toEntity(TestEntity.class)
+                .map(entityProcessor)
+                .toJsonFlow(entityToJson)
                 .map(addBusinessData)
                 .complete();
 
@@ -622,13 +622,23 @@ class FluentProcessorTest {
 
         testSerializer.setCustomEntity(rawEntity);
 
-        // Step 1: Extract and clean pet data
-        Function<TestEntity, JsonNode> entityCleaner = entity -> {
+        // Step 1: Extract and clean entity data
+        Function<TestEntity, TestEntity> entityCleaner = entity -> {
+            return new TestEntity(
+                entity.id(),
+                entity.name().trim().toLowerCase(),
+                entity.status().toLowerCase(),
+                entity.category().toLowerCase()
+            );
+        };
+
+        // Convert entity to JSON for further processing
+        Function<TestEntity, JsonNode> entityToJson = entity -> {
             ObjectNode cleaned = objectMapper.createObjectNode();
             cleaned.put("id", entity.id());
-            cleaned.put("name", entity.name().trim().toLowerCase());
-            cleaned.put("status", entity.status().toLowerCase());
-            cleaned.put("category", entity.category().toLowerCase());
+            cleaned.put("name", entity.name());
+            cleaned.put("status", entity.status());
+            cleaned.put("category", entity.category());
             cleaned.put("cleaningStep", "completed");
             return cleaned;
         };
@@ -657,7 +667,9 @@ class FluentProcessorTest {
 
         // When - Execute the complete workflow
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
-                .mapEntity(TestEntity.class, entityCleaner)
+                .toEntity(TestEntity.class)
+                .map(entityCleaner)
+                .toJsonFlow(entityToJson)
                 .map(businessValidator)
                 .map(finalizer)
                 .complete();
@@ -726,18 +738,326 @@ class FluentProcessorTest {
     void testEntityFirstProcessingPattern() {
         // This test demonstrates processing that starts with entity extraction
         // Given
-        Function<TestEntity, JsonNode> entityProcessor = entity -> {
-            ObjectNode result = objectMapper.createObjectNode();
-            result.put("petId", entity.id());
-            result.put("petName", entity.name());
-            result.put("isValid", entity.isValid());
-            result.put("entityProcessed", true);
-            return result;
+        Function<TestEntity, TestEntity> entityProcessor = entity -> {
+            return new TestEntity(entity.id(), entity.name().toUpperCase(), "processed", entity.category());
         };
 
         // When - Entity-first processing
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
-                .mapEntity(TestEntity.class, entityProcessor)
+                .toEntity(TestEntity.class)
+                .map(entityProcessor)
+                .complete();
+
+        // Then
+        assertNotNull(response);
+        verify(mockResponseBuilder).withSuccess(any(JsonNode.class));
+        verify(mockResponseBuilder).build();
+    }
+
+    // ========================================
+    // FLUENT ENTITY PROCESSOR TESTS
+    // ========================================
+
+    @Test
+    @DisplayName("FluentEntityProcessor: Multiple entity transformations should chain correctly")
+    void testMultipleEntityTransformations() {
+        // Given
+        Function<TestEntity, TestEntity> firstTransform = entity -> {
+            return new TestEntity(entity.id(), entity.name().toUpperCase(), entity.status(), entity.category());
+        };
+
+        Function<TestEntity, TestEntity> secondTransform = entity -> {
+            return new TestEntity(entity.id(), entity.name(), "processed", entity.category());
+        };
+
+        // When
+        EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
+                .toEntity(TestEntity.class)
+                .map(firstTransform)
+                .map(secondTransform)
+                .complete();
+
+        // Then
+        assertNotNull(response);
+        verify(mockResponseBuilder).withSuccess(any(JsonNode.class));
+        verify(mockResponseBuilder).build();
+    }
+
+    @Test
+    @DisplayName("FluentEntityProcessor: toJsonFlow should switch from entity to JSON processing")
+    void testToJsonFlowTransition() {
+        // Given
+        Function<TestEntity, TestEntity> entityTransform = entity -> {
+            return new TestEntity(entity.id(), entity.name().toUpperCase(), "processed", entity.category());
+        };
+
+        Function<TestEntity, JsonNode> entityToJson = entity -> {
+            ObjectNode result = objectMapper.createObjectNode();
+            result.put("entityId", entity.id());
+            result.put("entityName", entity.name());
+            result.put("entityStatus", entity.status());
+            result.put("convertedFromEntity", true);
+            return result;
+        };
+
+        Function<JsonNode, JsonNode> jsonTransform = node -> {
+            ObjectNode enhanced = node.deepCopy();
+            enhanced.put("jsonProcessingStep", "completed");
+            enhanced.put("timestamp", System.currentTimeMillis());
+            return enhanced;
+        };
+
+        // When
+        EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
+                .toEntity(TestEntity.class)
+                .map(entityTransform)
+                .toJsonFlow(entityToJson)
+                .map(jsonTransform)
+                .complete();
+
+        // Then
+        assertNotNull(response);
+        verify(mockResponseBuilder).withSuccess(any(JsonNode.class));
+        verify(mockResponseBuilder).build();
+    }
+
+    @Test
+    @DisplayName("FluentEntityProcessor: complete with custom converter should work")
+    void testCompleteWithCustomConverter() {
+        // Given
+        Function<TestEntity, TestEntity> entityTransform = entity -> {
+            return new TestEntity(entity.id(), entity.name().toUpperCase(), "processed", entity.category());
+        };
+
+        Function<TestEntity, JsonNode> customConverter = entity -> {
+            ObjectNode result = objectMapper.createObjectNode();
+            result.put("customId", entity.id());
+            result.put("customName", "Custom: " + entity.name());
+            result.put("customStatus", entity.status());
+            result.put("customProcessed", true);
+            return result;
+        };
+
+        // When
+        EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
+                .toEntity(TestEntity.class)
+                .map(entityTransform)
+                .complete(customConverter);
+
+        // Then
+        assertNotNull(response);
+        verify(mockResponseBuilder).withSuccess(any(JsonNode.class));
+        verify(mockResponseBuilder).build();
+    }
+
+    @Test
+    @DisplayName("FluentEntityProcessor: Error in entity transformation should be handled")
+    void testEntityTransformationError() {
+        // Given
+        Function<TestEntity, TestEntity> faultyTransform = entity -> {
+            throw new RuntimeException("Entity transformation failed");
+        };
+
+        // When
+        EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
+                .toEntity(TestEntity.class)
+                .map(faultyTransform)
+                .complete();
+
+        // Then
+        assertNotNull(response);
+        verify(mockResponseBuilder).withError("PROCESSING_ERROR", "Entity transformation failed");
+        verify(mockResponseBuilder).build();
+    }
+
+    @Test
+    @DisplayName("FluentEntityProcessor: Error in toJsonFlow should be handled")
+    void testToJsonFlowError() {
+        // Given
+        Function<TestEntity, TestEntity> entityTransform = entity -> entity;
+
+        Function<TestEntity, JsonNode> faultyConverter = entity -> {
+            throw new RuntimeException("JSON conversion failed");
+        };
+
+        // When
+        EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
+                .toEntity(TestEntity.class)
+                .map(entityTransform)
+                .toJsonFlow(faultyConverter)
+                .complete();
+
+        // Then
+        assertNotNull(response);
+        verify(mockResponseBuilder).withError("PROCESSING_ERROR", "JSON conversion failed");
+        verify(mockResponseBuilder).build();
+    }
+
+    @Test
+    @DisplayName("FluentEntityProcessor: orElseFail with entity error handler should work")
+    void testEntityOrElseFailWithCustomErrorHandler() {
+        // Given
+        Function<TestEntity, TestEntity> faultyTransform = entity -> {
+            throw new IllegalStateException("Entity validation failed");
+        };
+
+        BiFunction<Throwable, TestEntity, ProcessorSerializer.ErrorInfo> entityErrorHandler =
+                (error, entity) -> {
+                    if (error instanceof IllegalStateException) {
+                        String entityInfo = entity != null ? " for entity ID: " + entity.id() : "";
+                        return new ProcessorSerializer.ErrorInfo("ENTITY_VALIDATION_ERROR",
+                                "Entity validation failed" + entityInfo);
+                    }
+                    return new ProcessorSerializer.ErrorInfo("ENTITY_PROCESSING_ERROR",
+                            "Unexpected entity processing error");
+                };
+
+        // When
+        EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
+                .toEntity(TestEntity.class)
+                .map(faultyTransform)
+                .orElseFail(entityErrorHandler);
+
+        // Then
+        assertNotNull(response);
+        verify(mockResponseBuilder).withError("ENTITY_VALIDATION_ERROR", "Entity validation failed for entity ID: 123");
+        verify(mockResponseBuilder).build();
+    }
+
+    @Test
+    @DisplayName("FluentEntityProcessor: Pure entity flow without JSON conversion")
+    void testPureEntityFlow() {
+        // Given - A complete entity processing flow
+        Function<TestEntity, TestEntity> normalizeEntity = entity -> {
+            return new TestEntity(entity.id(), entity.name().trim(), entity.status().toLowerCase(), entity.category());
+        };
+
+        Function<TestEntity, TestEntity> validateEntity = entity -> {
+            if (entity.name().isEmpty()) {
+                throw new IllegalArgumentException("Entity name cannot be empty");
+            }
+            return entity;
+        };
+
+        Function<TestEntity, TestEntity> enrichEntity = entity -> {
+            return new TestEntity(entity.id(), entity.name(), "enriched_" + entity.status(), entity.category());
+        };
+
+        // When
+        EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
+                .toEntity(TestEntity.class)
+                .map(normalizeEntity)
+                .map(validateEntity)
+                .map(enrichEntity)
+                .complete();
+
+        // Then
+        assertNotNull(response);
+        verify(mockResponseBuilder).withSuccess(any(JsonNode.class));
+        verify(mockResponseBuilder).build();
+    }
+
+    @Test
+    @DisplayName("FluentEntityProcessor: validate should pass for valid entities")
+    void testValidateSuccess() {
+        // Given
+        Function<TestEntity, Boolean> validator = entity -> entity.id() != null && entity.name() != null;
+
+        Function<TestEntity, TestEntity> processor = entity -> {
+            return new TestEntity(entity.id(), entity.name().toUpperCase(), "processed", entity.category());
+        };
+
+        // When
+        EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
+                .toEntity(TestEntity.class)
+                .validate(validator)
+                .map(processor)
+                .complete();
+
+        // Then
+        assertNotNull(response);
+        verify(mockResponseBuilder).withSuccess(any(JsonNode.class));
+        verify(mockResponseBuilder).build();
+    }
+
+    @Test
+    @DisplayName("FluentEntityProcessor: validate should fail for invalid entities")
+    void testValidateFailure() {
+        // Given
+        Function<TestEntity, Boolean> validator = entity -> entity.id() != null && entity.id() > 1000;
+
+        // When
+        EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
+                .toEntity(TestEntity.class)
+                .validate(validator)
+                .complete();
+
+        // Then
+        assertNotNull(response);
+        verify(mockResponseBuilder).withError("PROCESSING_ERROR", "Entity validation failed");
+        verify(mockResponseBuilder).build();
+    }
+
+    @Test
+    @DisplayName("FluentEntityProcessor: validate with custom error message")
+    void testValidateWithCustomErrorMessage() {
+        // Given
+        Function<TestEntity, Boolean> validator = entity -> entity.name().length() > 10;
+        String customErrorMessage = "Entity name must be longer than 10 characters";
+
+        // When
+        EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
+                .toEntity(TestEntity.class)
+                .validate(validator, customErrorMessage)
+                .complete();
+
+        // Then
+        assertNotNull(response);
+        verify(mockResponseBuilder).withError("PROCESSING_ERROR", customErrorMessage);
+        verify(mockResponseBuilder).build();
+    }
+
+    @Test
+    @DisplayName("FluentEntityProcessor: validate with exception in validator should be handled")
+    void testValidateWithException() {
+        // Given
+        Function<TestEntity, Boolean> faultyValidator = entity -> {
+            throw new RuntimeException("Validator error");
+        };
+
+        // When
+        EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
+                .toEntity(TestEntity.class)
+                .validate(faultyValidator)
+                .complete();
+
+        // Then
+        assertNotNull(response);
+        verify(mockResponseBuilder).withError("PROCESSING_ERROR", "Validator error");
+        verify(mockResponseBuilder).build();
+    }
+
+    @Test
+    @DisplayName("FluentEntityProcessor: Complete workflow with validation")
+    void testCompleteWorkflowWithValidation() {
+        // Given - A complete entity processing flow with validation
+        Function<TestEntity, Boolean> validator = entity -> entity.id() != null && entity.name() != null;
+
+        Function<TestEntity, TestEntity> normalizer = entity -> {
+            return new TestEntity(entity.id(), entity.name().trim().toLowerCase(), entity.status(), entity.category());
+        };
+
+        Function<TestEntity, TestEntity> enricher = entity -> {
+            return new TestEntity(entity.id(), entity.name(), "enriched_" + entity.status(), entity.category());
+        };
+
+        // When
+        EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
+                .toEntity(TestEntity.class)
+                .validate(validator)
+                .map(normalizer)
+                .validate(e -> !e.name().isEmpty(), "Name cannot be empty after normalization")
+                .map(enricher)
                 .complete();
 
         // Then

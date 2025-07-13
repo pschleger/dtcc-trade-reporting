@@ -11,11 +11,12 @@ import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationResponse;
 import org.cyoda.cloud.api.event.processing.EntityProcessorCalculationRequest;
 import org.cyoda.cloud.api.event.processing.EntityProcessorCalculationResponse;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * ABOUTME: Tests for the simplified ResponseBuilder API to ensure type safety and correct functionality.
@@ -52,7 +53,7 @@ class ResponseBuilderTest {
 
         // When
         EntityCriteriaCalculationResponse response = builder
-            .withMatch("Test criteria matched successfully")
+            .withMatch()
             .build();
 
         // Then
@@ -72,7 +73,7 @@ class ResponseBuilderTest {
 
         // When
         EntityCriteriaCalculationResponse response = builder
-            .withNonMatch("Test criteria did not match")
+            .withNonMatch()
             .build();
 
         // Then

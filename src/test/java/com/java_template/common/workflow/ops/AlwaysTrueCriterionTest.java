@@ -1,6 +1,7 @@
 package com.java_template.common.workflow.ops;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.java_template.application.serializer.CriterionSerializer;
 import com.java_template.application.serializer.SerializerFactory;
 import com.java_template.application.serializer.jackson.JacksonCriterionSerializer;
 import com.java_template.common.workflow.CyodaEventContext;
@@ -19,7 +20,7 @@ import static org.mockito.Mockito.mock;
 
 class AlwaysTrueCriterionTest {
     JacksonCriterionSerializer criterionSerializer = new JacksonCriterionSerializer(new ObjectMapper());
-    SerializerFactory serializerFactory = new SerializerFactory(List.of(), List.of((com.java_template.application.serializer.CriterionSerializer) criterionSerializer));
+    SerializerFactory serializerFactory = new SerializerFactory(List.of(), List.of((CriterionSerializer) criterionSerializer));
 
     @Test
     void testSupports() {
@@ -81,6 +82,14 @@ class AlwaysTrueCriterionTest {
         request.setId("123");
         request.setRequestId("123");
         request.setEntityId("456");
+
+        // Add a proper payload to avoid extraction errors
+        org.cyoda.cloud.api.event.common.DataPayload payload = new org.cyoda.cloud.api.event.common.DataPayload();
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        com.fasterxml.jackson.databind.node.ObjectNode data = mapper.createObjectNode();
+        data.put("test", "data");
+        payload.setData(data);
+        request.setPayload(payload);
 
         return new CyodaEventContext<>() {
             @Override

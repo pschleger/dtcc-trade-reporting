@@ -66,22 +66,17 @@ public interface CriterionSerializer {
         /**
          * Evaluates the criterion using the provided predicate on the JSON payload.
          * @param evaluator Predicate to evaluate the JSON payload
-         * @param matchMessage Message to include when criterion matches
-         * @param nonMatchMessage Message to include when criterion doesn't match
          * @return FluentCriterion for chaining
          */
-        FluentCriterion evaluate(Predicate<JsonNode> evaluator, String matchMessage, String nonMatchMessage);
+        FluentCriterion evaluate(Predicate<JsonNode> evaluator);
 
         /**
          * Evaluates the criterion using the provided predicate on the extracted entity.
          * @param clazz Entity class to extract
          * @param evaluator Predicate to evaluate the entity
-         * @param matchMessage Message to include when criterion matches
-         * @param nonMatchMessage Message to include when criterion doesn't match
          * @return FluentCriterion for chaining
          */
-        <T extends CyodaEntity> FluentCriterion evaluateEntity(Class<T> clazz, Predicate<T> evaluator,
-                                                              String matchMessage, String nonMatchMessage);
+        <T extends CyodaEntity> FluentCriterion evaluateEntity(Class<T> clazz, Predicate<T> evaluator);
 
         /**
          * Completes the evaluation chain and returns the appropriate response.
@@ -127,7 +122,6 @@ public interface CriterionSerializer {
         private JsonNode payload;
         private Throwable error;
         private Boolean matches;
-        private String resultMessage;
 
         FluentCriterionImpl(CriterionSerializer serializer, EntityCriteriaCalculationRequest request) {
             this.serializer = serializer;
@@ -140,11 +134,10 @@ public interface CriterionSerializer {
         }
 
         @Override
-        public FluentCriterion evaluate(Predicate<JsonNode> evaluator, String matchMessage, String nonMatchMessage) {
+        public FluentCriterion evaluate(Predicate<JsonNode> evaluator) {
             if (error == null && matches == null) {
                 try {
                     matches = evaluator.test(payload);
-                    resultMessage = matches ? matchMessage : nonMatchMessage;
                 } catch (Exception e) {
                     error = e;
                 }
@@ -153,13 +146,11 @@ public interface CriterionSerializer {
         }
 
         @Override
-        public <T extends CyodaEntity> FluentCriterion evaluateEntity(Class<T> clazz, Predicate<T> evaluator,
-                                                                     String matchMessage, String nonMatchMessage) {
+        public <T extends CyodaEntity> FluentCriterion evaluateEntity(Class<T> clazz, Predicate<T> evaluator) {
             if (error == null && matches == null) {
                 try {
                     T entity = serializer.extractEntity(request, clazz);
                     matches = evaluator.test(entity);
-                    resultMessage = matches ? matchMessage : nonMatchMessage;
                 } catch (Exception e) {
                     error = e;
                 }
@@ -182,8 +173,8 @@ public interface CriterionSerializer {
             }
 
             return matches ?
-                serializer.responseBuilder(request).withMatch(resultMessage).build() :
-                serializer.responseBuilder(request).withNonMatch(resultMessage).build();
+                serializer.responseBuilder(request).withMatch().build() :
+                serializer.responseBuilder(request).withNonMatch().build();
         }
 
         @Override
@@ -206,8 +197,8 @@ public interface CriterionSerializer {
             }
 
             return matches ?
-                serializer.responseBuilder(request).withMatch(resultMessage).build() :
-                serializer.responseBuilder(request).withNonMatch(resultMessage).build();
+                serializer.responseBuilder(request).withMatch().build() :
+                serializer.responseBuilder(request).withNonMatch().build();
         }
     }
 }

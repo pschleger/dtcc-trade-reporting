@@ -38,11 +38,7 @@ public class AlwaysTrueCriterion implements CyodaCriterion {
         logger.debug("AlwaysTrueCriterion check for request: {}", request.getId());
 
         return serializer.withRequest(request)
-            .evaluate(
-                jsonNode -> true, // Always returns true
-                "AlwaysTrueCriterion always matches",
-                "This message should never appear"
-            )
+            .evaluate(jsonNode -> true) // Always returns true
             .complete();
     }
 

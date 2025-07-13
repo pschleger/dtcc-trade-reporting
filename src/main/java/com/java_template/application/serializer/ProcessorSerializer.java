@@ -71,12 +71,11 @@ public interface ProcessorSerializer {
         FluentProcessor map(Function<JsonNode, JsonNode> mapper);
 
         /**
-         * Maps the extracted entity using the provided function.
+         * Extracts an entity and initiates entity-based processing flow.
          * @param clazz Entity class to extract
-         * @param mapper Function to transform the entity
-         * @return FluentProcessor for chaining
+         * @return FluentEntityProcessor for entity-based chaining
          */
-        <T extends CyodaEntity> FluentProcessor mapEntity(Class<T> clazz, Function<T, JsonNode> mapper);
+        <T extends CyodaEntity> FluentEntityProcessor<T> toEntity(Class<T> clazz);
 
         /**
          * Completes the processing chain and returns a successful response.
@@ -90,6 +89,65 @@ public interface ProcessorSerializer {
          * @return The processor response (success or error)
          */
         EntityProcessorCalculationResponse orElseFail(BiFunction<Throwable, JsonNode, ErrorInfo> errorHandler);
+    }
+
+    /**
+     * Fluent API for entity-based processor operations.
+     * Provides a chainable interface for transforming entity instances and building responses.
+     * This interface supports entity flows where processing operates on entity instances
+     * rather than JsonNode objects.
+     */
+    interface FluentEntityProcessor<T extends CyodaEntity> {
+        /**
+         * Maps the current entity using the provided function.
+         * @param mapper Function to transform the entity
+         * @return FluentEntityProcessor for chaining
+         */
+        FluentEntityProcessor<T> map(Function<T, T> mapper);
+
+        /**
+         * Validates the current entity using the provided predicate.
+         * If validation fails, the processing chain will error.
+         * @param validator Predicate to validate the entity
+         * @return FluentEntityProcessor for chaining
+         */
+        FluentEntityProcessor<T> validate(Function<T, Boolean> validator);
+
+        /**
+         * Validates the current entity with a custom error message.
+         * @param validator Predicate to validate the entity
+         * @param errorMessage Custom error message if validation fails
+         * @return FluentEntityProcessor for chaining
+         */
+        FluentEntityProcessor<T> validate(Function<T, Boolean> validator, String errorMessage);
+
+        /**
+         * Switches back to JsonNode processing by converting the current entity.
+         * @param converter Function to convert entity to JsonNode
+         * @return FluentProcessor for JsonNode-based chaining
+         */
+        FluentProcessor toJsonFlow(Function<T, JsonNode> converter);
+
+        /**
+         * Completes the entity processing chain and returns the response.
+         * The entity is automatically converted to JsonNode using the serializer.
+         * @return EntityProcessorCalculationResponse
+         */
+        EntityProcessorCalculationResponse complete();
+
+        /**
+         * Completes the entity processing chain with a custom converter.
+         * @param converter Function to convert the final entity to JsonNode
+         * @return EntityProcessorCalculationResponse
+         */
+        EntityProcessorCalculationResponse complete(Function<T, JsonNode> converter);
+
+        /**
+         * Provides error handling for the entity processing chain.
+         * @param errorHandler Function to handle errors and create error responses
+         * @return The processor response (success or error)
+         */
+        EntityProcessorCalculationResponse orElseFail(BiFunction<Throwable, T, ErrorInfo> errorHandler);
     }
 
     /**
@@ -117,6 +175,20 @@ public interface ProcessorSerializer {
             }
         }
 
+        FluentProcessorImpl(ProcessorSerializer serializer, EntityProcessorCalculationRequest request, JsonNode data) {
+            this.serializer = serializer;
+            this.request = request;
+            this.processedData = data;
+            this.error = null;
+        }
+
+        FluentProcessorImpl(ProcessorSerializer serializer, EntityProcessorCalculationRequest request, Throwable error) {
+            this.serializer = serializer;
+            this.request = request;
+            this.processedData = null;
+            this.error = error;
+        }
+
         @Override
         public FluentProcessor map(Function<JsonNode, JsonNode> mapper) {
             if (error == null) {
@@ -130,16 +202,16 @@ public interface ProcessorSerializer {
         }
 
         @Override
-        public <T extends CyodaEntity> FluentProcessor mapEntity(Class<T> clazz, Function<T, JsonNode> mapper) {
+        public <T extends CyodaEntity> FluentEntityProcessor<T> toEntity(Class<T> clazz) {
             if (error == null) {
                 try {
                     T entity = serializer.extractEntity(request, clazz);
-                    processedData = mapper.apply(entity);
+                    return new FluentEntityProcessorImpl<>(serializer, request, entity);
                 } catch (Exception e) {
-                    error = e;
+                    return new FluentEntityProcessorImpl<>(serializer, request, e);
                 }
             }
-            return this;
+            return new FluentEntityProcessorImpl<>(serializer, request, error);
         }
 
         @Override
@@ -165,6 +237,144 @@ public interface ProcessorSerializer {
             return serializer.responseBuilder(request)
                     .withSuccess(processedData)
                     .build();
+        }
+    }
+
+    /**
+     * Implementation of the FluentEntityProcessor interface.
+     * Handles entity-based processing flows where operations work on entity instances.
+     */
+    class FluentEntityProcessorImpl<T extends CyodaEntity> implements FluentEntityProcessor<T> {
+        private final ProcessorSerializer serializer;
+        private final EntityProcessorCalculationRequest request;
+        private T processedEntity;
+        private Throwable error;
+
+        FluentEntityProcessorImpl(ProcessorSerializer serializer, EntityProcessorCalculationRequest request, T entity) {
+            this.serializer = serializer;
+            this.request = request;
+            this.processedEntity = entity;
+            this.error = null;
+        }
+
+        FluentEntityProcessorImpl(ProcessorSerializer serializer, EntityProcessorCalculationRequest request, Throwable error) {
+            this.serializer = serializer;
+            this.request = request;
+            this.processedEntity = null;
+            this.error = error;
+        }
+
+        @Override
+        public FluentEntityProcessor<T> map(Function<T, T> mapper) {
+            if (error == null && processedEntity != null) {
+                try {
+                    processedEntity = mapper.apply(processedEntity);
+                } catch (Exception e) {
+                    error = e;
+                }
+            }
+            return this;
+        }
+
+        @Override
+        public FluentEntityProcessor<T> validate(Function<T, Boolean> validator) {
+            return validate(validator, "Entity validation failed");
+        }
+
+        @Override
+        public FluentEntityProcessor<T> validate(Function<T, Boolean> validator, String errorMessage) {
+            if (error == null && processedEntity != null) {
+                try {
+                    Boolean isValid = validator.apply(processedEntity);
+                    if (isValid == null || !isValid) {
+                        error = new IllegalArgumentException(errorMessage);
+                    }
+                } catch (Exception e) {
+                    error = e;
+                }
+            }
+            return this;
+        }
+
+        @Override
+        public FluentProcessor toJsonFlow(Function<T, JsonNode> converter) {
+            if (error == null && processedEntity != null) {
+                try {
+                    JsonNode jsonData = converter.apply(processedEntity);
+                    return new FluentProcessorImpl(serializer, request, jsonData);
+                } catch (Exception e) {
+                    return new FluentProcessorImpl(serializer, request, e);
+                }
+            }
+            return new FluentProcessorImpl(serializer, request, error);
+        }
+
+        @Override
+        public EntityProcessorCalculationResponse complete() {
+            if (error != null) {
+                return serializer.responseBuilder(request)
+                        .withError("PROCESSING_ERROR", error.getMessage())
+                        .build();
+            }
+            if (processedEntity == null) {
+                return serializer.responseBuilder(request)
+                        .withError("PROCESSING_ERROR", "Entity is null")
+                        .build();
+            }
+            try {
+                JsonNode entityJson = serializer.entityToJsonNode(processedEntity);
+                return serializer.responseBuilder(request)
+                        .withSuccess(entityJson)
+                        .build();
+            } catch (Exception e) {
+                return serializer.responseBuilder(request)
+                        .withError("CONVERSION_ERROR", e.getMessage())
+                        .build();
+            }
+        }
+
+        @Override
+        public EntityProcessorCalculationResponse complete(Function<T, JsonNode> converter) {
+            if (error != null) {
+                return serializer.responseBuilder(request)
+                        .withError("PROCESSING_ERROR", error.getMessage())
+                        .build();
+            }
+            if (processedEntity == null) {
+                return serializer.responseBuilder(request)
+                        .withError("PROCESSING_ERROR", "Entity is null")
+                        .build();
+            }
+            try {
+                JsonNode entityJson = converter.apply(processedEntity);
+                return serializer.responseBuilder(request)
+                        .withSuccess(entityJson)
+                        .build();
+            } catch (Exception e) {
+                return serializer.responseBuilder(request)
+                        .withError("CONVERSION_ERROR", e.getMessage())
+                        .build();
+            }
+        }
+
+        @Override
+        public EntityProcessorCalculationResponse orElseFail(BiFunction<Throwable, T, ErrorInfo> errorHandler) {
+            if (error != null) {
+                ErrorInfo errorInfo = errorHandler.apply(error, processedEntity);
+                return serializer.responseBuilder(request)
+                        .withError(errorInfo.code(), errorInfo.message())
+                        .build();
+            }
+            try {
+                JsonNode entityJson = serializer.entityToJsonNode(processedEntity);
+                return serializer.responseBuilder(request)
+                        .withSuccess(entityJson)
+                        .build();
+            } catch (Exception e) {
+                return serializer.responseBuilder(request)
+                        .withError("CONVERSION_ERROR", e.getMessage())
+                        .build();
+            }
         }
     }
 }

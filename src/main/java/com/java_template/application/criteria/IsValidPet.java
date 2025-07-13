@@ -57,8 +57,8 @@ public class IsValidPet implements CyodaCriterion {
                                  validatePetDataQuality(request);
 
                 return allValid ?
-                    jacksonSerializer.responseBuilder(request).withMatch("All Pet validation criteria passed").build() :
-                    jacksonSerializer.responseBuilder(request).withNonMatch("Pet validation criteria failed").build();
+                    jacksonSerializer.responseBuilder(request).withMatch().build() :
+                    jacksonSerializer.responseBuilder(request).withNonMatch().build();
             });
 
         } catch (Exception e) {
