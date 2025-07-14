@@ -51,31 +51,31 @@ public interface ProcessorSerializer {
     ResponseBuilder.ProcessorResponseBuilder responseBuilder(EntityProcessorCalculationRequest request);
 
     /**
-     * Starts a fluent processing chain with the given request.
+     * Starts a processing chain with the given request.
      * This allows for a more expressive and chainable API.
      */
-    default FluentProcessor withRequest(EntityProcessorCalculationRequest request) {
-        return new FluentProcessorImpl(this, request);
+    default ProcessingChain withRequest(EntityProcessorCalculationRequest request) {
+        return new ProcessingChainImpl(this, request);
     }
 
     /**
-     * Fluent API for processor operations.
+     * Processing chain API for processor operations.
      * Provides a chainable interface for transforming data and building responses.
      */
-    interface FluentProcessor {
+    interface ProcessingChain {
         /**
          * Maps the extracted payload using the provided function.
          * @param mapper Function to transform the JSON payload
-         * @return FluentProcessor for chaining
+         * @return ProcessingChain for chaining
          */
-        FluentProcessor map(Function<JsonNode, JsonNode> mapper);
+        ProcessingChain map(Function<JsonNode, JsonNode> mapper);
 
         /**
          * Extracts an entity and initiates entity-based processing flow.
          * @param clazz Entity class to extract
-         * @return FluentEntityProcessor for entity-based chaining
+         * @return EntityProcessingChain for entity-based chaining
          */
-        <T extends CyodaEntity> FluentEntityProcessor<T> toEntity(Class<T> clazz);
+        <T extends CyodaEntity> EntityProcessingChain<T> toEntity(Class<T> clazz);
 
         /**
          * Completes the processing chain and returns a successful response.
@@ -92,41 +92,41 @@ public interface ProcessorSerializer {
     }
 
     /**
-     * Fluent API for entity-based processor operations.
+     * Entity processing chain API for entity-based processor operations.
      * Provides a chainable interface for transforming entity instances and building responses.
      * This interface supports entity flows where processing operates on entity instances
      * rather than JsonNode objects.
      */
-    interface FluentEntityProcessor<T extends CyodaEntity> {
+    interface EntityProcessingChain<T extends CyodaEntity> {
         /**
          * Maps the current entity using the provided function.
          * @param mapper Function to transform the entity
-         * @return FluentEntityProcessor for chaining
+         * @return EntityProcessingChain for chaining
          */
-        FluentEntityProcessor<T> map(Function<T, T> mapper);
+        EntityProcessingChain<T> map(Function<T, T> mapper);
 
         /**
          * Validates the current entity using the provided predicate.
          * If validation fails, the processing chain will error.
          * @param validator Predicate to validate the entity
-         * @return FluentEntityProcessor for chaining
+         * @return EntityProcessingChain for chaining
          */
-        FluentEntityProcessor<T> validate(Function<T, Boolean> validator);
+        EntityProcessingChain<T> validate(Function<T, Boolean> validator);
 
         /**
          * Validates the current entity with a custom error message.
          * @param validator Predicate to validate the entity
          * @param errorMessage Custom error message if validation fails
-         * @return FluentEntityProcessor for chaining
+         * @return EntityProcessingChain for chaining
          */
-        FluentEntityProcessor<T> validate(Function<T, Boolean> validator, String errorMessage);
+        EntityProcessingChain<T> validate(Function<T, Boolean> validator, String errorMessage);
 
         /**
          * Switches back to JsonNode processing by converting the current entity.
          * @param converter Function to convert entity to JsonNode
-         * @return FluentProcessor for JsonNode-based chaining
+         * @return ProcessingChain for JsonNode-based chaining
          */
-        FluentProcessor toJsonFlow(Function<T, JsonNode> converter);
+        ProcessingChain toJsonFlow(Function<T, JsonNode> converter);
 
         /**
          * Completes the entity processing chain and returns the response.
@@ -157,15 +157,15 @@ public interface ProcessorSerializer {
     }
 
     /**
-     * Implementation of the FluentProcessor interface.
+     * Implementation of the ProcessingChain interface.
      */
-    class FluentProcessorImpl implements FluentProcessor {
+    class ProcessingChainImpl implements ProcessingChain {
         private final ProcessorSerializer serializer;
         private final EntityProcessorCalculationRequest request;
         private JsonNode processedData;
         private Throwable error;
 
-        FluentProcessorImpl(ProcessorSerializer serializer, EntityProcessorCalculationRequest request) {
+        ProcessingChainImpl(ProcessorSerializer serializer, EntityProcessorCalculationRequest request) {
             this.serializer = serializer;
             this.request = request;
             try {
@@ -175,14 +175,14 @@ public interface ProcessorSerializer {
             }
         }
 
-        FluentProcessorImpl(ProcessorSerializer serializer, EntityProcessorCalculationRequest request, JsonNode data) {
+        ProcessingChainImpl(ProcessorSerializer serializer, EntityProcessorCalculationRequest request, JsonNode data) {
             this.serializer = serializer;
             this.request = request;
             this.processedData = data;
             this.error = null;
         }
 
-        FluentProcessorImpl(ProcessorSerializer serializer, EntityProcessorCalculationRequest request, Throwable error) {
+        ProcessingChainImpl(ProcessorSerializer serializer, EntityProcessorCalculationRequest request, Throwable error) {
             this.serializer = serializer;
             this.request = request;
             this.processedData = null;
@@ -190,7 +190,7 @@ public interface ProcessorSerializer {
         }
 
         @Override
-        public FluentProcessor map(Function<JsonNode, JsonNode> mapper) {
+        public ProcessingChain map(Function<JsonNode, JsonNode> mapper) {
             if (error == null) {
                 try {
                     processedData = mapper.apply(processedData);
@@ -202,16 +202,16 @@ public interface ProcessorSerializer {
         }
 
         @Override
-        public <T extends CyodaEntity> FluentEntityProcessor<T> toEntity(Class<T> clazz) {
+        public <T extends CyodaEntity> EntityProcessingChain<T> toEntity(Class<T> clazz) {
             if (error == null) {
                 try {
                     T entity = serializer.extractEntity(request, clazz);
-                    return new FluentEntityProcessorImpl<>(serializer, request, entity);
+                    return new EntityProcessingChainImpl<>(serializer, request, entity);
                 } catch (Exception e) {
-                    return new FluentEntityProcessorImpl<>(serializer, request, e);
+                    return new EntityProcessingChainImpl<>(serializer, request, e);
                 }
             }
-            return new FluentEntityProcessorImpl<>(serializer, request, error);
+            return new EntityProcessingChainImpl<>(serializer, request, error);
         }
 
         @Override
@@ -241,23 +241,23 @@ public interface ProcessorSerializer {
     }
 
     /**
-     * Implementation of the FluentEntityProcessor interface.
+     * Implementation of the EntityProcessingChain interface.
      * Handles entity-based processing flows where operations work on entity instances.
      */
-    class FluentEntityProcessorImpl<T extends CyodaEntity> implements FluentEntityProcessor<T> {
+    class EntityProcessingChainImpl<T extends CyodaEntity> implements EntityProcessingChain<T> {
         private final ProcessorSerializer serializer;
         private final EntityProcessorCalculationRequest request;
         private T processedEntity;
         private Throwable error;
 
-        FluentEntityProcessorImpl(ProcessorSerializer serializer, EntityProcessorCalculationRequest request, T entity) {
+        EntityProcessingChainImpl(ProcessorSerializer serializer, EntityProcessorCalculationRequest request, T entity) {
             this.serializer = serializer;
             this.request = request;
             this.processedEntity = entity;
             this.error = null;
         }
 
-        FluentEntityProcessorImpl(ProcessorSerializer serializer, EntityProcessorCalculationRequest request, Throwable error) {
+        EntityProcessingChainImpl(ProcessorSerializer serializer, EntityProcessorCalculationRequest request, Throwable error) {
             this.serializer = serializer;
             this.request = request;
             this.processedEntity = null;
@@ -265,7 +265,7 @@ public interface ProcessorSerializer {
         }
 
         @Override
-        public FluentEntityProcessor<T> map(Function<T, T> mapper) {
+        public EntityProcessingChain<T> map(Function<T, T> mapper) {
             if (error == null && processedEntity != null) {
                 try {
                     processedEntity = mapper.apply(processedEntity);
@@ -277,12 +277,12 @@ public interface ProcessorSerializer {
         }
 
         @Override
-        public FluentEntityProcessor<T> validate(Function<T, Boolean> validator) {
+        public EntityProcessingChain<T> validate(Function<T, Boolean> validator) {
             return validate(validator, "Entity validation failed");
         }
 
         @Override
-        public FluentEntityProcessor<T> validate(Function<T, Boolean> validator, String errorMessage) {
+        public EntityProcessingChain<T> validate(Function<T, Boolean> validator, String errorMessage) {
             if (error == null && processedEntity != null) {
                 try {
                     Boolean isValid = validator.apply(processedEntity);
@@ -297,16 +297,16 @@ public interface ProcessorSerializer {
         }
 
         @Override
-        public FluentProcessor toJsonFlow(Function<T, JsonNode> converter) {
+        public ProcessingChain toJsonFlow(Function<T, JsonNode> converter) {
             if (error == null && processedEntity != null) {
                 try {
                     JsonNode jsonData = converter.apply(processedEntity);
-                    return new FluentProcessorImpl(serializer, request, jsonData);
+                    return new ProcessingChainImpl(serializer, request, jsonData);
                 } catch (Exception e) {
-                    return new FluentProcessorImpl(serializer, request, e);
+                    return new ProcessingChainImpl(serializer, request, e);
                 }
             }
-            return new FluentProcessorImpl(serializer, request, error);
+            return new ProcessingChainImpl(serializer, request, error);
         }
 
         @Override

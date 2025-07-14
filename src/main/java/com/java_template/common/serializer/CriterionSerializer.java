@@ -51,32 +51,32 @@ public interface CriterionSerializer {
     ResponseBuilder.CriterionResponseBuilder responseBuilder(EntityCriteriaCalculationRequest request);
 
     /**
-     * Starts a fluent criterion evaluation chain with the given request.
+     * Starts an evaluation chain with the given request.
      * This allows for a more expressive and chainable API.
      */
-    default FluentCriterion withRequest(EntityCriteriaCalculationRequest request) {
-        return new FluentCriterionImpl(this, request);
+    default EvaluationChain withRequest(EntityCriteriaCalculationRequest request) {
+        return new EvaluationChainImpl(this, request);
     }
 
     /**
-     * Fluent API for criterion operations.
+     * Evaluation chain API for criterion operations.
      * Provides a chainable interface for evaluating criteria and building responses.
      */
-    interface FluentCriterion {
+    interface EvaluationChain {
         /**
          * Evaluates the criterion using the provided predicate on the JSON payload.
          * @param evaluator Predicate to evaluate the JSON payload
-         * @return FluentCriterion for chaining
+         * @return EvaluationChain for chaining
          */
-        FluentCriterion evaluate(Predicate<JsonNode> evaluator);
+        EvaluationChain evaluate(Predicate<JsonNode> evaluator);
 
         /**
          * Evaluates the criterion using the provided predicate on the extracted entity.
          * @param clazz Entity class to extract
          * @param evaluator Predicate to evaluate the entity
-         * @return FluentCriterion for chaining
+         * @return EvaluationChain for chaining
          */
-        <T extends CyodaEntity> FluentCriterion evaluateEntity(Class<T> clazz, Predicate<T> evaluator);
+        <T extends CyodaEntity> EvaluationChain evaluateEntity(Class<T> clazz, Predicate<T> evaluator);
 
         /**
          * Completes the evaluation chain and returns the appropriate response.
@@ -114,16 +114,16 @@ public interface CriterionSerializer {
     }
 
     /**
-     * Implementation of the FluentCriterion interface.
+     * Implementation of the EvaluationChain interface.
      */
-    class FluentCriterionImpl implements FluentCriterion {
+    class EvaluationChainImpl implements EvaluationChain {
         private final CriterionSerializer serializer;
         private final EntityCriteriaCalculationRequest request;
         private JsonNode payload;
         private Throwable error;
         private Boolean matches;
 
-        FluentCriterionImpl(CriterionSerializer serializer, EntityCriteriaCalculationRequest request) {
+        EvaluationChainImpl(CriterionSerializer serializer, EntityCriteriaCalculationRequest request) {
             this.serializer = serializer;
             this.request = request;
             try {
@@ -134,7 +134,7 @@ public interface CriterionSerializer {
         }
 
         @Override
-        public FluentCriterion evaluate(Predicate<JsonNode> evaluator) {
+        public EvaluationChain evaluate(Predicate<JsonNode> evaluator) {
             if (error == null && matches == null) {
                 try {
                     matches = evaluator.test(payload);
@@ -146,7 +146,7 @@ public interface CriterionSerializer {
         }
 
         @Override
-        public <T extends CyodaEntity> FluentCriterion evaluateEntity(Class<T> clazz, Predicate<T> evaluator) {
+        public <T extends CyodaEntity> EvaluationChain evaluateEntity(Class<T> clazz, Predicate<T> evaluator) {
             if (error == null && matches == null) {
                 try {
                     T entity = serializer.extractEntity(request, clazz);

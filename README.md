@@ -66,7 +66,7 @@ Integration logic with Cyoda.
 - `repository/` – Facilitates integration with the Cyoda REST API (modifications usually unnecessary).
 - `service/` – Service layer for your application.
 - `util/` – Various utility functions.
-- `workflow/` – Registrar and dispatcher for `Workflow.java` methods.
+- `workflow/` – Core workflow processing architecture with CyodaProcessor and CyodaCriterion interfaces.
 
 To interact with **Cyoda**, use `common/service/EntityService.java`, which provides all necessary methods.
 
@@ -83,8 +83,17 @@ To add new integrations with Cyoda, extend the following files:
 
 ---
 
-### `entity/`
-Domain logic:
+### `application/`
+Application-specific logic and components:
+
+- `controller/` – HTTP endpoints and REST API controllers.
+- `entity/` – Domain entities (e.g., `pet/Pet.java`) that implement `CyodaEntity`.
+- `processor/` – Workflow processors that implement `CyodaProcessor` interface.
+- `criteria/` – Workflow criteria that implement `CyodaCriterion` interface.
+- `serializer/` – Serialization layer with fluent APIs for processing requests and responses.
+
+### `entity/` (deprecated structure)
+Legacy domain logic structure. New entities should be placed in `application/entity/`.
 
 - `functional_requirements.md` – Describes the application’s functional requirements.
 - `$entity_name/Workflow.java` – FSM event dispatcher.
@@ -320,56 +329,193 @@ ICONTAINS, ISTARTS_WITH, IENDS_WITH, INOT_CONTAINS, INOT_STARTS_WITH, INOT_ENDS_
 
 ## 🧠 Workflow Processors
 
-The logic for processing workflows is implemented in `entity/$entity_name/Workflow.java`.
+The logic for processing workflows is implemented using **CyodaProcessor** and **CyodaCriterion** interfaces in the `application/` directory.
 
+### Modern Processor Architecture
 
-Action / processor example:
+Processors implement the `CyodaProcessor` interface and use the **EntityProcessingChain** API for type-safe entity processing:
 
 ```java
-public CompletableFuture<ObjectNode> processTemplateEntity(ObjectNode entity) {
-  fetchedData = fetchDataForTemplateEntity(entity);
-  entity.put("fetchedData", fetchedData);
-  return CompletableFuture.completedFuture(entity);
+@Component
+public class AddLastModifiedTimestamp implements CyodaProcessor {
+
+    private final ProcessorSerializer serializer;
+
+    @Override
+    public EntityProcessorCalculationResponse process(CyodaEventContext<EntityProcessorCalculationRequest> context) {
+        EntityProcessorCalculationRequest request = context.getEvent();
+
+        // Modern fluent entity processing with validation
+        return serializer.withRequest(request)
+            .toEntity(Pet.class)
+            .validate(pet -> pet.getId() != null && pet.getName() != null)
+            .map(pet -> {
+                pet.addLastModifiedTimestamp();
+                return pet;
+            })
+            .complete();
+    }
+
+    @Override
+    public boolean supports(OperationSpecification modelKey) {
+        // Implementation-specific support logic
+        return "pet".equals(modelKey.entityName());
+    }
 }
 ```
 
-Function condition example:
+### EntityProcessingChain API
+
+The **EntityProcessingChain** provides a clean, type-safe API for entity processing:
+
+- `toEntity(Class<T>)` - Extract entity and initiate entity flow
+- `map(Function<T, T>)` - Transform entity instances
+- `validate(Function<T, Boolean>)` - Validate entities with default error message
+- `validate(Function<T, Boolean>, String)` - Validate entities with custom error message
+- `toJsonFlow(Function<T, JsonNode>)` - Switch to JSON processing
+- `complete()` - Complete processing with automatic entity-to-JSON conversion
+- `complete(Function<T, JsonNode>)` - Complete with custom entity converter
+
+### Criteria Implementation
+
+Criteria implement the `CyodaCriterion` interface for condition checking:
 
 ```java
-public CompletableFuture<ObjectNode> isTemplateValid(ObjectNode entity) {
-  boolean isValid = checkCondition(entity);
-  entity.put("success", isValid);
-  return CompletableFuture.completedFuture(entity);
+@Component
+public class IsValidPet implements CyodaCriterion {
+
+    private final CriterionSerializer serializer;
+
+    @Override
+    public EntityCriteriaCalculationResponse check(CyodaEventContext<EntityCriteriaCalculationRequest> context) {
+        EntityCriteriaCalculationRequest request = context.getEvent();
+
+        return serializer.withRequest(request)
+            .evaluate(
+                jsonNode -> {
+                    // Validation logic
+                    return jsonNode.has("id") && jsonNode.has("name");
+                },
+                "Pet is valid",
+                "Pet validation failed"
+            )
+            .complete();
+    }
 }
 ```
 
 ### ⚙️ Registration mechanism
 
-Workflow methods are **discovered and registered lazily** at runtime via the `WorkflowRegistrar` in `common/workflow`,  
-triggered by the first call to `processEvent(...)` in the `WorkflowProcessor`.
+Workflow components are **automatically discovered** via Spring's dependency injection system using the `OperationFactory`.
 
 Here’s how it works:
 
-1. When the first gRPC event (`EntityProcessorCalculationRequest` for `action.name` or `EntityCriteriaCalculationRequest` for `condition.function.name`) arrives,  
-   the `WorkflowProcessor` initializes and delegates registration to `WorkflowRegistrar`.
+1. **Processor Discovery**: All Spring beans implementing `CyodaProcessor` are automatically collected by the `OperationFactory`.
 
-2. `WorkflowRegistrar` scans all Spring beans whose class name ends with `workflow`.
+2. **Criterion Discovery**: All Spring beans implementing `CyodaCriterion` are automatically collected by the `OperationFactory`.
 
-3. It collects all declared methods with the following signature:
-   ```java
-   Function<ObjectNode, CompletableFuture<ObjectNode>>
-   ```
+3. **Operation Matching**: When a gRPC event arrives, the `OperationFactory` finds the appropriate processor or criterion by:
+   - Calling the `supports(OperationSpecification)` method on each component
+   - Matching based on entity name, version, and operation name
+   - Caching successful matches for performance
 
-4. Each method is registered in the `WorkflowProcessor` under its method name (e.g. `processTemplateEntity`, `isTemplateValid`).
+4. **Execution**: The matched component processes the request using its `process()` or `check()` method.
 
-5. Upon subsequent gRPC events, the processor invokes the corresponding method by name, passing the `ObjectNode` entity as input.
+### Component Registration
 
-> ✅ The method name must **exactly match** the value of `action.name` or `condition.function.name` used in the workflow configuration.
+To register a new processor or criterion:
+
+1. **Create a class** implementing `CyodaProcessor` or `CyodaCriterion`
+2. **Add `@Component` annotation** for Spring discovery
+3. **Implement the `supports()` method** to define when this component should be used
+4. **Implement the processing method** (`process()` for processors, `check()` for criteria)
+
+> ✅ Component names are matched against the `action.name` or `condition.function.name` in workflow configuration via the `supports()` method.
+
+---
+
+## 🔄 Serializer Architecture
+
+The application uses a modern serializer architecture with fluent APIs:
+
+### ProcessorSerializer
+- **Purpose**: Handles entity extraction and response building for processors
+- **Key Methods**:
+  - `withRequest(request)` - Start fluent processing chain
+  - `extractEntity(request, Class<T>)` - Extract typed entities
+  - `extractPayload(request)` - Extract raw JSON payload
+  - `responseBuilder(request)` - Create response builders
+
+### ProcessingChain vs EntityProcessingChain
+- **ProcessingChain**: JSON-based processing with `map(Function<JsonNode, JsonNode>)`
+- **EntityProcessingChain**: Type-safe entity processing with `map(Function<T, T>)`
+- **Transition**: Use `toEntity(Class<T>)` to switch from JSON to entity flow
+- **Transition**: Use `toJsonFlow(Function<T, JsonNode>)` to switch from entity to JSON flow
+
+### SerializerFactory
+- **Purpose**: Provides access to different serializer implementations
+- **Default**: Jackson-based serializers for JSON processing
+- **Usage**: Injected into processors and criteria for consistent serialization
+
+---
+
+## 🔧 EntityProcessingChain Usage Examples
+
+### Basic Entity Processing
+```java
+// Simple entity transformation
+return serializer.withRequest(request)
+    .toEntity(Pet.class)
+    .map(pet -> {
+        pet.setName(pet.getName().toUpperCase());
+        return pet;
+    })
+    .complete();
+```
+
+### Entity Processing with Validation
+```java
+// Entity processing with validation steps
+return serializer.withRequest(request)
+    .toEntity(Pet.class)
+    .validate(pet -> pet.getId() != null, "Pet ID cannot be null")
+    .map(pet -> pet.normalizeStatus())
+    .validate(pet -> pet.hasStatus(), "Pet must have a valid status")
+    .map(pet -> pet.addLastModifiedTimestamp())
+    .complete();
+```
+
+### Mixed Entity and JSON Processing
+```java
+// Start with entity processing, then switch to JSON
+return serializer.withRequest(request)
+    .toEntity(Pet.class)
+    .map(pet -> pet.processBusinessLogic())
+    .toJsonFlow(pet -> createEnhancedJson(pet))
+    .map(json -> addMetadata(json))
+    .complete();
+```
+
+### Custom Error Handling
+```java
+// Entity processing with custom error handling
+return serializer.withRequest(request)
+    .toEntity(Pet.class)
+    .map(pet -> pet.validateAndProcess())
+    .orElseFail((error, pet) -> new ErrorInfo(
+        "PET_PROCESSING_ERROR",
+        "Failed to process pet " + (pet != null ? pet.getId() : "unknown")
+    ));
+```
 
 ---
 
 ## 📝 Notes
 
 - Entity `id` is a **UUID**.
-- Keep workflow method names unique and aligned with JSON actions and function conditions.
+- Use `CyodaProcessor` and `CyodaCriterion` interfaces for workflow components.
+- Leverage the **EntityProcessingChain** API for type-safe entity processing.
+- Component names are matched via the `supports()` method against workflow configuration.
 - Avoid cyclic FSM states.
+- Place new entities in `application/entity/` directory.
+- Use `@Component` annotation for automatic Spring discovery of workflow components.
