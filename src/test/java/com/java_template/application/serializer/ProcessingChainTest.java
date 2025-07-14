@@ -176,20 +176,16 @@ class ProcessingChainTest {
     @Test
     @DisplayName("map should transform JSON payload and allow chaining")
     void testMapTransformation() {
-        // Given
-        Function<JsonNode, JsonNode> mapper = node -> {
-            ObjectNode result = objectMapper.createObjectNode();
-            result.put("transformedId", node.get("id").asLong() * 2);
-            result.put("transformedName", "Transformed: " + node.get("name").asText());
-            return result;
-        };
 
-        // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
-                .map(mapper)
+                .map(node -> {
+                    ObjectNode result = objectMapper.createObjectNode();
+                    result.put("transformedId", node.get("id").asLong() * 2);
+                    result.put("transformedName", "Transformed: " + node.get("name").asText());
+                    return result;
+                })
                 .complete();
 
-        // Then
         assertNotNull(response);
         verify(mockResponseBuilder).withSuccess(any(JsonNode.class));
         verify(mockResponseBuilder).build();
@@ -198,16 +194,12 @@ class ProcessingChainTest {
     @Test
     @DisplayName("toEntity should extract entity and initiate entity flow")
     void testToEntityTransformation() {
-        // Given
-        Function<TestEntity, TestEntity> entityMapper = entity -> new TestEntity(entity.id(), entity.name().toUpperCase(), "processed", entity.category());
 
-        // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
                 .toEntity(TestEntity.class)
-                .map(entityMapper)
+                .map(entity -> new TestEntity(entity.id(), entity.name().toUpperCase(), "processed", entity.category()))
                 .complete();
 
-        // Then
         assertNotNull(response);
         verify(mockResponseBuilder).withSuccess(any(JsonNode.class));
         verify(mockResponseBuilder).build();
@@ -216,29 +208,22 @@ class ProcessingChainTest {
     @Test
     @DisplayName("Multiple chained operations should work correctly")
     void testChainedOperations() {
-        // Given
-        Function<JsonNode, JsonNode> firstMapper = node -> {
-            ObjectNode result = objectMapper.createObjectNode();
-            result.put("step1", "First transformation");
-            result.put("originalId", node.get("id").asLong());
-            return result;
-        };
-
-        Function<JsonNode, JsonNode> secondMapper = node -> {
-            ObjectNode result = objectMapper.createObjectNode();
-            result.put("step2", "Second transformation");
-            result.put("previousStep", node.get("step1").asText());
-            result.put("finalId", node.get("originalId").asLong() * 10);
-            return result;
-        };
-
-        // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
-                .map(firstMapper)
-                .map(secondMapper)
+                .map(node -> {
+                    ObjectNode result = objectMapper.createObjectNode();
+                    result.put("step1", "First transformation");
+                    result.put("originalId", node.get("id").asLong());
+                    return result;
+                })
+                .map(node -> {
+                    ObjectNode result = objectMapper.createObjectNode();
+                    result.put("step2", "Second transformation");
+                    result.put("previousStep", node.get("step1").asText());
+                    result.put("finalId", node.get("originalId").asLong() * 10);
+                    return result;
+                })
                 .complete();
 
-        // Then
         assertNotNull(response);
         verify(mockResponseBuilder).withSuccess(any(JsonNode.class));
         verify(mockResponseBuilder).build();
@@ -264,14 +249,10 @@ class ProcessingChainTest {
     @Test
     @DisplayName("Error during map operation should be handled by complete()")
     void testErrorDuringMapOperation() {
-        // Given
-        Function<JsonNode, JsonNode> faultyMapper = node -> {
-            throw new RuntimeException("Mapping operation failed");
-        };
-
-        // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
-                .map(faultyMapper)
+                .map(node -> {
+                    throw new RuntimeException("Mapping operation failed");
+                })
                 .complete();
 
         // Then
@@ -287,12 +268,10 @@ class ProcessingChainTest {
         RuntimeException entityError = new RuntimeException("Entity extraction failed");
         testSerializer.setShouldThrowOnExtractEntity(entityError);
 
-        Function<TestEntity, TestEntity> entityMapper = entity -> entity;
-
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
                 .toEntity(TestEntity.class)
-                .map(entityMapper)
+                .map(entity -> entity)
                 .complete();
 
         // Then
@@ -308,12 +287,11 @@ class ProcessingChainTest {
         RuntimeException processingError = new RuntimeException("Custom processing error");
         testSerializer.setShouldThrowOnExtractPayload(processingError);
 
-        BiFunction<Throwable, JsonNode, ProcessorSerializer.ErrorInfo> errorHandler =
-                (error, data) -> new ProcessorSerializer.ErrorInfo("CUSTOM_ERROR", "Custom error: " + error.getMessage());
-
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
-                .orElseFail(errorHandler);
+                .orElseFail((error, data) ->
+                        new ProcessorSerializer.ErrorInfo("CUSTOM_ERROR", "Custom error: " + error.getMessage())
+                );
 
         // Then
         assertNotNull(response);
@@ -324,20 +302,16 @@ class ProcessingChainTest {
     @Test
     @DisplayName("orElseFail should return success response when no errors occur")
     void testOrElseFailWithoutErrors() {
-        // Given
-        Function<JsonNode, JsonNode> mapper = node -> {
-            ObjectNode result = objectMapper.createObjectNode();
-            result.put("success", true);
-            return result;
-        };
-
-        BiFunction<Throwable, JsonNode, ProcessorSerializer.ErrorInfo> errorHandler =
-                (error, data) -> new ProcessorSerializer.ErrorInfo("SHOULD_NOT_BE_CALLED", "Should not be called");
-
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
-                .map(mapper)
-                .orElseFail(errorHandler);
+                .map(node -> {
+                    ObjectNode result = objectMapper.createObjectNode();
+                    result.put("success", true);
+                    return result;
+                })
+                .orElseFail((error, data) ->
+                        new ProcessorSerializer.ErrorInfo("SHOULD_NOT_BE_CALLED", "Should not be called")
+                );
 
         // Then
         assertNotNull(response);
