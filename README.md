@@ -382,7 +382,7 @@ The **EntityProcessingChain** provides a clean, type-safe API for entity process
 
 ### Criteria Implementation
 
-Criteria implement the `CyodaCriterion` interface for condition checking using **EvaluationOutcome** sealed classes:
+Criteria implement the `CyodaCriterion` interface for condition checking using **EvaluationOutcome** sealed classes with **logical chaining**:
 
 ```java
 @Component
@@ -395,19 +395,32 @@ public class IsValidPet implements CyodaCriterion {
         EntityCriteriaCalculationRequest request = context.getEvent();
 
         return serializer.withRequest(request)
-            .evaluateEntity(Pet.class, pet -> {
-                // Validation logic with explicit outcomes
-                if (pet == null) {
-                    return EvaluationOutcome.Fail.structuralFailure("Pet entity is null");
-                }
-                if (!pet.isValid()) {
-                    return EvaluationOutcome.Fail.structuralFailure("Pet validation failed");
-                }
-                return EvaluationOutcome.success();
-            })
+            .evaluateEntity(Pet.class, this::validatePet)
             .withReasonAttachment(ReasonAttachmentStrategy.toWarnings())
             .complete();
     }
+
+    private EvaluationOutcome validatePet(Pet pet) {
+        // Chain all validation checks with AND logic - first failure stops the chain
+        return validatePetExists(pet)
+            .and(validatePetBasicValidity(pet))
+            .and(validateBasicStructure(pet))
+            .and(validateBusinessRules(pet))
+            .and(validateDataQuality(pet));
+    }
+
+    private EvaluationOutcome validatePetExists(Pet pet) {
+        return pet == null ?
+            EvaluationOutcome.Fail.structuralFailure("Pet entity is null") :
+            EvaluationOutcome.success();
+    }
+
+    private EvaluationOutcome validateBasicStructure(Pet pet) {
+        // Chain multiple field validations
+        return validatePetId(pet).and(validatePetName(pet));
+    }
+
+    // ... other validation methods
 }
 ```
 
@@ -488,7 +501,7 @@ return serializer.responseBuilder(request)
 
 ### EvaluationOutcome Sealed Classes
 
-Criteria evaluation uses **EvaluationOutcome** sealed classes for type-safe result handling:
+Criteria evaluation uses **EvaluationOutcome** sealed classes for type-safe result handling with **logical chaining**:
 
 ```java
 // Success outcome (no additional information needed)
@@ -503,10 +516,32 @@ return EvaluationOutcome.Fail.dataQualityFailure("Pet photo URL is malformed");
 return EvaluationOutcome.Fail.of("Custom reason", StandardEvalReasonCategories.VALIDATION_FAILURE);
 ```
 
+**Logical Chaining Operations:**
+
+```java
+// AND chaining - all must succeed, returns first failure
+EvaluationOutcome result = validateStructure(pet)
+    .and(validateBusinessRules(pet))
+    .and(validateDataQuality(pet));
+
+// OR chaining - any can succeed, returns first success or last failure
+EvaluationOutcome result = primaryValidation(pet)
+    .or(fallbackValidation(pet));
+
+// Bulk operations
+EvaluationOutcome allMustPass = EvaluationOutcome.allOf(check1, check2, check3);
+EvaluationOutcome anyCanPass = EvaluationOutcome.anyOf(check1, check2, check3);
+
+// Convenience methods
+if (result.isSuccess()) { /* handle success */ }
+if (result.isFailure()) { /* handle failure */ }
+```
+
 **Key Benefits:**
 - **Type Safety**: Compile-time checking ensures proper outcome handling
 - **Clear Contracts**: No ambiguity about success vs failure
 - **Categorized Failures**: Structured failure reasons with standard categories
+- **Logical Chaining**: Elegant AND/OR operations with short-circuit evaluation
 - **Reason Attachment**: Failure reasons can be attached to response warnings
 
 ---

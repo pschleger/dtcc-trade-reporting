@@ -174,12 +174,104 @@ public sealed class EvaluationOutcome permits EvaluationOutcome.Success, Evaluat
     
     /**
      * Factory method to create a Fail outcome with category.
-     * 
+     *
      * @param reason the reason for failure
      * @param category the category of failure
      * @return Fail outcome
      */
     public static Fail fail(String reason, StandardEvalReasonCategories category) {
         return Fail.of(reason, category);
+    }
+
+    /**
+     * Logical AND operation with another EvaluationOutcome.
+     * Returns the first failure encountered, or success if both are successful.
+     *
+     * @param other the other EvaluationOutcome to AND with
+     * @return Success if both are successful, otherwise the first failure
+     */
+    public EvaluationOutcome and(EvaluationOutcome other) {
+        if (this instanceof Fail) {
+            return this; // Return first failure
+        }
+        return other; // Return other (success or failure)
+    }
+
+    /**
+     * Logical OR operation with another EvaluationOutcome.
+     * Returns the first success encountered, or the last failure if both fail.
+     *
+     * @param other the other EvaluationOutcome to OR with
+     * @return Success if either is successful, otherwise the last failure
+     */
+    public EvaluationOutcome or(EvaluationOutcome other) {
+        if (this instanceof Success) {
+            return this; // Return first success
+        }
+        return other; // Return other (success or failure)
+    }
+
+    /**
+     * Convenience method to check if this outcome is a success.
+     *
+     * @return true if this is a Success outcome
+     */
+    public boolean isSuccess() {
+        return this instanceof Success;
+    }
+
+    /**
+     * Convenience method to check if this outcome is a failure.
+     *
+     * @return true if this is a Fail outcome
+     */
+    public boolean isFailure() {
+        return this instanceof Fail;
+    }
+
+    /**
+     * Chains multiple EvaluationOutcomes with AND logic.
+     * Returns the first failure encountered, or success if all are successful.
+     *
+     * <p><strong>Performance Note:</strong> This method is more efficient than chaining multiple
+     * {@code and()} calls as it avoids creating intermediate EvaluationOutcome objects.
+     * For simple "all must pass" scenarios, prefer this over {@code outcome1.and(outcome2).and(outcome3)}.
+     * However, for complex mixed logic or when building validation step-by-step,
+     * the fluent chaining approach may be more readable.</p>
+     *
+     * @param outcomes the outcomes to chain with AND logic
+     * @return Success if all are successful, otherwise the first failure
+     */
+    public static EvaluationOutcome allOf(EvaluationOutcome... outcomes) {
+        for (EvaluationOutcome outcome : outcomes) {
+            if (outcome instanceof Fail) {
+                return outcome;
+            }
+        }
+        return success();
+    }
+
+    /**
+     * Chains multiple EvaluationOutcomes with OR logic.
+     * Returns the first success encountered, or the last failure if all fail.
+     *
+     * <p><strong>Performance Note:</strong> This method is more efficient than chaining multiple
+     * {@code or()} calls as it avoids creating intermediate EvaluationOutcome objects.
+     * For simple "any can pass" scenarios, prefer this over {@code outcome1.or(outcome2).or(outcome3)}.
+     * However, for complex mixed logic or when building fallback validation step-by-step,
+     * the fluent chaining approach may be more readable.</p>
+     *
+     * @param outcomes the outcomes to chain with OR logic
+     * @return Success if any is successful, otherwise the last failure
+     */
+    public static EvaluationOutcome anyOf(EvaluationOutcome... outcomes) {
+        EvaluationOutcome lastFailure = null;
+        for (EvaluationOutcome outcome : outcomes) {
+            if (outcome instanceof Success) {
+                return outcome;
+            }
+            lastFailure = outcome;
+        }
+        return lastFailure != null ? lastFailure : fail("No outcomes provided");
     }
 }

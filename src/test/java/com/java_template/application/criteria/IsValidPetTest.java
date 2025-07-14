@@ -227,6 +227,26 @@ class IsValidPetTest {
         assertTrue(qualityResponse.getWarnings().get(0).contains("Pet photo URL at index 0 is invalid"));
     }
 
+    @Test
+    @DisplayName("Should demonstrate logical chaining stops at first failure")
+    void testLogicalChainingStopsAtFirstFailure() {
+        // Create Pet data with multiple issues - ID and status both invalid
+        ObjectNode multipleIssuesData = createValidPetData();
+        multipleIssuesData.put("id", -1); // First failure: invalid ID
+        multipleIssuesData.put("status", "invalid_status"); // Second failure: invalid status
+
+        EntityCriteriaCalculationResponse response = isValidPet.check(createEventContext(multipleIssuesData));
+
+        // Should fail and return the FIRST failure encountered (ID validation)
+        assertFalse(response.getMatches());
+        assertNotNull(response.getWarnings());
+        assertEquals(1, response.getWarnings().size()); // Only one warning - the first failure
+        assertTrue(response.getWarnings().get(0).contains("STRUCTURAL_FAILURE"));
+        assertTrue(response.getWarnings().get(0).contains("Pet ID must be positive"));
+        // Should NOT contain the status error since chaining stopped at first failure
+        assertFalse(response.getWarnings().get(0).contains("status"));
+    }
+
     // Helper methods
 
     private ObjectNode createValidPetData() {

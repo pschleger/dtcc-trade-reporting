@@ -79,50 +79,73 @@ public class IsValidPet implements CyodaCriterion {
 
     /**
      * Comprehensive Pet validation with detailed outcomes for use with EvaluationChain.
-     * Validates all aspects of Pet entity and provides specific reasons for failures.
+     * Uses logical chaining to validate all aspects of Pet entity.
      * Returns EvaluationOutcome.Success for success, EvaluationOutcome.Fail for failures.
      */
     private EvaluationOutcome validatePet(Pet pet) {
-        // Check if Pet entity exists and is valid
+        logger.debug("Starting Pet validation for: {}", pet != null ? pet.getId() : "null");
+
+        // Chain all validation checks with AND logic - first failure stops the chain
+        EvaluationOutcome result = validatePetExists(pet)
+            .and(validatePetBasicValidity(pet))
+            .and(validateBasicStructure(pet))
+            .and(validateBusinessRules(pet))
+            .and(validateDataQuality(pet));
+
+        if (result.isSuccess()) {
+            logger.debug("Pet passed all validation checks: id={}, name={}", pet.getId(), pet.getName());
+        } else {
+            logger.debug("Pet validation failed");
+        }
+
+        return result;
+    }
+
+    /**
+     * Validates that the Pet entity exists.
+     */
+    private EvaluationOutcome validatePetExists(Pet pet) {
         if (pet == null) {
             logger.debug("Pet entity is null");
             return EvaluationOutcome.Fail.structuralFailure("Pet entity is null");
         }
+        return EvaluationOutcome.success();
+    }
 
-        // Use Pet's built-in validation
-        if (!pet.isValid()) {
+    /**
+     * Validates Pet's built-in validation.
+     */
+    private EvaluationOutcome validatePetBasicValidity(Pet pet) {
+        if (pet != null && !pet.isValid()) {
             logger.debug("Pet entity failed basic validation");
             return EvaluationOutcome.Fail.structuralFailure("Pet entity failed basic validation (missing required fields)");
         }
-
-        // Validate basic structure and required fields
-        EvaluationOutcome structureResult = validateBasicStructure(pet);
-        if (structureResult instanceof EvaluationOutcome.Fail) {
-            return structureResult;
-        }
-
-        // Validate business rules
-        EvaluationOutcome businessResult = validateBusinessRules(pet);
-        if (businessResult instanceof EvaluationOutcome.Fail) {
-            return businessResult;
-        }
-
-        // Validate data quality
-        EvaluationOutcome qualityResult = validateDataQuality(pet);
-        if (qualityResult instanceof EvaluationOutcome.Fail) {
-            return qualityResult;
-        }
-
-        logger.debug("Pet passed all validation checks: id={}, name={}", pet.getId(), pet.getName());
         return EvaluationOutcome.success();
     }
 
     /**
      * Validates basic Pet entity structure and required fields with detailed outcomes.
-     * Returns EvaluationOutcome.Success for success, EvaluationOutcome.Fail for failures.
+     * Uses logical chaining for multiple field validations.
      */
     private EvaluationOutcome validateBasicStructure(Pet pet) {
-        // Validate required fields
+        if (pet == null) {
+            return EvaluationOutcome.success(); // Already validated in validatePetExists
+        }
+
+        // Chain ID and name validation with AND logic
+        EvaluationOutcome result = validatePetId(pet).and(validatePetName(pet));
+
+        if (result.isSuccess()) {
+            logger.debug("Pet passed basic structure validation: id={}, name={}", pet.getId(), pet.getName());
+        }
+
+        return result;
+    }
+
+    /**
+     * Validates Pet ID field.
+     */
+    private EvaluationOutcome validatePetId(Pet pet) {
         if (pet.getId() == null || pet.getId() <= 0) {
             String reason = pet.getId() == null ?
                 "Pet ID is null" :
@@ -130,7 +153,13 @@ public class IsValidPet implements CyodaCriterion {
             logger.debug("Pet has invalid ID: {}", pet.getId());
             return EvaluationOutcome.Fail.structuralFailure(reason);
         }
+        return EvaluationOutcome.success();
+    }
 
+    /**
+     * Validates Pet name field.
+     */
+    private EvaluationOutcome validatePetName(Pet pet) {
         if (pet.getName() == null || pet.getName().trim().isEmpty()) {
             String reason = pet.getName() == null ?
                 "Pet name is null" :
@@ -138,25 +167,47 @@ public class IsValidPet implements CyodaCriterion {
             logger.debug("Pet has invalid name: {}", pet.getName());
             return EvaluationOutcome.Fail.structuralFailure(reason);
         }
-
-        logger.debug("Pet passed basic structure validation: id={}, name={}", pet.getId(), pet.getName());
         return EvaluationOutcome.success();
     }
 
     /**
      * Validates Pet entity against business rules with detailed outcomes.
-     * Returns EvaluationOutcome.Success for success, EvaluationOutcome.Fail for failures.
+     * Uses logical chaining for multiple business rule validations.
      */
     private EvaluationOutcome validateBusinessRules(Pet pet) {
-        // Validate status if present
+        if (pet == null) {
+            return EvaluationOutcome.success(); // Already validated in validatePetExists
+        }
+
+        // Chain all business rule validations with AND logic
+        EvaluationOutcome result = validatePetStatus(pet)
+            .and(validatePetNameLength(pet))
+            .and(validatePetTagsCount(pet));
+
+        if (result.isSuccess()) {
+            logger.debug("Pet passed business rules validation");
+        }
+
+        return result;
+    }
+
+    /**
+     * Validates Pet status against allowed values.
+     */
+    private EvaluationOutcome validatePetStatus(Pet pet) {
         if (pet.getStatus() != null && !VALID_STATUSES.contains(pet.getStatus().toLowerCase())) {
             String reason = String.format("Pet status '%s' is invalid. Valid statuses are: %s",
                 pet.getStatus(), String.join(", ", VALID_STATUSES));
             logger.debug("Pet has invalid status: {}", pet.getStatus());
             return EvaluationOutcome.Fail.businessRuleFailure(reason);
         }
+        return EvaluationOutcome.success();
+    }
 
-        // Validate name length
+    /**
+     * Validates Pet name length constraints.
+     */
+    private EvaluationOutcome validatePetNameLength(Pet pet) {
         if (pet.getName() != null) {
             int nameLength = pet.getName().trim().length();
             if (nameLength < MIN_NAME_LENGTH || nameLength > MAX_NAME_LENGTH) {
@@ -166,25 +217,47 @@ public class IsValidPet implements CyodaCriterion {
                 return EvaluationOutcome.Fail.businessRuleFailure(reason);
             }
         }
+        return EvaluationOutcome.success();
+    }
 
-        // Validate tags count
+    /**
+     * Validates Pet tags count constraints.
+     */
+    private EvaluationOutcome validatePetTagsCount(Pet pet) {
         if (pet.getTags() != null && pet.getTags().size() > MAX_TAGS) {
             String reason = String.format("Pet has too many tags (%d). Maximum allowed is %d",
                 pet.getTags().size(), MAX_TAGS);
             logger.debug("Pet has too many tags: {}", pet.getTags().size());
             return EvaluationOutcome.Fail.businessRuleFailure(reason);
         }
-
-        logger.debug("Pet passed business rules validation");
         return EvaluationOutcome.success();
     }
 
     /**
      * Validates Pet entity data quality and consistency with detailed outcomes.
-     * Returns EvaluationOutcome.Success for success, EvaluationOutcome.Fail for failures.
+     * Uses logical chaining for multiple data quality validations.
      */
     private EvaluationOutcome validateDataQuality(Pet pet) {
-        // Validate photo URLs if present
+        if (pet == null) {
+            return EvaluationOutcome.success(); // Already validated in validatePetExists
+        }
+
+        // Chain all data quality validations with AND logic
+        EvaluationOutcome result = validatePetPhotoUrls(pet)
+            .and(validatePetTags(pet))
+            .and(validatePetCategory(pet));
+
+        if (result.isSuccess()) {
+            logger.debug("Pet passed data quality validation");
+        }
+
+        return result;
+    }
+
+    /**
+     * Validates Pet photo URLs format and validity.
+     */
+    private EvaluationOutcome validatePetPhotoUrls(Pet pet) {
         if (pet.getPhotoUrls() != null) {
             for (int i = 0; i < pet.getPhotoUrls().size(); i++) {
                 String url = pet.getPhotoUrls().get(i);
@@ -196,8 +269,13 @@ public class IsValidPet implements CyodaCriterion {
                 }
             }
         }
+        return EvaluationOutcome.success();
+    }
 
-        // Validate tags if present
+    /**
+     * Validates Pet tags content and format.
+     */
+    private EvaluationOutcome validatePetTags(Pet pet) {
         if (pet.getTags() != null) {
             for (int i = 0; i < pet.getTags().size(); i++) {
                 String tag = pet.getTags().get(i);
@@ -209,15 +287,18 @@ public class IsValidPet implements CyodaCriterion {
                 }
             }
         }
+        return EvaluationOutcome.success();
+    }
 
-        // Validate category if present
+    /**
+     * Validates Pet category content.
+     */
+    private EvaluationOutcome validatePetCategory(Pet pet) {
         if (pet.getCategory() != null && pet.getCategory().trim().isEmpty()) {
             String reason = "Pet category is empty or contains only whitespace. If provided, category must have content";
             logger.debug("Pet has empty category");
             return EvaluationOutcome.Fail.dataQualityFailure(reason);
         }
-
-        logger.debug("Pet passed data quality validation");
         return EvaluationOutcome.success();
     }
 
