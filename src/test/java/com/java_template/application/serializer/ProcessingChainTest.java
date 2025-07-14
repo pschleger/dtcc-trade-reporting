@@ -3,6 +3,7 @@ package com.java_template.application.serializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.java_template.common.serializer.ErrorInfo;
 import com.java_template.common.serializer.ProcessorSerializer;
 import com.java_template.common.serializer.ResponseBuilder;
 import com.java_template.common.workflow.CyodaEntity;
@@ -290,7 +291,7 @@ class ProcessingChainTest {
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
                 .withErrorHandler((error, data) ->
-                        new ProcessorSerializer.ErrorInfo("CUSTOM_ERROR", "Custom error: " + error.getMessage())
+                        new ErrorInfo("CUSTOM_ERROR", "Custom error: " + error.getMessage())
                 )
                 .complete();
 
@@ -306,7 +307,7 @@ class ProcessingChainTest {
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
                 .withErrorHandler((error, data) ->
-                        new ProcessorSerializer.ErrorInfo("SHOULD_NOT_BE_CALLED", "Should not be called")
+                        new ErrorInfo("SHOULD_NOT_BE_CALLED", "Should not be called")
                 )
                 .map(node -> {
                     ObjectNode result = objectMapper.createObjectNode();
@@ -414,13 +415,13 @@ class ProcessingChainTest {
             return new TestEntity(entity.id(), entity.name(), "validated", entity.category());
         };
 
-        BiFunction<Throwable, TestEntity, ProcessorSerializer.ErrorInfo> validationErrorHandler =
+        BiFunction<Throwable, TestEntity, ErrorInfo> validationErrorHandler =
                 (error, entity) -> {
                     if (error instanceof IllegalArgumentException) {
-                        return new ProcessorSerializer.ErrorInfo("VALIDATION_ERROR",
+                        return new ErrorInfo("VALIDATION_ERROR",
                                 "TestEntity validation failed: " + error.getMessage());
                     }
-                    return new ProcessorSerializer.ErrorInfo("PROCESSING_ERROR",
+                    return new ErrorInfo("PROCESSING_ERROR",
                             "Unexpected error during entity processing");
                 };
 
@@ -564,13 +565,13 @@ class ProcessingChainTest {
             throw new RuntimeException("Processing failed at step 2");
         };
 
-        BiFunction<Throwable, JsonNode, ProcessorSerializer.ErrorInfo> dataAwareErrorHandler =
+        BiFunction<Throwable, JsonNode, ErrorInfo> dataAwareErrorHandler =
                 (error, data) -> {
                     String errorMessage = "Error: " + error.getMessage();
                     if (data != null && data.has("step")) {
                         errorMessage += " (failed at: " + data.get("step").asText() + ")";
                     }
-                    return new ProcessorSerializer.ErrorInfo("DETAILED_ERROR", errorMessage);
+                    return new ErrorInfo("DETAILED_ERROR", errorMessage);
                 };
 
         // When
@@ -661,14 +662,14 @@ class ProcessingChainTest {
         RuntimeException primaryError = new RuntimeException("Primary processing service unavailable");
         testSerializer.setShouldThrowOnExtractPayload(primaryError);
 
-        BiFunction<Throwable, JsonNode, ProcessorSerializer.ErrorInfo> fallbackHandler =
+        BiFunction<Throwable, JsonNode, ErrorInfo> fallbackHandler =
                 (error, data) -> {
                     // In a real scenario, this might trigger fallback processing
                     if (error.getMessage().contains("service unavailable")) {
-                        return new ProcessorSerializer.ErrorInfo("FALLBACK_PROCESSING",
+                        return new ErrorInfo("FALLBACK_PROCESSING",
                                 "Primary service unavailable, fallback processing initiated");
                     }
-                    return new ProcessorSerializer.ErrorInfo("PROCESSING_ERROR",
+                    return new ErrorInfo("PROCESSING_ERROR",
                             "Unrecoverable error: " + error.getMessage());
                 };
 
@@ -873,14 +874,14 @@ class ProcessingChainTest {
             throw new IllegalStateException("Entity validation failed");
         };
 
-        BiFunction<Throwable, TestEntity, ProcessorSerializer.ErrorInfo> entityErrorHandler =
+        BiFunction<Throwable, TestEntity, ErrorInfo> entityErrorHandler =
                 (error, entity) -> {
                     if (error instanceof IllegalStateException) {
                         String entityInfo = entity != null ? " for entity ID: " + entity.id() : "";
-                        return new ProcessorSerializer.ErrorInfo("ENTITY_VALIDATION_ERROR",
+                        return new ErrorInfo("ENTITY_VALIDATION_ERROR",
                                 "Entity validation failed" + entityInfo);
                     }
-                    return new ProcessorSerializer.ErrorInfo("ENTITY_PROCESSING_ERROR",
+                    return new ErrorInfo("ENTITY_PROCESSING_ERROR",
                             "Unexpected entity processing error");
                 };
 

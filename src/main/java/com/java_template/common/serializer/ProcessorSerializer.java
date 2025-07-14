@@ -154,12 +154,6 @@ public interface ProcessorSerializer {
     }
 
     /**
-         * Error information for response building.
-         */
-        record ErrorInfo(String code, String message) {
-    }
-
-    /**
      * Implementation of the ProcessingChain interface.
      */
     class ProcessingChainImpl implements ProcessingChain {

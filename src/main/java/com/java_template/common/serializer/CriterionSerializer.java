@@ -94,27 +94,6 @@ public interface CriterionSerializer {
     }
 
     /**
-     * Error information for response building.
-     */
-    class ErrorInfo {
-        private final String code;
-        private final String message;
-
-        public ErrorInfo(String code, String message) {
-            this.code = code;
-            this.message = message;
-        }
-
-        public String code() {
-            return code;
-        }
-
-        public String message() {
-            return message;
-        }
-    }
-
-    /**
      * Implementation of the EvaluationChain interface.
      */
     class EvaluationChainImpl implements EvaluationChain {
