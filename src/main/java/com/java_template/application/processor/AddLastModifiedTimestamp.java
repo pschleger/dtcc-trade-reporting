@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.java_template.application.entity.pet.Pet;
+import com.java_template.common.serializer.ErrorInfo;
 import com.java_template.common.serializer.ProcessorSerializer;
 import com.java_template.common.serializer.SerializerFactory;
+import com.java_template.common.serializer.StandardErrorCodes;
 import com.java_template.common.workflow.CyodaEventContext;
 import com.java_template.common.workflow.CyodaProcessor;
 import com.java_template.common.workflow.OperationSpecification;
@@ -21,16 +23,12 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Complex processor that adds last modified timestamp to Pet entities.
- * Demonstrates advanced usage of sealed ResponseBuilder with:
- * - Entity validation and transformation
- * - Business logic processing
- * - Error handling with detailed context
- * - Type-safe response building
- * - Comprehensive validation pipeline
+ * ABOUTME: Processor that adds last modified timestamp to Pet entities using ProcessingChaining.
+ * Demonstrates modern fluent entity processing with validation, transformation, and error handling.
  */
 @Component
 public class AddLastModifiedTimestamp implements CyodaProcessor {
@@ -58,22 +56,20 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
         EntityProcessorCalculationRequest request = context.getEvent();
         logger.info("Processing Pet entity timestamp update for request: {}", request.getId());
 
-        try {
-            // Validate request first
-            if (!isRequestValidForProcessing(request)) {
-                return handleInvalidRequest(request);
-            }
-
-            // Process valid Pet entity
-            return processValidPetEntity(request);
-
-        } catch (Exception e) {
-            logger.error("Unexpected error processing Pet timestamp for request {}", request.getId(), e);
-            return serializer.responseBuilder(request)
-                    .withError(com.java_template.common.serializer.StandardErrorCodes.PROCESSING_ERROR.getCode(), "Unexpected error during Pet processing")
-                    .withAdditionalErrorDetails("Exception: " + e.getMessage())
-                    .build();
-        }
+        // Modern fluent entity processing with ProcessingChaining - individual business logic steps
+        return serializer.withRequest(request)
+                .toEntity(Pet.class)
+                .withErrorHandler(this::createPetProcessingError)
+                .validate(this::isValidPet, "Pet entity is invalid (missing ID or name)")
+                .map(this::createPetCopy)
+                .map(this::normalizeStatus)
+                .map(this::normalizeCategory)
+                .map(this::cleanAndValidateTags)
+                .map(this::cleanAndValidatePhotoUrls)
+                .map(this::trimAndValidateName)
+                .validate(this::validatePetBusinessRules, "Pet entity failed business validation")
+                .map(this::addTimestampAndFinalize)
+                .complete();
     }
 
     @Override
@@ -87,274 +83,36 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
     }
 
     // ========================================
-    // MAIN PROCESSING METHODS
+    // PROCESSING CHAIN METHODS
     // ========================================
 
     /**
-     * Simple example demonstrating the use of withEntity method with entityToJsonNode converter.
-     * This is a cleaner approach when you just need to return a processed entity without additional metadata.
+     * Creates custom error information for Pet processing failures.
+     * Provides detailed context about the Pet entity and error.
      */
-    private EntityProcessorCalculationResponse processSimplePetEntity(EntityProcessorCalculationRequest request) {
-        logger.debug("Processing Pet entity with simple approach for request: {}", request.getId());
+    private ErrorInfo createPetProcessingError(Throwable error, Pet pet) {
+        String petInfo = pet != null ? "Pet ID: " + pet.getId() : "unknown pet";
+        String errorMessage = "Failed to process " + petInfo + ": " + error.getMessage();
 
-        try {
-            // Extract and process Pet entity
-            Pet pet = serializer.extractEntity(request, Pet.class);
-            Pet processedPet = applyPetBusinessLogic(pet);
-            processedPet.addLastModifiedTimestamp();
-
-            // Clean approach: Use withSuccess method with entity and converter
-            // This is the recommended approach for simple entity responses
-            return serializer.responseBuilder(request)
-                    .withSuccess(processedPet, serializer::entityToJsonNode)  // Clean entity conversion using interface method
-                    .build();
-
-        } catch (Exception e) {
-            logger.error("Failed to process Pet entity for request {}", request.getId(), e);
-            return serializer.responseBuilder(request)
-                    .withError(com.java_template.common.serializer.StandardErrorCodes.PROCESSING_ERROR.getCode(), "Failed to process Pet entity")
-                    .withAdditionalErrorDetails("Processing error: " + e.getMessage())
-                    .build();
+        if (error instanceof IllegalArgumentException) {
+            return ErrorInfo.validationError(errorMessage);
+        } else {
+            return ErrorInfo.processingError(errorMessage);
         }
     }
 
     /**
-     * Processes a valid Pet entity with comprehensive business logic.
+     * Validates that a Pet entity has required fields.
      */
-    private EntityProcessorCalculationResponse processValidPetEntity(EntityProcessorCalculationRequest request) {
-        logger.debug("Processing valid Pet entity for request: {}", request.getId());
-
-        try {
-            // Extract and validate Pet entity
-            Pet pet = serializer.extractEntity(request, Pet.class);
-
-            // Apply business logic transformations
-            Pet processedPet = applyPetBusinessLogic(pet);
-
-            // Validate business rules
-            List<String> businessValidationErrors = validatePetBusinessRules(processedPet);
-            if (!businessValidationErrors.isEmpty()) {
-                String errorDetails = String.join("; ", businessValidationErrors);
-                return serializer.responseBuilder(request)
-                        .withError("BUSINESS_VALIDATION_ERROR", "Pet entity failed business validation")
-                        .withAdditionalErrorDetails(errorDetails)
-                        .build();
-            }
-
-            // Add timestamp
-            processedPet.addLastModifiedTimestamp();
-
-            // Demonstrate two approaches for successful response creation:
-
-            // Approach 1: Simple entity response using withEntity method
-            // This is cleaner when you just need to return the processed entity
-            if (shouldUseSimpleResponse(request)) {
-                return serializer.responseBuilder(request)
-                        .withSuccess(processedPet, serializer::entityToJsonNode)  // Use interface method
-                        .build();
-            }
-
-            // Approach 2: Enhanced response with metadata using withJsonData method
-            // This is better when you need additional processing metadata
-            JsonNode enhancedData = createEnhancedPetJson(processedPet, request);
-
-            // Perform final validation
-            List<String> finalValidationErrors = performFinalPetValidation(enhancedData);
-            if (!finalValidationErrors.isEmpty()) {
-                String errorDetails = String.join("; ", finalValidationErrors);
-                return serializer.responseBuilder(request)
-                        .withError("FINAL_VALIDATION_ERROR", "Pet entity failed final validation")
-                        .withAdditionalErrorDetails(errorDetails)
-                        .build();
-            }
-
-            // Return successful response with enhanced JSON data
-            return serializer.responseBuilder(request)
-                    .withSuccess(enhancedData)
-                    .build();
-
-        } catch (Exception e) {
-            logger.error("Failed to process Pet entity for request {}", request.getId(), e);
-            return serializer.responseBuilder(request)
-                    .withError("PROCESSING_ERROR", "Failed to process Pet entity")
-                    .withAdditionalErrorDetails("Processing error: " + e.getMessage())
-                    .build();
-        }
-    }
-
-    /**
-     * Handles invalid requests with detailed error context.
-     */
-    private EntityProcessorCalculationResponse handleInvalidRequest(EntityProcessorCalculationRequest request) {
-        logger.warn("Invalid Pet entity request: {}", request.getId());
-
-        List<String> validationErrors = validateRequest(request);
-        String errorDetails = String.join("; ", validationErrors);
-
-        return serializer.responseBuilder(request)
-                .withError(com.java_template.common.serializer.StandardErrorCodes.VALIDATION_ERROR.getCode(), "Pet entity validation failed")
-                .withAdditionalErrorDetails(errorDetails)
-                .build();
-    }
-
-    // ========================================
-    // BUSINESS LOGIC METHODS
-    // ========================================
-
-    /**
-     * Applies comprehensive business logic transformations to Pet entity.
-     */
-    private Pet applyPetBusinessLogic(Pet pet) {
-        logger.debug("Applying business logic to Pet: {}", pet.getId());
-
-        // Create a copy to avoid modifying the original
-        Pet processedPet = createPetCopy(pet);
-
-        // 1. Normalize status
-        processedPet.normalizeStatus();
-
-        // 2. Validate and normalize category
-        if (processedPet.getCategory() != null) {
-            processedPet.setCategory(processedPet.getCategory().toLowerCase());
-            if (!VALID_CATEGORIES.contains(processedPet.getCategory())) {
-                processedPet.setCategory("other");
-                logger.debug("Normalized invalid category to 'other' for Pet: {}", pet.getId());
-            }
-        }
-
-        // 3. Clean and validate tags
-        if (processedPet.getTags() != null) {
-            List<String> cleanedTags = processedPet.getTags().stream()
-                    .filter(tag -> tag != null && !tag.trim().isEmpty())
-                    .map(String::trim)
-                    .map(String::toLowerCase)
-                    .distinct()
-                    .limit(MAX_TAGS)
-                    .collect(Collectors.toList());
-            processedPet.setTags(cleanedTags);
-        }
-
-        // 4. Validate and clean photo URLs
-        if (processedPet.getPhotoUrls() != null) {
-            List<String> validUrls = processedPet.getPhotoUrls().stream()
-                    .filter(this::isValidUrl)
-                    .limit(MAX_PHOTO_URLS)
-                    .collect(Collectors.toList());
-            processedPet.setPhotoUrls(validUrls);
-        }
-
-        // 5. Trim and validate name
-        if (processedPet.getName() != null) {
-            String trimmedName = processedPet.getName().trim();
-            if (trimmedName.length() > MAX_NAME_LENGTH) {
-                trimmedName = trimmedName.substring(0, MAX_NAME_LENGTH);
-                logger.debug("Truncated Pet name to {} characters for Pet: {}", MAX_NAME_LENGTH, pet.getId());
-            }
-            processedPet.setName(trimmedName);
-        }
-
-        logger.debug("Completed business logic processing for Pet: {}", processedPet.getId());
-        return processedPet;
-    }
-
-    /**
-     * Creates enhanced JSON representation of Pet with additional metadata.
-     */
-    private JsonNode createEnhancedPetJson(Pet pet, EntityProcessorCalculationRequest request) {
-        try {
-            // Convert Pet to JSON
-            ObjectNode petJson = (ObjectNode) objectMapper.valueToTree(pet);
-
-            // Add processing metadata
-            ObjectNode metadata = objectMapper.createObjectNode();
-            metadata.put("processedAt", Instant.now().toString());
-            metadata.put("processedBy", "AddLastModifiedTimestamp");
-            metadata.put("requestId", request.getRequestId());
-            metadata.put("entityId", request.getEntityId());
-            metadata.put("processingVersion", "1.0");
-
-            // Add validation status
-            ObjectNode validationStatus = objectMapper.createObjectNode();
-            validationStatus.put("isValid", pet.isValid());
-            validationStatus.put("hasStatus", pet.hasStatus());
-            validationStatus.put("tagCount", pet.getTags() != null ? pet.getTags().size() : 0);
-            validationStatus.put("photoUrlCount", pet.getPhotoUrls() != null ? pet.getPhotoUrls().size() : 0);
-
-            // Combine all data
-            ObjectNode enhancedData = objectMapper.createObjectNode();
-            enhancedData.set("pet", petJson);
-            enhancedData.set("metadata", metadata);
-            enhancedData.set("validation", validationStatus);
-
-            return enhancedData;
-
-        } catch (Exception e) {
-            logger.error("Failed to create enhanced Pet JSON for Pet: {}", pet.getId(), e);
-            // Fallback to basic Pet JSON
-            return objectMapper.valueToTree(pet);
-        }
-    }
-
-    // ========================================
-    // VALIDATION METHODS
-    // ========================================
-
-    /**
-     * Validates if request is suitable for processing.
-     */
-    private boolean isRequestValidForProcessing(EntityProcessorCalculationRequest request) {
-        try {
-            // Basic request validation
-            if (request == null || request.getPayload() == null || request.getPayload().getData() == null) {
-                return false;
-            }
-
-            // Try to extract Pet entity
-            Pet pet = serializer.extractEntity(request, Pet.class);
-            return pet != null && pet.isValid();
-
-        } catch (Exception e) {
-            logger.debug("Request validation failed for request: {}",
-                    request != null ? request.getId() : "null", e);
-            return false;
-        }
-    }
-
-    /**
-     * Validates request and returns list of validation errors.
-     */
-    private List<String> validateRequest(EntityProcessorCalculationRequest request) {
-        List<String> errors = new ArrayList<>();
-
-        if (request == null) {
-            errors.add("Request is null");
-            return errors;
-        }
-
-        if (request.getPayload() == null) {
-            errors.add("Request payload is null");
-        } else if (request.getPayload().getData() == null) {
-            errors.add("Request payload data is null");
-        }
-
-        try {
-            Pet pet = serializer.extractEntity(request, Pet.class);
-            if (pet == null) {
-                errors.add("Pet entity is null");
-            } else if (!pet.isValid()) {
-                errors.add("Pet entity is invalid (missing ID or name)");
-            }
-        } catch (Exception e) {
-            errors.add("Failed to extract Pet entity: " + e.getMessage());
-        }
-
-        return errors;
+    private boolean isValidPet(Pet pet) {
+        return pet != null && pet.getId() != null && pet.getName() != null && !pet.getName().trim().isEmpty();
     }
 
     /**
      * Validates Pet entity against business rules.
+     * Returns true if valid, throws IllegalArgumentException with details if invalid.
      */
-    private List<String> validatePetBusinessRules(Pet pet) {
+    private boolean validatePetBusinessRules(Pet pet) {
         List<String> errors = new ArrayList<>();
 
         // Validate status
@@ -377,67 +135,32 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
             errors.add("Too many photo URLs (max " + MAX_PHOTO_URLS + " allowed)");
         }
 
-        return errors;
+        if (!errors.isEmpty()) {
+            throw new IllegalArgumentException(String.join("; ", errors));
+        }
+
+        return true;
     }
 
     /**
-     * Performs final validation on processed Pet data.
+     * Adds timestamp and performs final processing on the Pet entity.
      */
-    private List<String> performFinalPetValidation(JsonNode processedData) {
-        List<String> errors = new ArrayList<>();
-
-        if (processedData == null) {
-            errors.add("Processed data is null");
-            return errors;
-        }
-
-        // Validate structure
-        if (!processedData.has("pet")) {
-            errors.add("Missing pet data in processed result");
-        }
-
-        if (!processedData.has("metadata")) {
-            errors.add("Missing metadata in processed result");
-        }
-
-        // Validate pet data
-        JsonNode petData = processedData.get("pet");
-        if (petData != null) {
-            if (!petData.has("lastModified")) {
-                errors.add("Missing lastModified timestamp");
-            }
-
-            if (!petData.has("id") || petData.get("id").isNull()) {
-                errors.add("Missing or null pet ID");
-            }
-
-            if (!petData.has("name") || petData.get("name").asText().trim().isEmpty()) {
-                errors.add("Missing or empty pet name");
-            }
-        }
-
-        return errors;
+    private Pet addTimestampAndFinalize(Pet pet) {
+        pet.addLastModifiedTimestamp();
+        logger.debug("Added timestamp to Pet: {}", pet.getId());
+        return pet;
     }
 
     // ========================================
-    // UTILITY METHODS
+    // INDIVIDUAL BUSINESS LOGIC CHAIN METHODS
     // ========================================
-
-    /**
-     * Determines whether to use simple response (just entity) or enhanced response (with metadata).
-     * This is just for demonstration purposes - in real scenarios, this could be based on request parameters,
-     * configuration, or business logic.
-     */
-    private boolean shouldUseSimpleResponse(EntityProcessorCalculationRequest request) {
-        // For demonstration: use simple response for requests with specific criteria
-        // In practice, this could be based on request headers, parameters, or configuration
-        return request.getRequestId() != null && request.getRequestId().contains("simple");
-    }
 
     /**
      * Creates a deep copy of Pet entity for safe processing.
+     * This is the first step in the business logic chain.
      */
     private Pet createPetCopy(Pet original) {
+        logger.debug("Creating copy for Pet: {}", original.getId());
         Pet copy = new Pet();
         copy.setId(original.getId());
         copy.setName(original.getName());
@@ -455,6 +178,83 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
 
         return copy;
     }
+
+    /**
+     * Normalizes the Pet status using the entity's built-in method.
+     */
+    private Pet normalizeStatus(Pet pet) {
+        logger.debug("Normalizing status for Pet: {}", pet.getId());
+        pet.normalizeStatus();
+        return pet;
+    }
+
+    /**
+     * Validates and normalizes the Pet category.
+     */
+    private Pet normalizeCategory(Pet pet) {
+        logger.debug("Normalizing category for Pet: {}", pet.getId());
+        if (pet.getCategory() != null) {
+            pet.setCategory(pet.getCategory().toLowerCase());
+            if (!VALID_CATEGORIES.contains(pet.getCategory())) {
+                pet.setCategory("other");
+                logger.debug("Normalized invalid category to 'other' for Pet: {}", pet.getId());
+            }
+        }
+        return pet;
+    }
+
+    /**
+     * Cleans and validates Pet tags.
+     */
+    private Pet cleanAndValidateTags(Pet pet) {
+        logger.debug("Cleaning and validating tags for Pet: {}", pet.getId());
+        if (pet.getTags() != null) {
+            List<String> cleanedTags = pet.getTags().stream()
+                    .filter(tag -> tag != null && !tag.trim().isEmpty())
+                    .map(String::trim)
+                    .map(String::toLowerCase)
+                    .distinct()
+                    .limit(MAX_TAGS)
+                    .collect(Collectors.toList());
+            pet.setTags(cleanedTags);
+        }
+        return pet;
+    }
+
+    /**
+     * Validates and cleans Pet photo URLs.
+     */
+    private Pet cleanAndValidatePhotoUrls(Pet pet) {
+        logger.debug("Cleaning and validating photo URLs for Pet: {}", pet.getId());
+        if (pet.getPhotoUrls() != null) {
+            List<String> validUrls = pet.getPhotoUrls().stream()
+                    .filter(this::isValidUrl)
+                    .limit(MAX_PHOTO_URLS)
+                    .collect(Collectors.toList());
+            pet.setPhotoUrls(validUrls);
+        }
+        return pet;
+    }
+
+    /**
+     * Trims and validates Pet name length.
+     */
+    private Pet trimAndValidateName(Pet pet) {
+        logger.debug("Trimming and validating name for Pet: {}", pet.getId());
+        if (pet.getName() != null) {
+            String trimmedName = pet.getName().trim();
+            if (trimmedName.length() > MAX_NAME_LENGTH) {
+                trimmedName = trimmedName.substring(0, MAX_NAME_LENGTH);
+                logger.debug("Truncated Pet name to {} characters for Pet: {}", MAX_NAME_LENGTH, pet.getId());
+            }
+            pet.setName(trimmedName);
+        }
+        return pet;
+    }
+
+    // ========================================
+    // UTILITY METHODS
+    // ========================================
 
     /**
      * Validates if a string is a valid URL format.
@@ -483,7 +283,7 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
      * Gets processor version for tracking.
      */
     public String getVersion() {
-        return "2.0.0";
+        return "3.1.0";
     }
 
     /**
