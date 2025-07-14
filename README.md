@@ -10,7 +10,7 @@ A structured template for building scalable web clients using **Spring Boot**, d
 - Modular, extensible structure for rapid iteration.
 - Built-in support for **gRPC** and **REST** APIs.
 - Integration with **Cyoda**: workflow-driven backend interactions.
-- Modern serialization architecture with fluent APIs for type-safe processing.
+- Serialization architecture with fluent APIs for type-safe processing.
 
 ---
 
@@ -70,7 +70,7 @@ Integration logic with Cyoda.
 - `service/` – Service layer for your application.
 - `util/` – Various utility functions.
 - `workflow/` – Core workflow processing architecture with CyodaProcessor and CyodaCriterion interfaces.
-- `serializer/` – Modern serialization layer with fluent APIs for processing requests and responses.
+- `serializer/` – Serialization layer with fluent APIs for processing requests and responses.
 - `tool/` – Utility tools like WorkflowImportTool for importing workflow configurations.
 
 To interact with **Cyoda**, use `common/service/EntityService.java`, which provides all necessary methods.
@@ -79,7 +79,7 @@ To add new integrations with Cyoda, extend the following files:
 
 - **Interface** — `common/service/EntityService.java`: defines service methods; abstraction layer for Cyoda. Optional to modify.
 - **Implementation** — `common/service/EntityServiceImpl.java`: implements interface methods and business logic. Optional to modify.
-- **Repository Interface** — `common/repository/CrudRepository.java`: defines a generic interface. Modify only if new operations are needed.
+- **Repository Interface** — `common/repository/CrudRepository.java`: defines a generic interface. Modify only if additional operations are needed.
 - **Cyoda Repository** — `common/repository/CyodaRepository.java`: implements repository methods. Modify only if needed.
 
 > ⚠️ `CrudRepository.java` and `CyodaRepository.java` rarely change — only for significant updates to the data access layer.
@@ -95,13 +95,11 @@ Application-specific logic and components:
 - `entity/` – Domain entities (e.g., `pet/Pet.java`) that implement `CyodaEntity`.
 - `processor/` – Workflow processors that implement `CyodaProcessor` interface.
 - `criteria/` – Workflow criteria that implement `CyodaCriterion` interface.
-- `serializer_deprecated/` – Legacy serialization layer (deprecated, use `common/serializer/` instead).
 - `cyoda_dto/` – Data transfer objects for Cyoda integration.
 
-### `entity/` (deprecated structure)
-Legacy domain logic structure. New entities should be placed in `application/entity/`.
+### `entity/`
+Domain logic structure. Contains entity structures.
 
-- Contains legacy entity structures (currently mostly empty).
 - `$entity_name/Workflow.json` – Workflow configuration files should be placed alongside entities in `application/entity/`.
 
 ---
@@ -335,7 +333,7 @@ ICONTAINS, ISTARTS_WITH, IENDS_WITH, INOT_CONTAINS, INOT_STARTS_WITH, INOT_ENDS_
 
 The logic for processing workflows is implemented using **CyodaProcessor** and **CyodaCriterion** interfaces in the `application/` directory.
 
-### Modern Processor Architecture
+### Processor Architecture
 
 Processors implement the `CyodaProcessor` interface and use the **EntityProcessingChain** API for type-safe entity processing:
 
@@ -349,7 +347,7 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
     public EntityProcessorCalculationResponse process(CyodaEventContext<EntityProcessorCalculationRequest> context) {
         EntityProcessorCalculationRequest request = context.getEvent();
 
-        // Modern fluent entity processing with validation
+        // Fluent entity processing with validation
         return serializer.withRequest(request)
             .toEntity(Pet.class)
             .validate(pet -> pet.getId() != null && pet.getName() != null)
@@ -443,7 +441,7 @@ Here’s how it works:
 
 ### Component Registration
 
-To register a new processor or criterion:
+To register a processor or criterion:
 
 1. **Create a class** implementing `CyodaProcessor` or `CyodaCriterion`
 2. **Add `@Component` annotation** for Spring discovery
@@ -456,7 +454,7 @@ To register a new processor or criterion:
 
 ## 🔄 Serializer Architecture
 
-The application uses a modern serializer architecture with fluent APIs:
+The application uses a serializer architecture with fluent APIs:
 
 ### ProcessorSerializer (in `common/serializer/`)
 - **Purpose**: Handles entity extraction and response building for processors
@@ -619,7 +617,7 @@ return serializer.withRequest(request)
 - Use `CyodaProcessor` and `CyodaCriterion` interfaces for workflow components.
 - Leverage the **EntityProcessingChain** API for type-safe entity processing.
 - Component operation names are matched via the `supports()` method against workflow configuration.
-- Use modern serializers in `common/serializer/` for new development; avoid `application/serializer_deprecated/`.
+- Use serializers in `common/serializer/` for development.
 - Avoid cyclic FSM states.
-- Place new entities in `application/entity/` directory.
+- Place entities in `application/entity/` directory.
 - Use `@Component` annotation for automatic Spring discovery of workflow components.
