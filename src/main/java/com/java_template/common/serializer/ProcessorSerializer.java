@@ -324,13 +324,13 @@ public interface ProcessorSerializer {
                             .build();
                 } else {
                     return serializer.responseBuilder(request)
-                            .withError("PROCESSING_ERROR", error.getMessage())
+                            .withError(StandardErrorCodes.PROCESSING_ERROR.getCode(), error.getMessage())
                             .build();
                 }
             }
             if (processedEntity == null) {
                 return serializer.responseBuilder(request)
-                        .withError("PROCESSING_ERROR", "Entity is null")
+                        .withError(StandardErrorCodes.PROCESSING_ERROR.getCode(), "Entity is null")
                         .build();
             }
             try {

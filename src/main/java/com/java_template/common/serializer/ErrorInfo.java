@@ -38,31 +38,31 @@ public record ErrorInfo(String code, String message) {
     
     /**
      * Creates an ErrorInfo for processing errors.
-     * 
+     *
      * @param message the error message
      * @return ErrorInfo with "PROCESSING_ERROR" code
      */
     public static ErrorInfo processingError(String message) {
-        return new ErrorInfo("PROCESSING_ERROR", message);
+        return new ErrorInfo(StandardErrorCodes.PROCESSING_ERROR.getCode(), message);
     }
-    
+
     /**
      * Creates an ErrorInfo for validation errors.
-     * 
+     *
      * @param message the error message
      * @return ErrorInfo with "VALIDATION_ERROR" code
      */
     public static ErrorInfo validationError(String message) {
-        return new ErrorInfo("VALIDATION_ERROR", message);
+        return new ErrorInfo(StandardErrorCodes.VALIDATION_ERROR.getCode(), message);
     }
-    
+
     /**
      * Creates an ErrorInfo for evaluation errors.
-     * 
+     *
      * @param message the error message
      * @return ErrorInfo with "EVALUATION_ERROR" code
      */
     public static ErrorInfo evaluationError(String message) {
-        return new ErrorInfo("EVALUATION_ERROR", message);
+        return new ErrorInfo(StandardErrorCodes.EVALUATION_ERROR.getCode(), message);
     }
 }

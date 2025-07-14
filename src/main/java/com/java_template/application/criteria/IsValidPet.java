@@ -63,7 +63,7 @@ public class IsValidPet implements CyodaCriterion {
 
         } catch (Exception e) {
             logger.error("Error checking Pet validity for request {}", request.getId(), e);
-            return serializer.responseBuilder(request).withError("VALIDATION_ERROR", e).build();
+            return serializer.responseBuilder(request).withError(com.java_template.common.serializer.StandardErrorCodes.VALIDATION_ERROR.getCode(), e).build();
         }
     }
 

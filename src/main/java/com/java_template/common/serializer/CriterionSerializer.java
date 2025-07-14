@@ -171,7 +171,7 @@ public interface CriterionSerializer {
                             .build();
                 } else {
                     return serializer.responseBuilder(request)
-                            .withError("EVALUATION_ERROR", "No evaluation was performed")
+                            .withError(StandardErrorCodes.EVALUATION_ERROR.getCode(), "No evaluation was performed")
                             .build();
                 }
             }

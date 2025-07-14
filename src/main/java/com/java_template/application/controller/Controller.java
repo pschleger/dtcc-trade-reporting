@@ -330,7 +330,7 @@ public class Controller {
             .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
             .toList();
 
-        PetResponse errorResponse = createErrorResponse("VALIDATION_ERROR",
+        PetResponse errorResponse = createErrorResponse(com.java_template.common.serializer.StandardErrorCodes.VALIDATION_ERROR.getCode(),
             "Request validation failed: " + String.join(", ", validationMessages));
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);

@@ -70,7 +70,7 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
         } catch (Exception e) {
             logger.error("Unexpected error processing Pet timestamp for request {}", request.getId(), e);
             return serializer.responseBuilder(request)
-                    .withError("PROCESSING_ERROR", "Unexpected error during Pet processing")
+                    .withError(com.java_template.common.serializer.StandardErrorCodes.PROCESSING_ERROR.getCode(), "Unexpected error during Pet processing")
                     .withAdditionalErrorDetails("Exception: " + e.getMessage())
                     .build();
         }
@@ -112,7 +112,7 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
         } catch (Exception e) {
             logger.error("Failed to process Pet entity for request {}", request.getId(), e);
             return serializer.responseBuilder(request)
-                    .withError("PROCESSING_ERROR", "Failed to process Pet entity")
+                    .withError(com.java_template.common.serializer.StandardErrorCodes.PROCESSING_ERROR.getCode(), "Failed to process Pet entity")
                     .withAdditionalErrorDetails("Processing error: " + e.getMessage())
                     .build();
         }
@@ -192,7 +192,7 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
         String errorDetails = String.join("; ", validationErrors);
 
         return serializer.responseBuilder(request)
-                .withError("INVALID_PET_REQUEST", "Pet entity validation failed")
+                .withError(com.java_template.common.serializer.StandardErrorCodes.VALIDATION_ERROR.getCode(), "Pet entity validation failed")
                 .withAdditionalErrorDetails(errorDetails)
                 .build();
     }

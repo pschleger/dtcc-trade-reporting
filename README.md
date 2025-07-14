@@ -468,12 +468,18 @@ The application uses a modern serializer architecture with fluent APIs:
 - **Default**: Jackson-based serializers for JSON processing
 - **Usage**: Injected into processors and criteria for consistent serialization
 
-### Legacy Serializers (in `application/serializer_deprecated/`)
-- **ProcessorRequestSerializer**: Legacy processor serialization (deprecated)
-- **CriteriaRequestSerializer**: Legacy criteria serialization (deprecated)
-- **BaseRequestSerializer**: Common base for legacy serializers (deprecated)
+**Example Usage:**
+```java
+// Instead of hardcoded strings
+return serializer.responseBuilder(request)
+    .withError("PROCESSING_ERROR", "Processing failed")
+    .build();
 
-> ⚠️ **Note**: Use the modern serializers in `common/serializer/` for new development. The legacy serializers in `application/serializer_deprecated/` are maintained for backward compatibility only.
+// Use the enum for type safety
+return serializer.responseBuilder(request)
+    .withError(StandardErrorCodes.PROCESSING_ERROR.getCode(), "Processing failed")
+    .build();
+```
 
 ---
 
