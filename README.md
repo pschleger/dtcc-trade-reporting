@@ -10,6 +10,7 @@ A structured template for building scalable web clients using **Spring Boot**, d
 - Modular, extensible structure for rapid iteration.
 - Built-in support for **gRPC** and **REST** APIs.
 - Integration with **Cyoda**: workflow-driven backend interactions.
+- Modern serialization architecture with fluent APIs for type-safe processing.
 
 ---
 
@@ -52,6 +53,8 @@ java -jar build/libs/java-client-template-1.0-SNAPSHOT.jar
 ```
 
 > Access the app: [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+>
+> **Note**: The default port is 8080 as configured in `src/main/resources/application.yml`. You can change this by setting the `server.port` property.
 
 ---
 
@@ -67,6 +70,8 @@ Integration logic with Cyoda.
 - `service/` – Service layer for your application.
 - `util/` – Various utility functions.
 - `workflow/` – Core workflow processing architecture with CyodaProcessor and CyodaCriterion interfaces.
+- `serializer/` – Modern serialization layer with fluent APIs for processing requests and responses.
+- `tool/` – Utility tools like WorkflowImportTool for importing workflow configurations.
 
 To interact with **Cyoda**, use `common/service/EntityService.java`, which provides all necessary methods.
 
@@ -90,17 +95,14 @@ Application-specific logic and components:
 - `entity/` – Domain entities (e.g., `pet/Pet.java`) that implement `CyodaEntity`.
 - `processor/` – Workflow processors that implement `CyodaProcessor` interface.
 - `criteria/` – Workflow criteria that implement `CyodaCriterion` interface.
-- `serializer/` – Serialization layer with fluent APIs for processing requests and responses.
+- `serializer_deprecated/` – Legacy serialization layer (deprecated, use `common/serializer/` instead).
+- `cyoda_dto/` – Data transfer objects for Cyoda integration.
 
 ### `entity/` (deprecated structure)
 Legacy domain logic structure. New entities should be placed in `application/entity/`.
 
-- `functional_requirements.md` – Describes the application’s functional requirements.
-- `$entity_name/Workflow.java` – FSM event dispatcher.
-- `$entity_name/Workflow.json` – Workflow configuration.
-
-### `controller/`
-Handles HTTP endpoints. Based on `Controller.java`.
+- Contains legacy entity structures (currently mostly empty).
+- `$entity_name/Workflow.json` – Workflow configuration files should be placed alongside entities in `application/entity/`.
 
 ---
 
@@ -162,8 +164,10 @@ entityService.getItemsByCondition("exampleModel", ENTITY_VERSION, yourSearchCond
 
 Located at:
 ```
-entity/$entity_name/Workflow.json
+application/entity/$entity_name/Workflow.json
 ```
+
+> **Note**: Workflow configuration files should be placed alongside their corresponding entity classes in the `application/entity/` directory structure.
 
 This file defines the workflow configuration using a **finite-state machine (FSM)**  
 model, which specifies states and transitions between them.
@@ -358,8 +362,8 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
 
     @Override
     public boolean supports(OperationSpecification modelKey) {
-        // Implementation-specific support logic
-        return "pet".equals(modelKey.entityName());
+        // Match based on processor name from workflow configuration
+        return "AddLastModifiedTimestamp".equals(modelKey.operationName());
     }
 }
 ```
@@ -416,8 +420,8 @@ Here’s how it works:
 
 3. **Operation Matching**: When a gRPC event arrives, the `OperationFactory` finds the appropriate processor or criterion by:
    - Calling the `supports(OperationSpecification)` method on each component
-   - Matching based on entity name, version, and operation name
-   - Caching successful matches for performance
+   - Matching based on the operation name from workflow configuration (e.g., `action.name` or `condition.function.name`)
+   - Caching successful matches for performance using `ConcurrentHashMap`
 
 4. **Execution**: The matched component processes the request using its `process()` or `check()` method.
 
@@ -430,7 +434,7 @@ To register a new processor or criterion:
 3. **Implement the `supports()` method** to define when this component should be used
 4. **Implement the processing method** (`process()` for processors, `check()` for criteria)
 
-> ✅ Component names are matched against the `action.name` or `condition.function.name` in workflow configuration via the `supports()` method.
+> ✅ Component operation names are matched against the `action.name` or `condition.function.name` in workflow configuration via the `supports()` method. The `supports()` method should return `true` when `modelKey.operationName()` matches the expected operation name.
 
 ---
 
@@ -438,13 +442,20 @@ To register a new processor or criterion:
 
 The application uses a modern serializer architecture with fluent APIs:
 
-### ProcessorSerializer
+### ProcessorSerializer (in `common/serializer/`)
 - **Purpose**: Handles entity extraction and response building for processors
 - **Key Methods**:
   - `withRequest(request)` - Start fluent processing chain
   - `extractEntity(request, Class<T>)` - Extract typed entities
   - `extractPayload(request)` - Extract raw JSON payload
   - `responseBuilder(request)` - Create response builders
+
+### CriterionSerializer (in `common/serializer/`)
+- **Purpose**: Handles entity extraction and response building for criteria
+- **Key Methods**:
+  - `extractEntity(request, Class<T>)` - Extract typed entities
+  - `extractPayload(request)` - Extract raw JSON payload
+  - `evaluate()` - Evaluate conditions with fluent API
 
 ### ProcessingChain vs EntityProcessingChain
 - **ProcessingChain**: JSON-based processing with `map(Function<JsonNode, JsonNode>)`
@@ -456,6 +467,13 @@ The application uses a modern serializer architecture with fluent APIs:
 - **Purpose**: Provides access to different serializer implementations
 - **Default**: Jackson-based serializers for JSON processing
 - **Usage**: Injected into processors and criteria for consistent serialization
+
+### Legacy Serializers (in `application/serializer_deprecated/`)
+- **ProcessorRequestSerializer**: Legacy processor serialization (deprecated)
+- **CriteriaRequestSerializer**: Legacy criteria serialization (deprecated)
+- **BaseRequestSerializer**: Common base for legacy serializers (deprecated)
+
+> ⚠️ **Note**: Use the modern serializers in `common/serializer/` for new development. The legacy serializers in `application/serializer_deprecated/` are maintained for backward compatibility only.
 
 ---
 
@@ -512,10 +530,11 @@ return serializer.withRequest(request)
 
 ## 📝 Notes
 
-- Entity `id` is a **UUID**.
+- Entity `id` type varies by entity (e.g., Pet entity uses `Long`).
 - Use `CyodaProcessor` and `CyodaCriterion` interfaces for workflow components.
 - Leverage the **EntityProcessingChain** API for type-safe entity processing.
-- Component names are matched via the `supports()` method against workflow configuration.
+- Component operation names are matched via the `supports()` method against workflow configuration.
+- Use modern serializers in `common/serializer/` for new development; avoid `application/serializer_deprecated/`.
 - Avoid cyclic FSM states.
 - Place new entities in `application/entity/` directory.
 - Use `@Component` annotation for automatic Spring discovery of workflow components.
