@@ -2,7 +2,9 @@ package com.java_template.application.criteria;
 
 import com.java_template.application.entity.pet.Pet;
 import com.java_template.common.serializer.CriterionSerializer;
+import com.java_template.common.serializer.ErrorInfo;
 import com.java_template.common.serializer.SerializerFactory;
+import com.java_template.common.serializer.StandardErrorCodes;
 import com.java_template.common.config.Config;
 import com.java_template.common.workflow.CyodaCriterion;
 import com.java_template.common.workflow.CyodaEventContext;
@@ -17,12 +19,12 @@ import org.springframework.stereotype.Component;
 import java.util.Set;
 
 /**
- * Criteria implementation that validates Pet entities using the new Jackson serializers.
+ * ABOUTME: Criteria implementation that validates Pet entities using the EvaluationChain approach.
  * Demonstrates advanced usage patterns including:
- * - Type-safe entity extraction
- * - Multi-criteria evaluation with business rules
- * - Pattern matching with sealed interfaces
- * - Comprehensive validation logic
+ * - Type-safe entity extraction with EvaluationChain
+ * - Comprehensive validation logic in a single predicate
+ * - Custom error handling with ErrorInfo
+ * - Fluent API for criteria evaluation
  */
 @Component
 public class IsValidPet implements CyodaCriterion {
@@ -48,23 +50,13 @@ public class IsValidPet implements CyodaCriterion {
         EntityCriteriaCalculationRequest request = context.getEvent();
         logger.debug("Checking Pet validity for request: {}", request.getId());
 
-        try {
-            // Use executeFunction for multi-criteria evaluation
-            return serializer.executeFunction(request, jacksonSerializer -> {
-                // Evaluate all criteria using basic interface methods
-                boolean allValid = validateBasicPetStructure(request) &&
-                                 validatePetBusinessRules(request) &&
-                                 validatePetDataQuality(request);
-
-                return allValid ?
-                    jacksonSerializer.responseBuilder(request).withMatch().build() :
-                    jacksonSerializer.responseBuilder(request).withNonMatch().build();
-            });
-
-        } catch (Exception e) {
-            logger.error("Error checking Pet validity for request {}", request.getId(), e);
-            return serializer.responseBuilder(request).withError(com.java_template.common.serializer.StandardErrorCodes.VALIDATION_ERROR.getCode(), e).build();
-        }
+        return serializer.withRequest(request)
+            .evaluateEntity(Pet.class, this::isValidPet)
+            .withErrorHandler((error, pet) -> {
+                logger.debug("Pet validation failed for request: {}", request.getId(), error);
+                return ErrorInfo.validationError("Pet validation failed: " + error.getMessage());
+            })
+            .complete();
     }
 
     @Override
@@ -82,121 +74,121 @@ public class IsValidPet implements CyodaCriterion {
     // ========================================
 
     /**
-     * Validates basic Pet entity structure and required fields.
+     * Comprehensive Pet validation predicate for use with EvaluationChain.
+     * Validates all aspects of Pet entity including structure, business rules, and data quality.
      */
-    private boolean validateBasicPetStructure(EntityCriteriaCalculationRequest request) {
-        try {
-            Pet pet = serializer.extractEntity(request, Pet.class);
-
-            // Check if Pet entity exists and is valid
-            if (pet == null) {
-                logger.debug("Pet entity is null for request: {}", request.getId());
-                return false;
-            }
-
-            // Use Pet's built-in validation
-            if (!pet.isValid()) {
-                logger.debug("Pet entity failed basic validation for request: {}", request.getId());
-                return false;
-            }
-
-            // Validate required fields
-            if (pet.getId() == null || pet.getId() <= 0) {
-                logger.debug("Pet has invalid ID for request: {}", request.getId());
-                return false;
-            }
-
-            if (pet.getName() == null || pet.getName().trim().isEmpty()) {
-                logger.debug("Pet has invalid name for request: {}", request.getId());
-                return false;
-            }
-
-            logger.debug("Pet passed basic structure validation: id={}, name={}", pet.getId(), pet.getName());
-            return true;
-
-        } catch (Exception e) {
-            logger.debug("Failed to validate basic Pet structure for request: {}", request.getId(), e);
+    private boolean isValidPet(Pet pet) {
+        // Check if Pet entity exists and is valid
+        if (pet == null) {
+            logger.debug("Pet entity is null");
             return false;
         }
+
+        // Use Pet's built-in validation
+        if (!pet.isValid()) {
+            logger.debug("Pet entity failed basic validation");
+            return false;
+        }
+
+        // Validate basic structure and required fields
+        if (!validateBasicStructure(pet)) {
+            return false;
+        }
+
+        // Validate business rules
+        if (!validateBusinessRules(pet)) {
+            return false;
+        }
+
+        // Validate data quality
+        if (!validateDataQuality(pet)) {
+            return false;
+        }
+
+        logger.debug("Pet passed all validation checks: id={}, name={}", pet.getId(), pet.getName());
+        return true;
+    }
+
+    /**
+     * Validates basic Pet entity structure and required fields.
+     */
+    private boolean validateBasicStructure(Pet pet) {
+        // Validate required fields
+        if (pet.getId() == null || pet.getId() <= 0) {
+            logger.debug("Pet has invalid ID: {}", pet.getId());
+            return false;
+        }
+
+        if (pet.getName() == null || pet.getName().trim().isEmpty()) {
+            logger.debug("Pet has invalid name: {}", pet.getName());
+            return false;
+        }
+
+        logger.debug("Pet passed basic structure validation: id={}, name={}", pet.getId(), pet.getName());
+        return true;
     }
 
     /**
      * Validates Pet entity against business rules.
      */
-    private boolean validatePetBusinessRules(EntityCriteriaCalculationRequest request) {
-        try {
-            Pet pet = serializer.extractEntity(request, Pet.class);
-
-            // Validate status if present
-            if (pet.getStatus() != null && !VALID_STATUSES.contains(pet.getStatus().toLowerCase())) {
-                logger.debug("Pet has invalid status '{}' for request: {}", pet.getStatus(), request.getId());
-                return false;
-            }
-
-            // Validate name length
-            if (pet.getName() != null) {
-                int nameLength = pet.getName().trim().length();
-                if (nameLength < MIN_NAME_LENGTH || nameLength > MAX_NAME_LENGTH) {
-                    logger.debug("Pet name length {} is invalid for request: {}", nameLength, request.getId());
-                    return false;
-                }
-            }
-
-            // Validate tags count
-            if (pet.getTags() != null && pet.getTags().size() > MAX_TAGS) {
-                logger.debug("Pet has too many tags ({}) for request: {}", pet.getTags().size(), request.getId());
-                return false;
-            }
-
-            logger.debug("Pet passed business rules validation for request: {}", request.getId());
-            return true;
-
-        } catch (Exception e) {
-            logger.debug("Failed to validate Pet business rules for request: {}", request.getId(), e);
+    private boolean validateBusinessRules(Pet pet) {
+        // Validate status if present
+        if (pet.getStatus() != null && !VALID_STATUSES.contains(pet.getStatus().toLowerCase())) {
+            logger.debug("Pet has invalid status: {}", pet.getStatus());
             return false;
         }
+
+        // Validate name length
+        if (pet.getName() != null) {
+            int nameLength = pet.getName().trim().length();
+            if (nameLength < MIN_NAME_LENGTH || nameLength > MAX_NAME_LENGTH) {
+                logger.debug("Pet name length {} is invalid", nameLength);
+                return false;
+            }
+        }
+
+        // Validate tags count
+        if (pet.getTags() != null && pet.getTags().size() > MAX_TAGS) {
+            logger.debug("Pet has too many tags: {}", pet.getTags().size());
+            return false;
+        }
+
+        logger.debug("Pet passed business rules validation");
+        return true;
     }
 
     /**
      * Validates Pet entity data quality and consistency.
      */
-    private boolean validatePetDataQuality(EntityCriteriaCalculationRequest request) {
-        try {
-            Pet pet = serializer.extractEntity(request, Pet.class);
-
-            // Validate photo URLs if present
-            if (pet.getPhotoUrls() != null) {
-                for (String url : pet.getPhotoUrls()) {
-                    if (url != null && !isValidUrl(url)) {
-                        logger.debug("Pet has invalid photo URL '{}' for request: {}", url, request.getId());
-                        return false;
-                    }
+    private boolean validateDataQuality(Pet pet) {
+        // Validate photo URLs if present
+        if (pet.getPhotoUrls() != null) {
+            for (String url : pet.getPhotoUrls()) {
+                if (url != null && !isValidUrl(url)) {
+                    logger.debug("Pet has invalid photo URL: {}", url);
+                    return false;
                 }
             }
+        }
 
-            // Validate tags if present
-            if (pet.getTags() != null) {
-                for (String tag : pet.getTags()) {
-                    if (tag == null || tag.trim().isEmpty()) {
-                        logger.debug("Pet has invalid tag for request: {}", request.getId());
-                        return false;
-                    }
+        // Validate tags if present
+        if (pet.getTags() != null) {
+            for (String tag : pet.getTags()) {
+                if (tag == null || tag.trim().isEmpty()) {
+                    logger.debug("Pet has invalid tag");
+                    return false;
                 }
             }
+        }
 
-            // Validate category if present
-            if (pet.getCategory() != null && pet.getCategory().trim().isEmpty()) {
-                logger.debug("Pet has empty category for request: {}", request.getId());
-                return false;
-            }
-
-            logger.debug("Pet passed data quality validation for request: {}", request.getId());
-            return true;
-
-        } catch (Exception e) {
-            logger.debug("Failed to validate Pet data quality for request: {}", request.getId(), e);
+        // Validate category if present
+        if (pet.getCategory() != null && pet.getCategory().trim().isEmpty()) {
+            logger.debug("Pet has empty category");
             return false;
         }
+
+        logger.debug("Pet passed data quality validation");
+        return true;
     }
 
     // ========================================
