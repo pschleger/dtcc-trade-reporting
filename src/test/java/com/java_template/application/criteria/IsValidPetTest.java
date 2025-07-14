@@ -24,8 +24,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 /**
- * ABOUTME: Test class for IsValidPet criteria implementation using EvaluationChain approach.
- * Verifies that the refactored implementation correctly validates Pet entities.
+ * ABOUTME: Test class for IsValidPet criteria implementation using enhanced EvaluationChain approach.
+ * Verifies that the refactored implementation correctly validates Pet entities and provides detailed reasons.
  */
 class IsValidPetTest {
 
@@ -42,7 +42,7 @@ class IsValidPetTest {
     }
 
     @Test
-    @DisplayName("Should return match for valid Pet entity")
+    @DisplayName("Should return match for valid Pet entity and not add warnings")
     void testValidPet() {
         // Given
         CyodaEventContext<EntityCriteriaCalculationRequest> context = createEventContext(
@@ -58,10 +58,13 @@ class IsValidPetTest {
         assertTrue(response.getMatches());
         assertEquals("test-123", response.getId());
         assertEquals("entity-456", response.getEntityId());
+
+        // Verify that no warnings are added for successful evaluation
+        assertTrue(response.getWarnings() == null || response.getWarnings().isEmpty());
     }
 
     @Test
-    @DisplayName("Should return non-match for Pet with invalid ID")
+    @DisplayName("Should return non-match for Pet with invalid ID and include reason in warnings")
     void testInvalidPetId() {
         // Given
         ObjectNode petData = createValidPetData();
@@ -75,10 +78,16 @@ class IsValidPetTest {
         assertNotNull(response);
         assertTrue(response.getSuccess());
         assertFalse(response.getMatches());
+
+        // Verify that the reason is attached to warnings
+        assertNotNull(response.getWarnings());
+        assertFalse(response.getWarnings().isEmpty());
+        assertTrue(response.getWarnings().get(0).contains("Pet ID must be positive"));
+        assertTrue(response.getWarnings().get(0).contains("STRUCTURAL_FAILURE"));
     }
 
     @Test
-    @DisplayName("Should return non-match for Pet with empty name")
+    @DisplayName("Should return non-match for Pet with empty name and include reason in warnings")
     void testInvalidPetName() {
         // Given
         ObjectNode petData = createValidPetData();
@@ -92,10 +101,16 @@ class IsValidPetTest {
         assertNotNull(response);
         assertTrue(response.getSuccess());
         assertFalse(response.getMatches());
+
+        // Verify that the reason is attached to warnings
+        assertNotNull(response.getWarnings());
+        assertFalse(response.getWarnings().isEmpty());
+        assertTrue(response.getWarnings().get(0).contains("Pet entity failed basic validation"));
+        assertTrue(response.getWarnings().get(0).contains("STRUCTURAL_FAILURE"));
     }
 
     @Test
-    @DisplayName("Should return non-match for Pet with invalid status")
+    @DisplayName("Should return non-match for Pet with invalid status and include reason in warnings")
     void testInvalidPetStatus() {
         // Given
         ObjectNode petData = createValidPetData();
@@ -109,10 +124,16 @@ class IsValidPetTest {
         assertNotNull(response);
         assertTrue(response.getSuccess());
         assertFalse(response.getMatches());
+
+        // Verify that the reason is attached to warnings
+        assertNotNull(response.getWarnings());
+        assertFalse(response.getWarnings().isEmpty());
+        assertTrue(response.getWarnings().get(0).contains("Pet status 'invalid_status' is invalid"));
+        assertTrue(response.getWarnings().get(0).contains("BUSINESS_RULE_FAILURE"));
     }
 
     @Test
-    @DisplayName("Should return non-match for Pet with too many tags")
+    @DisplayName("Should return non-match for Pet with too many tags and include reason in warnings")
     void testTooManyTags() {
         // Given
         ObjectNode petData = createValidPetData();
@@ -130,6 +151,12 @@ class IsValidPetTest {
         assertNotNull(response);
         assertTrue(response.getSuccess());
         assertFalse(response.getMatches());
+
+        // Verify that the reason is attached to warnings
+        assertNotNull(response.getWarnings());
+        assertFalse(response.getWarnings().isEmpty());
+        assertTrue(response.getWarnings().get(0).contains("Pet has too many tags (11)"));
+        assertTrue(response.getWarnings().get(0).contains("BUSINESS_RULE_FAILURE"));
     }
 
 
@@ -164,6 +191,40 @@ class IsValidPetTest {
 
         // Then
         assertFalse(supports);
+    }
+
+    @Test
+    @DisplayName("Should provide detailed reasons for different validation failure categories")
+    void testDetailedValidationReasons() {
+        // Test structural failure (invalid ID)
+        ObjectNode structuralFailureData = createValidPetData();
+        structuralFailureData.put("id", 0);
+        EntityCriteriaCalculationResponse structuralResponse = isValidPet.check(createEventContext(structuralFailureData));
+
+        assertFalse(structuralResponse.getMatches());
+        assertNotNull(structuralResponse.getWarnings());
+        assertTrue(structuralResponse.getWarnings().get(0).contains("STRUCTURAL_FAILURE"));
+        assertTrue(structuralResponse.getWarnings().get(0).contains("Pet ID must be positive"));
+
+        // Test business rule failure (invalid status)
+        ObjectNode businessFailureData = createValidPetData();
+        businessFailureData.put("status", "invalid");
+        EntityCriteriaCalculationResponse businessResponse = isValidPet.check(createEventContext(businessFailureData));
+
+        assertFalse(businessResponse.getMatches());
+        assertNotNull(businessResponse.getWarnings());
+        assertTrue(businessResponse.getWarnings().get(0).contains("BUSINESS_RULE_FAILURE"));
+        assertTrue(businessResponse.getWarnings().get(0).contains("Pet status 'invalid' is invalid"));
+
+        // Test data quality failure (invalid URL)
+        ObjectNode qualityFailureData = createValidPetData();
+        qualityFailureData.set("photoUrls", objectMapper.createArrayNode().add("invalid-url"));
+        EntityCriteriaCalculationResponse qualityResponse = isValidPet.check(createEventContext(qualityFailureData));
+
+        assertFalse(qualityResponse.getMatches());
+        assertNotNull(qualityResponse.getWarnings());
+        assertTrue(qualityResponse.getWarnings().get(0).contains("DATA_QUALITY_FAILURE"));
+        assertTrue(qualityResponse.getWarnings().get(0).contains("Pet photo URL at index 0 is invalid"));
     }
 
     // Helper methods

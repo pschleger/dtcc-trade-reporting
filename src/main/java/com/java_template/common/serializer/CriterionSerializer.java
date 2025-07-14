@@ -6,6 +6,7 @@ import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationRequest;
 import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationResponse;
 
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -34,16 +35,7 @@ public interface CriterionSerializer {
      * Gets the serializer type identifier.
      */
     String getType();
-
-    /**
-     * Executes a custom function with the serializer and returns the result.
-     * This allows for flexible operations without modifying the interface.
-     */
-    default <R> R executeFunction(EntityCriteriaCalculationRequest request,
-                                  java.util.function.Function<CriterionSerializer, R> function) {
-        return function.apply(this);
-    }
-
+    
     /**
      * Creates a response builder for the given request.
      * This builder provides a simplified API for both match and error responses.
@@ -79,11 +71,33 @@ public interface CriterionSerializer {
         <T extends CyodaEntity> EvaluationChain evaluateEntity(Class<T> clazz, Predicate<T> evaluator);
 
         /**
+         * Evaluates the criterion with a reason provider for the JSON payload.
+         * @param evaluator Function that returns both result and reason
+         * @return EvaluationChain for chaining
+         */
+        EvaluationChain evaluateWithReason(Function<JsonNode, EvaluationReason> evaluator);
+
+        /**
+         * Evaluates the criterion with a reason provider for the extracted entity.
+         * @param clazz Entity class to extract
+         * @param evaluator Function that returns both result and reason
+         * @return EvaluationChain for chaining
+         */
+        <T extends CyodaEntity> EvaluationChain evaluateEntityWithReason(Class<T> clazz, Function<T, EvaluationReason> evaluator);
+
+        /**
          * Sets the error handler for the evaluation chain.
          * @param errorHandler Function to handle errors and create error responses
          * @return EvaluationChain for chaining
          */
         EvaluationChain withErrorHandler(BiFunction<Throwable, JsonNode, ErrorInfo> errorHandler);
+
+        /**
+         * Sets the reason attachment strategy for the evaluation chain.
+         * @param strategy Strategy for attaching evaluation reasons to responses
+         * @return EvaluationChain for chaining
+         */
+        EvaluationChain withReasonAttachment(ReasonAttachmentStrategy strategy);
 
         /**
          * Completes the evaluation chain and returns the appropriate response.
@@ -102,7 +116,9 @@ public interface CriterionSerializer {
         private JsonNode payload;
         private Throwable error;
         private Boolean matches;
+        private EvaluationReason evaluationReason;
         private BiFunction<Throwable, JsonNode, ErrorInfo> errorHandler;
+        private ReasonAttachmentStrategy reasonAttachmentStrategy = ReasonAttachmentStrategy.toWarnings();
 
         EvaluationChainImpl(CriterionSerializer serializer, EntityCriteriaCalculationRequest request) {
             this.serializer = serializer;
@@ -140,8 +156,41 @@ public interface CriterionSerializer {
         }
 
         @Override
+        public EvaluationChain evaluateWithReason(Function<JsonNode, EvaluationReason> evaluator) {
+            if (error == null && matches == null) {
+                try {
+                    evaluationReason = evaluator.apply(payload);
+                    matches = false; // EvaluationReason only exists for failures
+                } catch (Exception e) {
+                    error = e;
+                }
+            }
+            return this;
+        }
+
+        @Override
+        public <T extends CyodaEntity> EvaluationChain evaluateEntityWithReason(Class<T> clazz, Function<T, EvaluationReason> evaluator) {
+            if (error == null && matches == null) {
+                try {
+                    T entity = serializer.extractEntity(request, clazz);
+                    evaluationReason = evaluator.apply(entity);
+                    matches = evaluationReason == null; // null means success, non-null means failure
+                } catch (Exception e) {
+                    error = e;
+                }
+            }
+            return this;
+        }
+
+        @Override
         public EvaluationChain withErrorHandler(BiFunction<Throwable, JsonNode, ErrorInfo> errorHandler) {
             this.errorHandler = errorHandler;
+            return this;
+        }
+
+        @Override
+        public EvaluationChain withReasonAttachment(ReasonAttachmentStrategy strategy) {
+            this.reasonAttachmentStrategy = strategy;
             return this;
         }
 
@@ -176,9 +225,17 @@ public interface CriterionSerializer {
                 }
             }
 
-            return matches ?
+            // Build the response
+            EntityCriteriaCalculationResponse response = matches ?
                 serializer.responseBuilder(request).withMatch().build() :
                 serializer.responseBuilder(request).withNonMatch().build();
+
+            // Attach evaluation reason if present (only for failures)
+            if (evaluationReason != null && reasonAttachmentStrategy != null) {
+                reasonAttachmentStrategy.attachReason(response, evaluationReason);
+            }
+
+            return response;
         }
     }
 }

@@ -9,6 +9,8 @@ import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationResponse;
 import org.cyoda.cloud.api.event.processing.EntityProcessorCalculationRequest;
 import org.cyoda.cloud.api.event.processing.EntityProcessorCalculationResponse;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -54,6 +56,7 @@ public final class ResponseBuilder {
         private boolean success = false;
         private boolean matches = false;
         private ErrorInfo errorInfo;
+        private List<String> warnings;
 
         CriterionResponseBuilder(EntityCriteriaCalculationRequest request) {
             this.request = request;
@@ -97,6 +100,28 @@ public final class ResponseBuilder {
         }
 
         /**
+         * Adds a warning to the response.
+         */
+        public CriterionResponseBuilder withWarning(String warning) {
+            if (warnings == null) {
+                warnings = new ArrayList<>();
+            }
+            warnings.add(warning);
+            return this;
+        }
+
+        /**
+         * Adds multiple warnings to the response.
+         */
+        public CriterionResponseBuilder withWarnings(List<String> warnings) {
+            if (this.warnings == null) {
+                this.warnings = new ArrayList<>();
+            }
+            this.warnings.addAll(warnings);
+            return this;
+        }
+
+        /**
          * Builds the criteria calculation response.
          */
         public EntityCriteriaCalculationResponse build() {
@@ -108,6 +133,11 @@ public final class ResponseBuilder {
             response.setEntityId(request.getEntityId());
             response.setSuccess(success);
             response.setMatches(matches);
+
+            // Set warnings if present
+            if (warnings != null && !warnings.isEmpty()) {
+                response.setWarnings(new ArrayList<>(warnings));
+            }
 
             // Set error information if present
             if (errorInfo != null) {
