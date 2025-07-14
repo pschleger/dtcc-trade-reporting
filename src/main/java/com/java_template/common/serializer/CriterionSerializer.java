@@ -79,17 +79,18 @@ public interface CriterionSerializer {
         <T extends CyodaEntity> EvaluationChain evaluateEntity(Class<T> clazz, Predicate<T> evaluator);
 
         /**
-         * Completes the evaluation chain and returns the appropriate response.
-         * @return The criterion response
+         * Sets the error handler for the evaluation chain.
+         * @param errorHandler Function to handle errors and create error responses
+         * @return EvaluationChain for chaining
          */
-        EntityCriteriaCalculationResponse complete();
+        EvaluationChain withErrorHandler(BiFunction<Throwable, JsonNode, ErrorInfo> errorHandler);
 
         /**
-         * Provides error handling for the evaluation chain.
-         * @param errorHandler Function to handle errors and create error responses
+         * Completes the evaluation chain and returns the appropriate response.
+         * Uses the error handler if one was set, otherwise uses default error handling.
          * @return The criterion response (match, non-match, or error)
          */
-        EntityCriteriaCalculationResponse orElseFail(BiFunction<Throwable, JsonNode, ErrorInfo> errorHandler);
+        EntityCriteriaCalculationResponse complete();
     }
 
     /**
@@ -122,6 +123,7 @@ public interface CriterionSerializer {
         private JsonNode payload;
         private Throwable error;
         private Boolean matches;
+        private BiFunction<Throwable, JsonNode, ErrorInfo> errorHandler;
 
         EvaluationChainImpl(CriterionSerializer serializer, EntityCriteriaCalculationRequest request) {
             this.serializer = serializer;
@@ -159,41 +161,40 @@ public interface CriterionSerializer {
         }
 
         @Override
-        public EntityCriteriaCalculationResponse complete() {
-            if (error != null) {
-                return serializer.responseBuilder(request)
-                        .withError("EVALUATION_ERROR", error.getMessage())
-                        .build();
-            }
-
-            if (matches == null) {
-                return serializer.responseBuilder(request)
-                        .withError("EVALUATION_ERROR", "No evaluation was performed")
-                        .build();
-            }
-
-            return matches ?
-                serializer.responseBuilder(request).withMatch().build() :
-                serializer.responseBuilder(request).withNonMatch().build();
+        public EvaluationChain withErrorHandler(BiFunction<Throwable, JsonNode, ErrorInfo> errorHandler) {
+            this.errorHandler = errorHandler;
+            return this;
         }
 
         @Override
-        public EntityCriteriaCalculationResponse orElseFail(BiFunction<Throwable, JsonNode, ErrorInfo> errorHandler) {
+        public EntityCriteriaCalculationResponse complete() {
             if (error != null) {
-                ErrorInfo errorInfo = errorHandler.apply(error, payload);
-                return serializer.responseBuilder(request)
-                        .withError(errorInfo.code(), errorInfo.message())
-                        .build();
+                if (errorHandler != null) {
+                    ErrorInfo errorInfo = errorHandler.apply(error, payload);
+                    return serializer.responseBuilder(request)
+                            .withError(errorInfo.code(), errorInfo.message())
+                            .build();
+                } else {
+                    return serializer.responseBuilder(request)
+                            .withError("EVALUATION_ERROR", error.getMessage())
+                            .build();
+                }
             }
 
             if (matches == null) {
-                ErrorInfo errorInfo = errorHandler.apply(
-                    new IllegalStateException("No evaluation was performed"),
-                    payload
-                );
-                return serializer.responseBuilder(request)
-                        .withError(errorInfo.code(), errorInfo.message())
-                        .build();
+                if (errorHandler != null) {
+                    ErrorInfo errorInfo = errorHandler.apply(
+                        new IllegalStateException("No evaluation was performed"),
+                        payload
+                    );
+                    return serializer.responseBuilder(request)
+                            .withError(errorInfo.code(), errorInfo.message())
+                            .build();
+                } else {
+                    return serializer.responseBuilder(request)
+                            .withError("EVALUATION_ERROR", "No evaluation was performed")
+                            .build();
+                }
             }
 
             return matches ?

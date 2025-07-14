@@ -78,17 +78,18 @@ public interface ProcessorSerializer {
         <T extends CyodaEntity> EntityProcessingChain<T> toEntity(Class<T> clazz);
 
         /**
-         * Completes the processing chain and returns a successful response.
-         * @return The successful processor response
+         * Sets the error handler for the processing chain.
+         * @param errorHandler Function to handle errors and create error responses
+         * @return ProcessingChain for chaining
          */
-        EntityProcessorCalculationResponse complete();
+        ProcessingChain withErrorHandler(BiFunction<Throwable, JsonNode, ErrorInfo> errorHandler);
 
         /**
-         * Provides error handling for the processing chain.
-         * @param errorHandler Function to handle errors and create error responses
+         * Completes the processing chain and returns a response.
+         * Uses the error handler if one was set, otherwise uses default error handling.
          * @return The processor response (success or error)
          */
-        EntityProcessorCalculationResponse orElseFail(BiFunction<Throwable, JsonNode, ErrorInfo> errorHandler);
+        EntityProcessorCalculationResponse complete();
     }
 
     /**
@@ -129,7 +130,15 @@ public interface ProcessorSerializer {
         ProcessingChain toJsonFlow(Function<T, JsonNode> converter);
 
         /**
+         * Sets the error handler for the entity processing chain.
+         * @param errorHandler Function to handle errors and create error responses
+         * @return EntityProcessingChain for chaining
+         */
+        EntityProcessingChain<T> withErrorHandler(BiFunction<Throwable, T, ErrorInfo> errorHandler);
+
+        /**
          * Completes the entity processing chain and returns the response.
+         * Uses the error handler if one was set, otherwise uses default error handling.
          * The entity is automatically converted to JsonNode using the serializer.
          * @return EntityProcessorCalculationResponse
          */
@@ -137,17 +146,11 @@ public interface ProcessorSerializer {
 
         /**
          * Completes the entity processing chain with a custom converter.
+         * Uses the error handler if one was set, otherwise uses default error handling.
          * @param converter Function to convert the final entity to JsonNode
          * @return EntityProcessorCalculationResponse
          */
         EntityProcessorCalculationResponse complete(Function<T, JsonNode> converter);
-
-        /**
-         * Provides error handling for the entity processing chain.
-         * @param errorHandler Function to handle errors and create error responses
-         * @return The processor response (success or error)
-         */
-        EntityProcessorCalculationResponse orElseFail(BiFunction<Throwable, T, ErrorInfo> errorHandler);
     }
 
     /**
@@ -164,6 +167,7 @@ public interface ProcessorSerializer {
         private final EntityProcessorCalculationRequest request;
         private JsonNode processedData;
         private Throwable error;
+        private BiFunction<Throwable, JsonNode, ErrorInfo> errorHandler;
 
         ProcessingChainImpl(ProcessorSerializer serializer, EntityProcessorCalculationRequest request) {
             this.serializer = serializer;
@@ -215,24 +219,24 @@ public interface ProcessorSerializer {
         }
 
         @Override
-        public EntityProcessorCalculationResponse complete() {
-            if (error != null) {
-                return serializer.responseBuilder(request)
-                        .withError("PROCESSING_ERROR", error.getMessage())
-                        .build();
-            }
-            return serializer.responseBuilder(request)
-                    .withSuccess(processedData)
-                    .build();
+        public ProcessingChain withErrorHandler(BiFunction<Throwable, JsonNode, ErrorInfo> errorHandler) {
+            this.errorHandler = errorHandler;
+            return this;
         }
 
         @Override
-        public EntityProcessorCalculationResponse orElseFail(BiFunction<Throwable, JsonNode, ErrorInfo> errorHandler) {
+        public EntityProcessorCalculationResponse complete() {
             if (error != null) {
-                ErrorInfo errorInfo = errorHandler.apply(error, processedData);
-                return serializer.responseBuilder(request)
-                        .withError(errorInfo.code(), errorInfo.message())
-                        .build();
+                if (errorHandler != null) {
+                    ErrorInfo errorInfo = errorHandler.apply(error, processedData);
+                    return serializer.responseBuilder(request)
+                            .withError(errorInfo.code(), errorInfo.message())
+                            .build();
+                } else {
+                    return serializer.responseBuilder(request)
+                            .withError("PROCESSING_ERROR", error.getMessage())
+                            .build();
+                }
             }
             return serializer.responseBuilder(request)
                     .withSuccess(processedData)
@@ -249,6 +253,7 @@ public interface ProcessorSerializer {
         private final EntityProcessorCalculationRequest request;
         private T processedEntity;
         private Throwable error;
+        private BiFunction<Throwable, T, ErrorInfo> errorHandler;
 
         EntityProcessingChainImpl(ProcessorSerializer serializer, EntityProcessorCalculationRequest request, T entity) {
             this.serializer = serializer;
@@ -310,11 +315,24 @@ public interface ProcessorSerializer {
         }
 
         @Override
+        public EntityProcessingChain<T> withErrorHandler(BiFunction<Throwable, T, ErrorInfo> errorHandler) {
+            this.errorHandler = errorHandler;
+            return this;
+        }
+
+        @Override
         public EntityProcessorCalculationResponse complete() {
             if (error != null) {
-                return serializer.responseBuilder(request)
-                        .withError("PROCESSING_ERROR", error.getMessage())
-                        .build();
+                if (errorHandler != null) {
+                    ErrorInfo errorInfo = errorHandler.apply(error, processedEntity);
+                    return serializer.responseBuilder(request)
+                            .withError(errorInfo.code(), errorInfo.message())
+                            .build();
+                } else {
+                    return serializer.responseBuilder(request)
+                            .withError("PROCESSING_ERROR", error.getMessage())
+                            .build();
+                }
             }
             if (processedEntity == null) {
                 return serializer.responseBuilder(request)
@@ -327,18 +345,32 @@ public interface ProcessorSerializer {
                         .withSuccess(entityJson)
                         .build();
             } catch (Exception e) {
-                return serializer.responseBuilder(request)
-                        .withError("CONVERSION_ERROR", e.getMessage())
-                        .build();
+                if (errorHandler != null) {
+                    ErrorInfo errorInfo = errorHandler.apply(e, processedEntity);
+                    return serializer.responseBuilder(request)
+                            .withError(errorInfo.code(), errorInfo.message())
+                            .build();
+                } else {
+                    return serializer.responseBuilder(request)
+                            .withError("CONVERSION_ERROR", e.getMessage())
+                            .build();
+                }
             }
         }
 
         @Override
         public EntityProcessorCalculationResponse complete(Function<T, JsonNode> converter) {
             if (error != null) {
-                return serializer.responseBuilder(request)
-                        .withError("PROCESSING_ERROR", error.getMessage())
-                        .build();
+                if (errorHandler != null) {
+                    ErrorInfo errorInfo = errorHandler.apply(error, processedEntity);
+                    return serializer.responseBuilder(request)
+                            .withError(errorInfo.code(), errorInfo.message())
+                            .build();
+                } else {
+                    return serializer.responseBuilder(request)
+                            .withError("PROCESSING_ERROR", error.getMessage())
+                            .build();
+                }
             }
             if (processedEntity == null) {
                 return serializer.responseBuilder(request)
@@ -351,29 +383,16 @@ public interface ProcessorSerializer {
                         .withSuccess(entityJson)
                         .build();
             } catch (Exception e) {
-                return serializer.responseBuilder(request)
-                        .withError("CONVERSION_ERROR", e.getMessage())
-                        .build();
-            }
-        }
-
-        @Override
-        public EntityProcessorCalculationResponse orElseFail(BiFunction<Throwable, T, ErrorInfo> errorHandler) {
-            if (error != null) {
-                ErrorInfo errorInfo = errorHandler.apply(error, processedEntity);
-                return serializer.responseBuilder(request)
-                        .withError(errorInfo.code(), errorInfo.message())
-                        .build();
-            }
-            try {
-                JsonNode entityJson = serializer.entityToJsonNode(processedEntity);
-                return serializer.responseBuilder(request)
-                        .withSuccess(entityJson)
-                        .build();
-            } catch (Exception e) {
-                return serializer.responseBuilder(request)
-                        .withError("CONVERSION_ERROR", e.getMessage())
-                        .build();
+                if (errorHandler != null) {
+                    ErrorInfo errorInfo = errorHandler.apply(e, processedEntity);
+                    return serializer.responseBuilder(request)
+                            .withError(errorInfo.code(), errorInfo.message())
+                            .build();
+                } else {
+                    return serializer.responseBuilder(request)
+                            .withError("CONVERSION_ERROR", e.getMessage())
+                            .build();
+                }
             }
         }
     }

@@ -519,11 +519,12 @@ return serializer.withRequest(request)
 // Entity processing with custom error handling
 return serializer.withRequest(request)
     .toEntity(Pet.class)
-    .map(pet -> pet.validateAndProcess())
-    .orElseFail((error, pet) -> new ErrorInfo(
+    .withErrorHandler((error, pet) -> new ErrorInfo(
         "PET_PROCESSING_ERROR",
-        "Failed to process pet " + (pet != null ? pet.getId() : "unknown")
-    ));
+                "Failed to process pet " + (pet != null ? pet.getId() : "unknown")
+        ))
+    .map(pet -> pet.validateAndProcess())
+    .complete();
 ```
 
 ---

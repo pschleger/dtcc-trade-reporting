@@ -281,17 +281,18 @@ class ProcessingChainTest {
     }
 
     @Test
-    @DisplayName("orElseFail should handle errors with custom error handler")
-    void testOrElseFailWithCustomErrorHandler() {
+    @DisplayName("withErrorHandler should handle errors with custom error handler")
+    void testWithErrorHandlerWithCustomErrorHandler() {
         // Given
         RuntimeException processingError = new RuntimeException("Custom processing error");
         testSerializer.setShouldThrowOnExtractPayload(processingError);
 
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
-                .orElseFail((error, data) ->
+                .withErrorHandler((error, data) ->
                         new ProcessorSerializer.ErrorInfo("CUSTOM_ERROR", "Custom error: " + error.getMessage())
-                );
+                )
+                .complete();
 
         // Then
         assertNotNull(response);
@@ -300,18 +301,19 @@ class ProcessingChainTest {
     }
 
     @Test
-    @DisplayName("orElseFail should return success response when no errors occur")
-    void testOrElseFailWithoutErrors() {
+    @DisplayName("withErrorHandler should return success response when no errors occur")
+    void testWithErrorHandlerWithoutErrors() {
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
+                .withErrorHandler((error, data) ->
+                        new ProcessorSerializer.ErrorInfo("SHOULD_NOT_BE_CALLED", "Should not be called")
+                )
                 .map(node -> {
                     ObjectNode result = objectMapper.createObjectNode();
                     result.put("success", true);
                     return result;
                 })
-                .orElseFail((error, data) ->
-                        new ProcessorSerializer.ErrorInfo("SHOULD_NOT_BE_CALLED", "Should not be called")
-                );
+                .complete();
 
         // Then
         assertNotNull(response);
@@ -425,8 +427,9 @@ class ProcessingChainTest {
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
                 .toEntity(TestEntity.class)
+                .withErrorHandler(validationErrorHandler)
                 .map(entityValidator)
-                .orElseFail(validationErrorHandler);
+                .complete();
 
         // Then
         assertNotNull(response);
@@ -572,8 +575,9 @@ class ProcessingChainTest {
 
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
+                .withErrorHandler(dataAwareErrorHandler)
                 .map(faultyMapper)
-                .orElseFail(dataAwareErrorHandler);
+                .complete();
 
         // Then
         assertNotNull(response);
@@ -670,7 +674,8 @@ class ProcessingChainTest {
 
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
-                .orElseFail(fallbackHandler);
+                .withErrorHandler(fallbackHandler)
+                .complete();
 
         // Then
         assertNotNull(response);
@@ -861,8 +866,8 @@ class ProcessingChainTest {
     }
 
     @Test
-    @DisplayName("EntityProcessingChain: orElseFail with entity error handler should work")
-    void testEntityOrElseFailWithCustomErrorHandler() {
+    @DisplayName("EntityProcessingChain: withErrorHandler with entity error handler should work")
+    void testEntityWithErrorHandlerWithCustomErrorHandler() {
         // Given
         Function<TestEntity, TestEntity> faultyTransform = entity -> {
             throw new IllegalStateException("Entity validation failed");
@@ -882,8 +887,9 @@ class ProcessingChainTest {
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
                 .toEntity(TestEntity.class)
+                .withErrorHandler(entityErrorHandler)
                 .map(faultyTransform)
-                .orElseFail(entityErrorHandler);
+                .complete();
 
         // Then
         assertNotNull(response);
