@@ -1,6 +1,7 @@
 package com.java_template.common.workflow.ops;
 
 import com.java_template.common.serializer.CriterionSerializer;
+import com.java_template.common.serializer.EvaluationOutcome;
 import com.java_template.common.serializer.SerializerFactory;
 import com.java_template.common.config.Config;
 import com.java_template.common.workflow.CyodaCriterion;
@@ -38,7 +39,7 @@ public class AlwaysTrueCriterion implements CyodaCriterion {
         logger.debug("AlwaysTrueCriterion check for request: {}", request.getId());
 
         return serializer.withRequest(request)
-            .evaluate(jsonNode -> true) // Always returns true
+            .evaluate(jsonNode -> EvaluationOutcome.success()) // Always returns success
             .complete();
     }
 

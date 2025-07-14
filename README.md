@@ -382,7 +382,7 @@ The **EntityProcessingChain** provides a clean, type-safe API for entity process
 
 ### Criteria Implementation
 
-Criteria implement the `CyodaCriterion` interface for condition checking:
+Criteria implement the `CyodaCriterion` interface for condition checking using **EvaluationOutcome** sealed classes:
 
 ```java
 @Component
@@ -395,14 +395,17 @@ public class IsValidPet implements CyodaCriterion {
         EntityCriteriaCalculationRequest request = context.getEvent();
 
         return serializer.withRequest(request)
-            .evaluate(
-                jsonNode -> {
-                    // Validation logic
-                    return jsonNode.has("id") && jsonNode.has("name");
-                },
-                "Pet is valid",
-                "Pet validation failed"
-            )
+            .evaluateEntity(Pet.class, pet -> {
+                // Validation logic with explicit outcomes
+                if (pet == null) {
+                    return EvaluationOutcome.Fail.structuralFailure("Pet entity is null");
+                }
+                if (!pet.isValid()) {
+                    return EvaluationOutcome.Fail.structuralFailure("Pet validation failed");
+                }
+                return EvaluationOutcome.success();
+            })
+            .withReasonAttachment(ReasonAttachmentStrategy.toWarnings())
             .complete();
     }
 }
@@ -453,9 +456,11 @@ The application uses a modern serializer architecture with fluent APIs:
 ### CriterionSerializer (in `common/serializer/`)
 - **Purpose**: Handles entity extraction and response building for criteria
 - **Key Methods**:
-  - `extractEntity(request, Class<T>)` - Extract typed entities
-  - `extractPayload(request)` - Extract raw JSON payload
-  - `evaluate()` - Evaluate conditions with fluent API
+  - `withRequest(request)` - Start fluent evaluation chain
+  - `evaluate(Function<JsonNode, EvaluationOutcome>)` - Evaluate JSON with outcomes
+  - `evaluateEntity(Class<T>, Function<T, EvaluationOutcome>)` - Evaluate entities with outcomes
+  - `withReasonAttachment(ReasonAttachmentStrategy)` - Configure reason attachment
+  - `withErrorHandler(BiFunction<Throwable, JsonNode, ErrorInfo>)` - Configure error handling
 
 ### ProcessingChain vs EntityProcessingChain
 - **ProcessingChain**: JSON-based processing with `map(Function<JsonNode, JsonNode>)`
@@ -480,6 +485,29 @@ return serializer.responseBuilder(request)
     .withError(StandardErrorCodes.PROCESSING_ERROR.getCode(), "Processing failed")
     .build();
 ```
+
+### EvaluationOutcome Sealed Classes
+
+Criteria evaluation uses **EvaluationOutcome** sealed classes for type-safe result handling:
+
+```java
+// Success outcome (no additional information needed)
+return EvaluationOutcome.success();
+
+// Failure outcomes with categorized reasons
+return EvaluationOutcome.Fail.structuralFailure("Pet entity is null");
+return EvaluationOutcome.Fail.businessRuleFailure("Pet status is invalid");
+return EvaluationOutcome.Fail.dataQualityFailure("Pet photo URL is malformed");
+
+// Generic failure with custom category
+return EvaluationOutcome.Fail.of("Custom reason", StandardEvalReasonCategories.VALIDATION_FAILURE);
+```
+
+**Key Benefits:**
+- **Type Safety**: Compile-time checking ensures proper outcome handling
+- **Clear Contracts**: No ambiguity about success vs failure
+- **Categorized Failures**: Structured failure reasons with standard categories
+- **Reason Attachment**: Failure reasons can be attached to response warnings
 
 ---
 

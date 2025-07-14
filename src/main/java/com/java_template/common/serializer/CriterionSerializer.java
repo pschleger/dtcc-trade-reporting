@@ -56,34 +56,19 @@ public interface CriterionSerializer {
      */
     interface EvaluationChain {
         /**
-         * Evaluates the criterion using the provided predicate on the JSON payload.
-         * @param evaluator Predicate to evaluate the JSON payload
+         * Evaluates the criterion with an outcome provider for the JSON payload.
+         * @param evaluator Function that returns EvaluationOutcome (Success or Fail)
          * @return EvaluationChain for chaining
          */
-        EvaluationChain evaluate(Predicate<JsonNode> evaluator);
+        EvaluationChain evaluate(Function<JsonNode, EvaluationOutcome> evaluator);
 
         /**
-         * Evaluates the criterion using the provided predicate on the extracted entity.
+         * Evaluates the criterion with an outcome provider for the extracted entity.
          * @param clazz Entity class to extract
-         * @param evaluator Predicate to evaluate the entity
+         * @param evaluator Function that returns EvaluationOutcome (Success or Fail)
          * @return EvaluationChain for chaining
          */
-        <T extends CyodaEntity> EvaluationChain evaluateEntity(Class<T> clazz, Predicate<T> evaluator);
-
-        /**
-         * Evaluates the criterion with a reason provider for the JSON payload.
-         * @param evaluator Function that returns both result and reason
-         * @return EvaluationChain for chaining
-         */
-        EvaluationChain evaluateWithReason(Function<JsonNode, EvaluationReason> evaluator);
-
-        /**
-         * Evaluates the criterion with a reason provider for the extracted entity.
-         * @param clazz Entity class to extract
-         * @param evaluator Function that returns both result and reason
-         * @return EvaluationChain for chaining
-         */
-        <T extends CyodaEntity> EvaluationChain evaluateEntityWithReason(Class<T> clazz, Function<T, EvaluationReason> evaluator);
+        <T extends CyodaEntity> EvaluationChain evaluateEntity(Class<T> clazz, Function<T, EvaluationOutcome> evaluator);
 
         /**
          * Sets the error handler for the evaluation chain.
@@ -131,10 +116,17 @@ public interface CriterionSerializer {
         }
 
         @Override
-        public EvaluationChain evaluate(Predicate<JsonNode> evaluator) {
+        public EvaluationChain evaluate(Function<JsonNode, EvaluationOutcome> evaluator) {
             if (error == null && matches == null) {
                 try {
-                    matches = evaluator.test(payload);
+                    EvaluationOutcome outcome = evaluator.apply(payload);
+                    if (outcome instanceof EvaluationOutcome.Success) {
+                        matches = true;
+                        evaluationReason = null;
+                    } else if (outcome instanceof EvaluationOutcome.Fail fail) {
+                        matches = false;
+                        evaluationReason = fail.toEvaluationReason();
+                    }
                 } catch (Exception e) {
                     error = e;
                 }
@@ -143,38 +135,18 @@ public interface CriterionSerializer {
         }
 
         @Override
-        public <T extends CyodaEntity> EvaluationChain evaluateEntity(Class<T> clazz, Predicate<T> evaluator) {
+        public <T extends CyodaEntity> EvaluationChain evaluateEntity(Class<T> clazz, Function<T, EvaluationOutcome> evaluator) {
             if (error == null && matches == null) {
                 try {
                     T entity = serializer.extractEntity(request, clazz);
-                    matches = evaluator.test(entity);
-                } catch (Exception e) {
-                    error = e;
-                }
-            }
-            return this;
-        }
-
-        @Override
-        public EvaluationChain evaluateWithReason(Function<JsonNode, EvaluationReason> evaluator) {
-            if (error == null && matches == null) {
-                try {
-                    evaluationReason = evaluator.apply(payload);
-                    matches = false; // EvaluationReason only exists for failures
-                } catch (Exception e) {
-                    error = e;
-                }
-            }
-            return this;
-        }
-
-        @Override
-        public <T extends CyodaEntity> EvaluationChain evaluateEntityWithReason(Class<T> clazz, Function<T, EvaluationReason> evaluator) {
-            if (error == null && matches == null) {
-                try {
-                    T entity = serializer.extractEntity(request, clazz);
-                    evaluationReason = evaluator.apply(entity);
-                    matches = evaluationReason == null; // null means success, non-null means failure
+                    EvaluationOutcome outcome = evaluator.apply(entity);
+                    if (outcome instanceof EvaluationOutcome.Success) {
+                        matches = true;
+                        evaluationReason = null;
+                    } else if (outcome instanceof EvaluationOutcome.Fail fail) {
+                        matches = false;
+                        evaluationReason = fail.toEvaluationReason();
+                    }
                 } catch (Exception e) {
                     error = e;
                 }

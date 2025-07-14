@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.java_template.application.entity.pet.Pet;
 import com.java_template.common.serializer.CriterionSerializer;
-import com.java_template.common.serializer.EvaluationReason;
+import com.java_template.common.serializer.EvaluationOutcome;
 import com.java_template.common.serializer.ReasonAttachmentStrategy;
 import com.java_template.common.serializer.SerializerFactory;
 import com.java_template.common.serializer.jackson.JacksonCriterionSerializer;
@@ -25,7 +25,7 @@ import static org.mockito.Mockito.mock;
 
 /**
  * ABOUTME: Demonstration test showing the enhanced EvaluationChain capabilities.
- * Shows how to use evaluation reasons and different attachment strategies.
+ * Shows how to use EvaluationOutcome sealed classes and different attachment strategies.
  */
 class EvaluationChainDemoTest {
 
@@ -41,14 +41,14 @@ class EvaluationChainDemoTest {
     }
 
     @Test
-    @DisplayName("Demonstrates basic EvaluationChain with reasons attached to warnings")
-    void demonstrateBasicEvaluationChainWithReasons() {
+    @DisplayName("Demonstrates basic EvaluationChain with outcomes attached to warnings")
+    void demonstrateBasicEvaluationChainWithOutcomes() {
         // Given
         EntityCriteriaCalculationRequest request = createRequest(createInvalidPetData());
 
-        // When - Using the enhanced EvaluationChain with reasons
+        // When - Using the enhanced EvaluationChain with outcomes
         EntityCriteriaCalculationResponse response = serializer.withRequest(request)
-            .evaluateEntityWithReason(Pet.class, this::validatePetWithDetailedReason)
+            .evaluateEntity(Pet.class, this::validatePet)
             .withReasonAttachment(ReasonAttachmentStrategy.toWarnings())
             .complete();
 
@@ -56,7 +56,7 @@ class EvaluationChainDemoTest {
         assertNotNull(response);
         assertTrue(response.getSuccess());
         assertFalse(response.getMatches());
-        
+
         // Verify detailed reason is attached to warnings
         assertNotNull(response.getWarnings());
         assertFalse(response.getWarnings().isEmpty());
@@ -70,17 +70,17 @@ class EvaluationChainDemoTest {
         // Test 1: No attachment strategy (reasons are not attached)
         EntityCriteriaCalculationRequest request1 = createRequest(createInvalidPetData());
         EntityCriteriaCalculationResponse response1 = serializer.withRequest(request1)
-            .evaluateEntityWithReason(Pet.class, this::validatePetWithDetailedReason)
+            .evaluateEntity(Pet.class, this::validatePet)
             .withReasonAttachment(ReasonAttachmentStrategy.none())
             .complete();
 
         assertFalse(response1.getMatches());
         assertTrue(response1.getWarnings() == null || response1.getWarnings().isEmpty());
 
-        // Test 2: Success case - no warnings should be attached since there's no reason for success
+        // Test 2: Success case - no warnings should be attached since Success outcome has no reason
         EntityCriteriaCalculationRequest request2 = createRequest(createValidPetData());
         EntityCriteriaCalculationResponse response2 = serializer.withRequest(request2)
-            .evaluateEntityWithReason(Pet.class, this::validatePetWithDetailedReason)
+            .evaluateEntity(Pet.class, this::validatePet)
             .withReasonAttachment(ReasonAttachmentStrategy.toWarnings())
             .complete();
 
@@ -89,41 +89,43 @@ class EvaluationChainDemoTest {
     }
 
     @Test
-    @DisplayName("Demonstrates backward compatibility with existing predicate-based evaluation")
-    void demonstrateBackwardCompatibility() {
+    @DisplayName("Demonstrates simple outcome-based evaluation")
+    void demonstrateSimpleOutcomeEvaluation() {
         // Given
         EntityCriteriaCalculationRequest request = createRequest(createValidPetData());
 
-        // When - Using the original predicate-based approach (still works)
+        // When - Using simple outcome-based evaluation
         EntityCriteriaCalculationResponse response = serializer.withRequest(request)
-            .evaluateEntity(Pet.class, Pet::isValid)
+            .evaluateEntity(Pet.class, pet -> pet.isValid() ?
+                EvaluationOutcome.success() :
+                EvaluationOutcome.Fail.structuralFailure("Pet validation failed"))
             .complete();
 
         // Then
         assertNotNull(response);
         assertTrue(response.getSuccess());
         assertTrue(response.getMatches());
-        
-        // No warnings should be attached with the old approach
+
+        // No warnings should be attached for success
         assertTrue(response.getWarnings() == null || response.getWarnings().isEmpty());
     }
 
     // Helper methods
 
-    private EvaluationReason validatePetWithDetailedReason(Pet pet) {
+    private EvaluationOutcome validatePet(Pet pet) {
         if (pet == null) {
-            return EvaluationReason.structuralFailure("Pet entity is null");
+            return EvaluationOutcome.Fail.structuralFailure("Pet entity is null");
         }
 
         if (!pet.isValid()) {
-            return EvaluationReason.structuralFailure("Pet entity failed basic validation (missing required fields)");
+            return EvaluationOutcome.Fail.structuralFailure("Pet entity failed basic validation (missing required fields)");
         }
 
         if (pet.getId() != null && pet.getId() <= 0) {
-            return EvaluationReason.structuralFailure("Pet ID must be positive, got: " + pet.getId());
+            return EvaluationOutcome.Fail.structuralFailure("Pet ID must be positive, got: " + pet.getId());
         }
 
-        return null; // Success - no reason needed
+        return EvaluationOutcome.success();
     }
 
     private ObjectNode createValidPetData() {

@@ -3,7 +3,7 @@ package com.java_template.application.criteria;
 import com.java_template.application.entity.pet.Pet;
 import com.java_template.common.serializer.CriterionSerializer;
 import com.java_template.common.serializer.ErrorInfo;
-import com.java_template.common.serializer.EvaluationReason;
+import com.java_template.common.serializer.EvaluationOutcome;
 import com.java_template.common.serializer.ReasonAttachmentStrategy;
 import com.java_template.common.serializer.SerializerFactory;
 import com.java_template.common.config.Config;
@@ -23,7 +23,7 @@ import java.util.Set;
  * ABOUTME: Criteria implementation that validates Pet entities using the enhanced EvaluationChain approach.
  * Demonstrates advanced usage patterns including:
  * - Type-safe entity extraction with EvaluationChain
- * - Evaluation reasons for detailed feedback
+ * - EvaluationOutcome sealed classes for clear success/failure contracts
  * - Reason attachment to warnings for temporary workaround
  * - Comprehensive validation logic with detailed failure reasons
  * - Custom error handling with ErrorInfo
@@ -54,7 +54,7 @@ public class IsValidPet implements CyodaCriterion {
         logger.debug("Checking Pet validity for request: {}", request.getId());
 
         return serializer.withRequest(request)
-            .evaluateEntityWithReason(Pet.class, this::isValidPet)
+            .evaluateEntity(Pet.class, this::validatePet)
             .withReasonAttachment(ReasonAttachmentStrategy.toWarnings())
             .withErrorHandler((error, pet) -> {
                 logger.debug("Pet validation failed for request: {}", request.getId(), error);
@@ -78,57 +78,57 @@ public class IsValidPet implements CyodaCriterion {
     // ========================================
 
     /**
-     * Comprehensive Pet validation with detailed reasons for use with EvaluationChain.
+     * Comprehensive Pet validation with detailed outcomes for use with EvaluationChain.
      * Validates all aspects of Pet entity and provides specific reasons for failures.
-     * Returns null for success, EvaluationReason for failures.
+     * Returns EvaluationOutcome.Success for success, EvaluationOutcome.Fail for failures.
      */
-    private EvaluationReason isValidPet(Pet pet) {
+    private EvaluationOutcome validatePet(Pet pet) {
         // Check if Pet entity exists and is valid
         if (pet == null) {
             logger.debug("Pet entity is null");
-            return EvaluationReason.structuralFailure("Pet entity is null");
+            return EvaluationOutcome.Fail.structuralFailure("Pet entity is null");
         }
 
         // Use Pet's built-in validation
         if (!pet.isValid()) {
             logger.debug("Pet entity failed basic validation");
-            return EvaluationReason.structuralFailure("Pet entity failed basic validation (missing required fields)");
+            return EvaluationOutcome.Fail.structuralFailure("Pet entity failed basic validation (missing required fields)");
         }
 
         // Validate basic structure and required fields
-        EvaluationReason structureResult = validateBasicStructure(pet);
-        if (structureResult != null) {
+        EvaluationOutcome structureResult = validateBasicStructure(pet);
+        if (structureResult instanceof EvaluationOutcome.Fail) {
             return structureResult;
         }
 
         // Validate business rules
-        EvaluationReason businessResult = validateBusinessRules(pet);
-        if (businessResult != null) {
+        EvaluationOutcome businessResult = validateBusinessRules(pet);
+        if (businessResult instanceof EvaluationOutcome.Fail) {
             return businessResult;
         }
 
         // Validate data quality
-        EvaluationReason qualityResult = validateDataQuality(pet);
-        if (qualityResult != null) {
+        EvaluationOutcome qualityResult = validateDataQuality(pet);
+        if (qualityResult instanceof EvaluationOutcome.Fail) {
             return qualityResult;
         }
 
         logger.debug("Pet passed all validation checks: id={}, name={}", pet.getId(), pet.getName());
-        return null; // Success - no reason needed
+        return EvaluationOutcome.success();
     }
 
     /**
-     * Validates basic Pet entity structure and required fields with detailed reasons.
-     * Returns null for success, EvaluationReason for failures.
+     * Validates basic Pet entity structure and required fields with detailed outcomes.
+     * Returns EvaluationOutcome.Success for success, EvaluationOutcome.Fail for failures.
      */
-    private EvaluationReason validateBasicStructure(Pet pet) {
+    private EvaluationOutcome validateBasicStructure(Pet pet) {
         // Validate required fields
         if (pet.getId() == null || pet.getId() <= 0) {
             String reason = pet.getId() == null ?
                 "Pet ID is null" :
                 String.format("Pet ID must be positive, got: %d", pet.getId());
             logger.debug("Pet has invalid ID: {}", pet.getId());
-            return EvaluationReason.structuralFailure(reason);
+            return EvaluationOutcome.Fail.structuralFailure(reason);
         }
 
         if (pet.getName() == null || pet.getName().trim().isEmpty()) {
@@ -136,24 +136,24 @@ public class IsValidPet implements CyodaCriterion {
                 "Pet name is null" :
                 "Pet name is empty or contains only whitespace";
             logger.debug("Pet has invalid name: {}", pet.getName());
-            return EvaluationReason.structuralFailure(reason);
+            return EvaluationOutcome.Fail.structuralFailure(reason);
         }
 
         logger.debug("Pet passed basic structure validation: id={}, name={}", pet.getId(), pet.getName());
-        return null; // Success - no reason needed
+        return EvaluationOutcome.success();
     }
 
     /**
-     * Validates Pet entity against business rules with detailed reasons.
-     * Returns null for success, EvaluationReason for failures.
+     * Validates Pet entity against business rules with detailed outcomes.
+     * Returns EvaluationOutcome.Success for success, EvaluationOutcome.Fail for failures.
      */
-    private EvaluationReason validateBusinessRules(Pet pet) {
+    private EvaluationOutcome validateBusinessRules(Pet pet) {
         // Validate status if present
         if (pet.getStatus() != null && !VALID_STATUSES.contains(pet.getStatus().toLowerCase())) {
             String reason = String.format("Pet status '%s' is invalid. Valid statuses are: %s",
                 pet.getStatus(), String.join(", ", VALID_STATUSES));
             logger.debug("Pet has invalid status: {}", pet.getStatus());
-            return EvaluationReason.businessRuleFailure(reason);
+            return EvaluationOutcome.Fail.businessRuleFailure(reason);
         }
 
         // Validate name length
@@ -163,7 +163,7 @@ public class IsValidPet implements CyodaCriterion {
                 String reason = String.format("Pet name length %d is invalid. Must be between %d and %d characters",
                     nameLength, MIN_NAME_LENGTH, MAX_NAME_LENGTH);
                 logger.debug("Pet name length {} is invalid", nameLength);
-                return EvaluationReason.businessRuleFailure(reason);
+                return EvaluationOutcome.Fail.businessRuleFailure(reason);
             }
         }
 
@@ -172,18 +172,18 @@ public class IsValidPet implements CyodaCriterion {
             String reason = String.format("Pet has too many tags (%d). Maximum allowed is %d",
                 pet.getTags().size(), MAX_TAGS);
             logger.debug("Pet has too many tags: {}", pet.getTags().size());
-            return EvaluationReason.businessRuleFailure(reason);
+            return EvaluationOutcome.Fail.businessRuleFailure(reason);
         }
 
         logger.debug("Pet passed business rules validation");
-        return null; // Success - no reason needed
+        return EvaluationOutcome.success();
     }
 
     /**
-     * Validates Pet entity data quality and consistency with detailed reasons.
-     * Returns null for success, EvaluationReason for failures.
+     * Validates Pet entity data quality and consistency with detailed outcomes.
+     * Returns EvaluationOutcome.Success for success, EvaluationOutcome.Fail for failures.
      */
-    private EvaluationReason validateDataQuality(Pet pet) {
+    private EvaluationOutcome validateDataQuality(Pet pet) {
         // Validate photo URLs if present
         if (pet.getPhotoUrls() != null) {
             for (int i = 0; i < pet.getPhotoUrls().size(); i++) {
@@ -192,7 +192,7 @@ public class IsValidPet implements CyodaCriterion {
                     String reason = String.format("Pet photo URL at index %d is invalid: '%s'. URLs must start with http://, https://, or ftp://",
                         i, url);
                     logger.debug("Pet has invalid photo URL: {}", url);
-                    return EvaluationReason.dataQualityFailure(reason);
+                    return EvaluationOutcome.Fail.dataQualityFailure(reason);
                 }
             }
         }
@@ -205,7 +205,7 @@ public class IsValidPet implements CyodaCriterion {
                     String reason = String.format("Pet tag at index %d is invalid: %s. Tags cannot be null or empty",
                         i, tag == null ? "null" : "empty/whitespace");
                     logger.debug("Pet has invalid tag at index {}: {}", i, tag);
-                    return EvaluationReason.dataQualityFailure(reason);
+                    return EvaluationOutcome.Fail.dataQualityFailure(reason);
                 }
             }
         }
@@ -214,11 +214,11 @@ public class IsValidPet implements CyodaCriterion {
         if (pet.getCategory() != null && pet.getCategory().trim().isEmpty()) {
             String reason = "Pet category is empty or contains only whitespace. If provided, category must have content";
             logger.debug("Pet has empty category");
-            return EvaluationReason.dataQualityFailure(reason);
+            return EvaluationOutcome.Fail.dataQualityFailure(reason);
         }
 
         logger.debug("Pet passed data quality validation");
-        return null; // Success - no reason needed
+        return EvaluationOutcome.success();
     }
 
     // ========================================
