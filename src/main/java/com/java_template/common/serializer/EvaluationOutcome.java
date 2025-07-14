@@ -230,14 +230,57 @@ public sealed class EvaluationOutcome permits EvaluationOutcome.Success, Evaluat
     }
 
     /**
-     * Chains multiple EvaluationOutcomes with AND logic.
+     * Chains multiple EvaluationOutcome suppliers with AND logic.
      * Returns the first failure encountered, or success if all are successful.
      *
-     * <p><strong>Performance Note:</strong> This method is more efficient than chaining multiple
-     * {@code and()} calls as it avoids creating intermediate EvaluationOutcome objects.
-     * For simple "all must pass" scenarios, prefer this over {@code outcome1.and(outcome2).and(outcome3)}.
-     * However, for complex mixed logic or when building validation step-by-step,
-     * the fluent chaining approach may be more readable.</p>
+     * <p><strong>Performance Note:</strong> This method uses lazy evaluation with suppliers
+     * to provide true short-circuit behavior. Suppliers are evaluated in order and
+     * evaluation stops at the first failure, making it efficient for expensive operations.
+     * This is more efficient than both chaining multiple {@code and()} calls and
+     * the previous eager evaluation approach.</p>
+     *
+     * @param suppliers the outcome suppliers to chain with AND logic
+     * @return Success if all are successful, otherwise the first failure
+     */
+    public static EvaluationOutcome allOf(java.util.function.Supplier<EvaluationOutcome>... suppliers) {
+        for (java.util.function.Supplier<EvaluationOutcome> supplier : suppliers) {
+            EvaluationOutcome outcome = supplier.get();
+            if (outcome instanceof Fail) {
+                return outcome; // Short-circuit on first failure
+            }
+        }
+        return success();
+    }
+
+    /**
+     * Chains multiple EvaluationOutcome suppliers with OR logic.
+     * Returns the first success encountered, or the last failure if all fail.
+     *
+     * <p><strong>Performance Note:</strong> This method uses lazy evaluation with suppliers
+     * to provide true short-circuit behavior. Suppliers are evaluated in order and
+     * evaluation stops at the first success, making it efficient for expensive operations.
+     * This is more efficient than both chaining multiple {@code or()} calls and
+     * the previous eager evaluation approach.</p>
+     *
+     * @param suppliers the outcome suppliers to chain with OR logic
+     * @return Success if any is successful, otherwise the last failure
+     */
+    public static EvaluationOutcome anyOf(java.util.function.Supplier<EvaluationOutcome>... suppliers) {
+        EvaluationOutcome lastFailure = null;
+        for (java.util.function.Supplier<EvaluationOutcome> supplier : suppliers) {
+            EvaluationOutcome outcome = supplier.get();
+            if (outcome instanceof Success) {
+                return outcome; // Short-circuit on first success
+            }
+            lastFailure = outcome;
+        }
+        return lastFailure != null ? lastFailure : fail("No suppliers provided");
+    }
+
+    /**
+     * Convenience overload of allOf for direct EvaluationOutcome values.
+     * Note: This does not provide short-circuit behavior as all arguments are evaluated.
+     * For expensive operations, prefer the Supplier-based version.
      *
      * @param outcomes the outcomes to chain with AND logic
      * @return Success if all are successful, otherwise the first failure
@@ -252,14 +295,9 @@ public sealed class EvaluationOutcome permits EvaluationOutcome.Success, Evaluat
     }
 
     /**
-     * Chains multiple EvaluationOutcomes with OR logic.
-     * Returns the first success encountered, or the last failure if all fail.
-     *
-     * <p><strong>Performance Note:</strong> This method is more efficient than chaining multiple
-     * {@code or()} calls as it avoids creating intermediate EvaluationOutcome objects.
-     * For simple "any can pass" scenarios, prefer this over {@code outcome1.or(outcome2).or(outcome3)}.
-     * However, for complex mixed logic or when building fallback validation step-by-step,
-     * the fluent chaining approach may be more readable.</p>
+     * Convenience overload of anyOf for direct EvaluationOutcome values.
+     * Note: This does not provide short-circuit behavior as all arguments are evaluated.
+     * For expensive operations, prefer the Supplier-based version.
      *
      * @param outcomes the outcomes to chain with OR logic
      * @return Success if any is successful, otherwise the last failure

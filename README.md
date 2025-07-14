@@ -528,9 +528,22 @@ EvaluationOutcome result = validateStructure(pet)
 EvaluationOutcome result = primaryValidation(pet)
     .or(fallbackValidation(pet));
 
-// Bulk operations
-EvaluationOutcome allMustPass = EvaluationOutcome.allOf(check1, check2, check3);
-EvaluationOutcome anyCanPass = EvaluationOutcome.anyOf(check1, check2, check3);
+// Bulk operations with short-circuiting (using suppliers)
+EvaluationOutcome allMustPass = EvaluationOutcome.allOf(
+    () -> validateStructure(pet),
+    () -> validateBusinessRules(pet),
+    () -> validateDataQuality(pet)
+);
+
+EvaluationOutcome anyCanPass = EvaluationOutcome.anyOf(
+    () -> primaryValidation(pet),
+    () -> fallbackValidation(pet),
+    () -> lastResortValidation(pet)
+);
+
+// Convenience overloads (no short-circuiting - all arguments evaluated)
+EvaluationOutcome allMustPass2 = EvaluationOutcome.allOf(check1, check2, check3);
+EvaluationOutcome anyCanPass2 = EvaluationOutcome.anyOf(check1, check2, check3);
 
 // Convenience methods
 if (result.isSuccess()) { /* handle success */ }
@@ -542,6 +555,8 @@ if (result.isFailure()) { /* handle failure */ }
 - **Clear Contracts**: No ambiguity about success vs failure
 - **Categorized Failures**: Structured failure reasons with standard categories
 - **Logical Chaining**: Elegant AND/OR operations with short-circuit evaluation
+- **Efficient Bulk Operations**: Supplier-based `allOf()`/`anyOf()` provide true short-circuiting
+- **Flexible API**: Both lazy (suppliers) and eager (direct values) evaluation options
 - **Reason Attachment**: Failure reasons can be attached to response warnings
 
 ---
