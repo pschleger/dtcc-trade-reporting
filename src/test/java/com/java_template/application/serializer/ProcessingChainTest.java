@@ -199,9 +199,7 @@ class ProcessingChainTest {
     @DisplayName("toEntity should extract entity and initiate entity flow")
     void testToEntityTransformation() {
         // Given
-        Function<TestEntity, TestEntity> entityMapper = entity -> {
-            return new TestEntity(entity.id(), entity.name().toUpperCase(), "processed", entity.category());
-        };
+        Function<TestEntity, TestEntity> entityMapper = entity -> new TestEntity(entity.id(), entity.name().toUpperCase(), "processed", entity.category());
 
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
@@ -363,10 +361,10 @@ class ProcessingChainTest {
         Function<TestEntity, TestEntity> entityNormalizer = entity -> {
             // Normalize the entity data
             return new TestEntity(
-                entity.id(),
-                entity.name(),
-                entity.status().toLowerCase(), // Normalize status
-                entity.category().toLowerCase() // Normalize category
+                    entity.id(),
+                    entity.name(),
+                    entity.status().toLowerCase(), // Normalize status
+                    entity.category().toLowerCase() // Normalize category
             );
         };
 
@@ -466,9 +464,7 @@ class ProcessingChainTest {
     @DisplayName("Practical example: Mixed entity and JSON processing with toJsonFlow")
     void testMixedEntityAndJsonProcessing() {
         // Given - Process entity first, then switch to JSON flow
-        Function<TestEntity, TestEntity> entityProcessor = entity -> {
-            return new TestEntity(entity.id(), entity.name().toUpperCase(), "processed", entity.category());
-        };
+        Function<TestEntity, TestEntity> entityProcessor = entity -> new TestEntity(entity.id(), entity.name().toUpperCase(), "processed", entity.category());
 
         Function<TestEntity, JsonNode> entityToJson = entity -> {
             ObjectNode petJson = objectMapper.createObjectNode();
@@ -625,14 +621,12 @@ class ProcessingChainTest {
         testSerializer.setCustomEntity(rawEntity);
 
         // Step 1: Extract and clean entity data
-        Function<TestEntity, TestEntity> entityCleaner = entity -> {
-            return new TestEntity(
+        Function<TestEntity, TestEntity> entityCleaner = entity -> new TestEntity(
                 entity.id(),
                 entity.name().trim().toLowerCase(),
                 entity.status().toLowerCase(),
                 entity.category().toLowerCase()
-            );
-        };
+        );
 
         // Convert entity to JSON for further processing
         Function<TestEntity, JsonNode> entityToJson = entity -> {
@@ -740,9 +734,9 @@ class ProcessingChainTest {
     void testEntityFirstProcessingPattern() {
         // This test demonstrates processing that starts with entity extraction
         // Given
-        Function<TestEntity, TestEntity> entityProcessor = entity -> {
-            return new TestEntity(entity.id(), entity.name().toUpperCase(), "processed", entity.category());
-        };
+        Function<TestEntity, TestEntity> entityProcessor = entity ->
+                new TestEntity(entity.id(), entity.name().toUpperCase(),
+                        "processed", entity.category());
 
         // When - Entity-first processing
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
@@ -764,13 +758,11 @@ class ProcessingChainTest {
     @DisplayName("EntityProcessingChain: Multiple entity transformations should chain correctly")
     void testMultipleEntityTransformations() {
         // Given
-        Function<TestEntity, TestEntity> firstTransform = entity -> {
-            return new TestEntity(entity.id(), entity.name().toUpperCase(), entity.status(), entity.category());
-        };
+        Function<TestEntity, TestEntity> firstTransform = entity ->
+                new TestEntity(entity.id(), entity.name().toUpperCase(), entity.status(), entity.category());
 
-        Function<TestEntity, TestEntity> secondTransform = entity -> {
-            return new TestEntity(entity.id(), entity.name(), "processed", entity.category());
-        };
+        Function<TestEntity, TestEntity> secondTransform = entity ->
+                new TestEntity(entity.id(), entity.name(), "processed", entity.category());
 
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
@@ -789,9 +781,8 @@ class ProcessingChainTest {
     @DisplayName("EntityProcessingChain: toJsonFlow should switch from entity to JSON processing")
     void testToJsonFlowTransition() {
         // Given
-        Function<TestEntity, TestEntity> entityTransform = entity -> {
-            return new TestEntity(entity.id(), entity.name().toUpperCase(), "processed", entity.category());
-        };
+        Function<TestEntity, TestEntity> entityTransform = entity ->
+                new TestEntity(entity.id(), entity.name().toUpperCase(), "processed", entity.category());
 
         Function<TestEntity, JsonNode> entityToJson = entity -> {
             ObjectNode result = objectMapper.createObjectNode();
@@ -827,9 +818,9 @@ class ProcessingChainTest {
     @DisplayName("EntityProcessingChain: complete with custom converter should work")
     void testCompleteWithCustomConverter() {
         // Given
-        Function<TestEntity, TestEntity> entityTransform = entity -> {
-            return new TestEntity(entity.id(), entity.name().toUpperCase(), "processed", entity.category());
-        };
+        Function<TestEntity, TestEntity> entityTransform = entity ->
+                new TestEntity(entity.id(), entity.name().toUpperCase(),
+                        "processed", entity.category());
 
         Function<TestEntity, JsonNode> customConverter = entity -> {
             ObjectNode result = objectMapper.createObjectNode();
@@ -930,9 +921,8 @@ class ProcessingChainTest {
     @DisplayName("EntityProcessingChain: Pure entity flow without JSON conversion")
     void testPureEntityFlow() {
         // Given - A complete entity processing flow
-        Function<TestEntity, TestEntity> normalizeEntity = entity -> {
-            return new TestEntity(entity.id(), entity.name().trim(), entity.status().toLowerCase(), entity.category());
-        };
+        Function<TestEntity, TestEntity> normalizeEntity = entity ->
+                new TestEntity(entity.id(), entity.name().trim(), entity.status().toLowerCase(), entity.category());
 
         Function<TestEntity, TestEntity> validateEntity = entity -> {
             if (entity.name().isEmpty()) {
@@ -941,9 +931,8 @@ class ProcessingChainTest {
             return entity;
         };
 
-        Function<TestEntity, TestEntity> enrichEntity = entity -> {
-            return new TestEntity(entity.id(), entity.name(), "enriched_" + entity.status(), entity.category());
-        };
+        Function<TestEntity, TestEntity> enrichEntity = entity ->
+                new TestEntity(entity.id(), entity.name(), "enriched_" + entity.status(), entity.category());
 
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
@@ -965,9 +954,9 @@ class ProcessingChainTest {
         // Given
         Function<TestEntity, Boolean> validator = entity -> entity.id() != null && entity.name() != null;
 
-        Function<TestEntity, TestEntity> processor = entity -> {
-            return new TestEntity(entity.id(), entity.name().toUpperCase(), "processed", entity.category());
-        };
+        Function<TestEntity, TestEntity> processor = entity ->
+                new TestEntity(entity.id(), entity.name().toUpperCase(),
+                        "processed", entity.category());
 
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
@@ -1045,13 +1034,11 @@ class ProcessingChainTest {
         // Given - A complete entity processing flow with validation
         Function<TestEntity, Boolean> validator = entity -> entity.id() != null && entity.name() != null;
 
-        Function<TestEntity, TestEntity> normalizer = entity -> {
-            return new TestEntity(entity.id(), entity.name().trim().toLowerCase(), entity.status(), entity.category());
-        };
+        Function<TestEntity, TestEntity> normalizer = entity ->
+                new TestEntity(entity.id(), entity.name().trim().toLowerCase(), entity.status(), entity.category());
 
-        Function<TestEntity, TestEntity> enricher = entity -> {
-            return new TestEntity(entity.id(), entity.name(), "enriched_" + entity.status(), entity.category());
-        };
+        Function<TestEntity, TestEntity> enricher = entity ->
+                new TestEntity(entity.id(), entity.name(), "enriched_" + entity.status(), entity.category());
 
         // When
         EntityProcessorCalculationResponse response = testSerializer.withRequest(mockRequest)
