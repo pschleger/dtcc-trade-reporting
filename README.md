@@ -94,8 +94,7 @@ Application-specific logic and components:
 - `controller/` – HTTP endpoints and REST API controllers.
 - `entity/` – Domain entities (e.g., `pet/Pet.java`) that implement `CyodaEntity`.
 - `processor/` – Workflow processors that implement `CyodaProcessor` interface.
-- `criteria/` – Workflow criteria that implement `CyodaCriterion` interface.
-- `cyoda_dto/` – Data transfer objects for Cyoda integration.
+- `criterion/` – Workflow criteria that implement `CyodaCriterion` interface.
 
 ### `entity/`
 Domain logic structure. Contains entity structures.
@@ -188,59 +187,79 @@ FSM example:
 ```json
 {
   "version": "1.0",
-  "description": "Template FSM with structured states, transitions, actions, and conditions",
-  "initial_state": "none",
+  "description": "Template FSM with structured states, transitions, processors, and criterions",
+  "initial_state": "state_initial",
   "workflow_name": "template_workflow",
   "states": {
-    "none": {
-      "transitions": {
-        "transition_to_01": {
+    "state_initial": {
+      "transitions": [
+        {
+          "id": "transition_to_01",
           "next": "state_01"
         }
-      }
+      ]
     },
     "state_01": {
-      "transitions": {
-        "transition_to_02": {
+      "transitions": [
+        {
+          "id": "transition_to_02",
           "next": "state_02",
-          "action": {
-            "name": "exampleFunctionName"
-          }
+          "manual": true,
+          "processors": [
+            {
+              "name": "example_function_name",
+              "config": {
+                "attach_entity": "true",
+                "calculation_nodes_tags": "test_tag_01"
+              }
+            }
+          ]
         }
-      }
+      ]
     },
     "state_02": {
-      "transitions": {
-        "transition_with_condition_simple": {
-          "next": "state_condition_check_01",
-          "condition": {
-            "type": "function",
-            "function": {
-              "name": "exampleConditionName"
+      "transitions": [
+        {
+          "id": "transition_with_criterion_simple",
+          "next": "state_criterion_check_01",
+          "processors": [
+            {
+              "name": "example_function_name"
             }
-          }
-        }
-      }
-    },
-    "state_condition_check_01": {
-      "transitions": {
-        "transition_with_condition_group": {
-          "next": "state_terminal",
-          "condition": {
-            "type": "group",
-            "name": "conditionName",
-            "operator": "AND",
-            "parameters": [
-              {
-                "jsonPath": "$.sampleField",
-                "operatorType": "IEQUALS",
-                "value": "templateValue",
-                "type": "simple"
+          ],
+          "criteria": [
+            {
+              "type": "function",
+              "function": {
+                "name": "example_function_name_returns_bool"
               }
-            ]
-          }
+            }
+          ]
         }
-      }
+      ]
+    },
+    "state_criterion_check_01": {
+      "transitions": [
+        {
+          "id": "transition_with_criterion_group",
+          "next": "state_terminal",
+          "criteria": [
+            {
+              "type": "group",
+              "name": "criterion_group_gamma",
+              "operator": "AND",
+              "parameters": [
+                {
+                  "jsonPath": "sampleFieldA",
+                  "operatorType": "EQUALS",
+                  "value": "template_value_01",
+                  "type": "simple"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   }
 }
@@ -259,12 +278,16 @@ There are **two types of conditions** used to control transitions:
 
 
    ```json
-   "condition": {
-     "type": "function",
-     "function": {
-       "name": "exampleConditionName"
-     }
-   }
+   
+  "criteria": [
+    {
+      "type": "function",
+      "function": {
+        "name": "example_function_name_returns_bool"
+      }
+    }
+  ]
+
    ```
 
 2. **Group (server-side) condition** — evaluated on the **server**  
@@ -282,31 +305,35 @@ There are **two types of conditions** used to control transitions:
 Example:
 
    ```json
-   "condition": {
+   
+  "criteria": [
+    {
       "type": "group",
       "name": "conditionName",
       "operator": "AND",
       "parameters": [
-         {
-            "jsonPath": "$.sampleField1",
-            "operatorType": "IEQUALS",
-            "value": "templateValue",
-            "type": "simple"
-         },
-         {
-            "jsonPath": "$.sampleField2",
-            "operatorType": "GREATER_THAN",
-            "value": 1,
-            "type": "simple"
-         },
-         {
-            "jsonPath": "previousTransition",
-            "operatorType": "IEQUALS",
-            "value": "update",
-            "type": "simple"
-         }
+        {
+          "jsonPath": "$.sampleField1",
+          "operatorType": "IEQUALS",
+          "value": "templateValue",
+          "type": "simple"
+        },
+        {
+          "jsonPath": "$.sampleField2",
+          "operatorType": "GREATER_THAN",
+          "value": 1,
+          "type": "simple"
+        },
+        {
+          "jsonPath": "previousTransition",
+          "operatorType": "IEQUALS",
+          "value": "update",
+          "type": "simple"
+        }
       ]
-   }
+    }
+  ]
+
    ```
 
 Supported condition `types`:
