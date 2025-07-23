@@ -46,6 +46,15 @@ public class CyodaRepository implements CrudRepository {
     }
 
     @Override
+    public CompletableFuture<ArrayNode> findAllByCriteria(Meta meta, Object criteria, boolean inMemory) {
+        if (inMemory) {
+            return findAllByConditionInMemory(meta, criteria);
+        } else {
+            return findAllByCondition(meta, criteria);
+        }
+    }
+
+    @Override
     public CompletableFuture<ArrayNode> save(Meta meta, Object entity) {
         return saveNewEntities(meta, entity);
     }
@@ -204,6 +213,34 @@ public class CyodaRepository implements CrudRepository {
                 });
     }
 
+    private CompletableFuture<ArrayNode> findAllByConditionInMemory(Meta meta, Object condition) {
+        return searchEntitiesInMemory(meta, condition)
+                .thenApply(response -> {
+                    JsonNode jsonNode = response.get("json");
+                    if (jsonNode != null && jsonNode.isArray()) {
+                        ArrayNode results = objectMapper.createArrayNode();
+                        for (JsonNode item : jsonNode) {
+                            if (item.has("data")) {
+                                results.add(item.get("data"));
+                            }
+                        }
+                        return results;
+                    } else {
+                        logger.warn("Expected an ArrayNode under 'json' for in-memory search, but got: {}", jsonNode);
+                        return objectMapper.createArrayNode();
+                    }
+                })
+                .exceptionally(ex -> {
+                    Throwable cause = ex instanceof CompletionException ? ex.getCause() : ex;
+                    if (cause instanceof ResponseStatusException rsEx &&
+                            rsEx.getStatusCode() == HttpStatus.NOT_FOUND) {
+                        logger.warn("Model not found for in-memory search, returning empty array: {}", rsEx.getReason());
+                        return objectMapper.createArrayNode();
+                    }
+                    throw new CompletionException("Unhandled error in in-memory search", cause);
+                });
+    }
+
     private CompletableFuture<ObjectNode> searchEntities(Meta meta, Object condition) {
         return searchEntities(meta, condition, 100, 0);
     }
@@ -222,6 +259,43 @@ public class CyodaRepository implements CrudRepository {
                         throw new RuntimeException(e);
                     }
                 });
+    }
+
+    private CompletableFuture<ObjectNode> searchEntitiesInMemory(Meta meta, Object condition) {
+        return searchEntitiesInMemory(meta, condition, 1000, 60000);
+    }
+
+    private CompletableFuture<ObjectNode> searchEntitiesInMemory(Meta meta, Object condition, int limit, int timeoutMillis) {
+        String searchPath = String.format("search/%s/%s", meta.getEntityModel(), meta.getEntityVersion());
+
+        // Create search request with parameters
+        ObjectNode searchRequest = objectMapper.createObjectNode();
+        try {
+            // Convert condition to JsonNode if it's not already
+            JsonNode conditionNode;
+            if (condition instanceof JsonNode) {
+                conditionNode = (JsonNode) condition;
+            } else {
+                conditionNode = objectMapper.valueToTree(condition);
+            }
+
+            // Copy the condition structure
+            searchRequest.setAll((ObjectNode) conditionNode);
+
+            // Add query parameters for in-memory search
+            Map<String, String> queryParams = new HashMap<>();
+            queryParams.put("limit", String.valueOf(limit));
+            queryParams.put("timeoutMillis", String.valueOf(timeoutMillis));
+
+            logger.info("Performing in-memory search for entity: {}/{} with condition: {}",
+                       meta.getEntityModel(), meta.getEntityVersion(), searchRequest);
+
+            return httpUtils.sendPostRequest(meta.getToken(), CYODA_API_URL, searchPath, searchRequest, queryParams);
+
+        } catch (Exception e) {
+            logger.error("Error preparing in-memory search request", e);
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
     private CompletableFuture<String> createSnapshotSearch(String token, String entityModel, String entityVersion, Object condition) {

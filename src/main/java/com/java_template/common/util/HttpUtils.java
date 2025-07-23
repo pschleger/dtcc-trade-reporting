@@ -116,6 +116,11 @@ public class HttpUtils {
         return sendRequest(fullUrl, token, "POST", data);
     }
 
+    public CompletableFuture<ObjectNode> sendPostRequest(String token, String apiUrl, String path, Object data, Map<String, String> params) {
+        String fullUrl = buildUrlWithParams(apiUrl, path, params);
+        return sendRequest(fullUrl, token, "POST", data);
+    }
+
     public CompletableFuture<ObjectNode> sendPutRequest(String token, String apiUrl, String path, Object data) {
         String fullUrl = buildUrlWithParams(apiUrl, path, null);
         return sendRequest(fullUrl, token, "PUT", data);

@@ -28,6 +28,9 @@ public interface EntityService {
     //     Retrieve items based on a condition.
     CompletableFuture<ArrayNode> getItemsByCondition(String entityModel, String entityVersion, Object condition);
 
+    //     Retrieve items based on a condition with option for in-memory search.
+    CompletableFuture<ArrayNode> getItemsByCondition(String entityModel, String entityVersion, Object condition, boolean inMemory);
+
     //     Add a new item to the repository and return the entity's unique ID.
     CompletableFuture<UUID> addItem(String entityModel, String entityVersion, Object entity);
 

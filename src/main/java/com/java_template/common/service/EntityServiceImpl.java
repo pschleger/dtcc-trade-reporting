@@ -161,6 +161,32 @@ public class EntityServiceImpl implements EntityService {
     }
 
     @Override
+    public CompletableFuture<ArrayNode> getItemsByCondition(String entityModel, String entityVersion, Object condition, boolean inMemory) {
+        return executeWithTokenRetry(token -> {
+            Meta meta = repository.getMeta(token, entityModel, entityVersion);
+            return repository.findAllByCriteria(meta, condition, inMemory).thenApply(items -> {
+                ArrayNode simplifiedArray = JsonNodeFactory.instance.arrayNode();
+                for (JsonNode item : items) {
+                    // For in-memory search, the response structure is different
+                    // The data is directly in the item, not nested under "data"
+                    if (inMemory) {
+                        // In-memory search returns entities directly
+                        ObjectNode data = (ObjectNode) item.deepCopy();
+                        simplifiedArray.add(data);
+                    } else {
+                        // Regular search returns entities with meta structure
+                        ObjectNode data = (ObjectNode) item.path("data").deepCopy();
+                        JsonNode technicalId = item.at("/meta/id");
+                        data.set("technicalId", technicalId);
+                        simplifiedArray.add(data);
+                    }
+                }
+                return simplifiedArray;
+            });
+        });
+    }
+
+    @Override
     public CompletableFuture<UUID> addItem(String entityModel, String entityVersion, Object entity) {
         return executeWithTokenRetry(token -> {
             Meta meta = repository.getMeta(token, entityModel, entityVersion);

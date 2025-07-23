@@ -38,6 +38,8 @@ public interface CrudRepository {
 
     CompletableFuture<ArrayNode> findAllByCriteria(Meta meta, Object criteria);
 
+    CompletableFuture<ArrayNode> findAllByCriteria(Meta meta, Object criteria, boolean inMemory);
+
     CompletableFuture<ArrayNode> save(Meta meta, Object entity);
 
     CompletableFuture<ArrayNode> saveAll(Meta meta, Object entities);
