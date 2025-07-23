@@ -115,18 +115,8 @@ bootJar {
     mainClass.set("com.java_template.Application")
 }
 
-task bootJarPrototype(type: org.springframework.boot.gradle.tasks.bundling.BootJar) {
-    group = 'build'
-    description = 'Boot JAR for Prototype'
-    archiveClassifier.set("prototype")
-    mainClass.set("com.java_template.Prototype")
-    destinationDirectory.set(layout.buildDirectory.dir("libs"))
-    launchScript()
-    classpath = sourceSets.main.runtimeClasspath
-    mainClassName = "com.java_template.Prototype"
-    targetJavaVersion = JavaVersion.VERSION_21
-    dependsOn configurations.runtimeClasspath
-}
+// Prototype mode is now handled via test: ./gradlew test --tests PrototypeApplicationTest
+// No separate JAR needed since test-based approach is cleaner
 
 task bootJarWorkflowImport(type: org.springframework.boot.gradle.tasks.bundling.BootJar) {
     group = 'build'
