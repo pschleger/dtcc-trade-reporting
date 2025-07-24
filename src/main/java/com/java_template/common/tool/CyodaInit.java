@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.ArrayList;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -26,7 +26,7 @@ import static com.java_template.common.config.Config.*;
 
 public class CyodaInit {
     private static final Logger logger = LoggerFactory.getLogger(CyodaInit.class);
-    private static final Path WORKFLOW_DTO_DIR = Paths.get(System.getProperty("user.dir")).resolve("src/main/java/com/java_template/application/cyoda_dto");
+    private static final Path WORKFLOW_DTO_DIR = Paths.get(System.getProperty("user.dir")).resolve("src/main/java/com/java_template/application/workflow");
 
     private final HttpUtils httpUtils;
     private final Authentication authentication;
@@ -40,13 +40,33 @@ public class CyodaInit {
 
     public CompletableFuture<Void> initCyoda() {
         logger.info("🔄 Starting workflow import into Cyoda...");
-        String token = authentication.getAccessToken().getTokenValue();
-        return initEntitiesSchema(WORKFLOW_DTO_DIR, token)
-                .thenRun(() -> logger.info("✅ Workflow import process completed."))
-                .exceptionally(ex -> {
-                    logger.error("❌ Cyoda workflow import failed: {}", ex.getMessage(), ex);
-                    return null;
-                });
+
+        try {
+            String token = authentication.getAccessToken().getTokenValue();
+            return initEntitiesSchema(WORKFLOW_DTO_DIR, token)
+                    .thenRun(() -> logger.info("✅ Workflow import process completed."))
+                    .exceptionally(ex -> {
+                        handleImportError(ex);
+                        return null;
+                    });
+        } catch (Exception ex) {
+            logger.error("❌ Failed to obtain access token for workflow import");
+            handleImportError(ex);
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    private void handleImportError(Throwable ex) {
+        if (ex.getMessage() != null && ex.getMessage().contains("errorCode cannot be empty")) {
+            logger.error("❌ OAuth2 authentication failed: The server returned an invalid error response format");
+            logger.info("💡 This usually means the client credentials are invalid or the client is not registered");
+            logger.info("💡 Please check your CYODA_CLIENT_ID and CYODA_CLIENT_SECRET in the .env file");
+        } else if (ex.getMessage() != null && ex.getMessage().contains("M2M client not found")) {
+            logger.error("❌ OAuth2 client not found: {}", ex.getMessage());
+            logger.info("💡 Please verify your CYODA_CLIENT_ID is correct and registered on the server");
+        } else {
+            logger.error("❌ Cyoda workflow import failed: {}", ex.getMessage(), ex);
+        }
     }
 
     public CompletableFuture<Void> initEntitiesSchema(Path entityDir, String token) {
@@ -57,25 +77,13 @@ public class CyodaInit {
 
         ExecutorService executor = Executors.newFixedThreadPool(3);
 
-        CompletableFuture<JsonNode> workflowsFuture = httpUtils
-                .sendGetRequest(token, CYODA_API_URL, "platform-api/statemachine/workflows")
-                .thenApply(response -> {
-                    int status = response.get("status").asInt();
-                    if (status != 200) {
-                        throw new RuntimeException("Failed to fetch workflows");
-                    }
-                    JsonNode json = response.get("json");
-                    if (!json.isArray()) {
-                        throw new IllegalStateException("Expected workflows as array");
-                    }
-                    return json;
-                });
+
 
         try (Stream<Path> jsonFilesStream = Files.walk(entityDir)) {
             List<Path> jsonFiles = jsonFilesStream
-                    .filter(path -> path.toString().toLowerCase().endsWith("workflow.json"))
-                    .filter(path -> path.getParent() != null && path.getParent().getParent() != null)
-                    .filter(path -> path.getParent().getParent().getFileName().toString().equals("cyoda_dto"))
+                    .filter(path -> path.toString().toLowerCase().endsWith(".json"))
+                    .filter(path -> path.getParent() != null)
+                    .filter(path -> path.getParent().getFileName().toString().equals("workflow"))
                     .collect(Collectors.toList());
 
             if (jsonFiles.isEmpty()) {
@@ -86,18 +94,18 @@ public class CyodaInit {
 
             List<CompletableFuture<Void>> futures = jsonFiles.stream()
                     .map(jsonFile -> {
-                        String entityName = jsonFile.getParent().getFileName().toString();
-                        String fileName = WORKFLOW_DTO_DIR.relativize(jsonFile).toString();
-                        pendingFiles.add(fileName);
-                        return workflowsFuture.thenCompose(workflows ->
-                                CompletableFuture.supplyAsync(() -> null, executor)
-                                        .thenCompose(v -> processWorkflowFile(jsonFile, token, entityName, (ArrayNode) workflows)
-                                                .whenComplete((res, ex) -> {
-                                                    if (ex == null) {
-                                                        pendingFiles.remove(fileName);
-                                                    }
-                                                }))
-                        );
+                        // Extract entity name from filename (remove .json extension)
+                        String fileName = jsonFile.getFileName().toString();
+                        String entityName = fileName.substring(0, fileName.lastIndexOf('.'));
+                        String relativePath = WORKFLOW_DTO_DIR.relativize(jsonFile).toString();
+                        pendingFiles.add(relativePath);
+                        return CompletableFuture.supplyAsync(() -> null, executor)
+                                .thenCompose(v -> processWorkflowFile(jsonFile, token, entityName)
+                                        .whenComplete((res, ex) -> {
+                                            if (ex == null) {
+                                                pendingFiles.remove(relativePath);
+                                            }
+                                        }));
                     })
                     .collect(Collectors.toList());
 
@@ -122,54 +130,45 @@ public class CyodaInit {
         }
     }
 
-    private CompletableFuture<Void> processWorkflowFile(Path file, String token, String entityName, ArrayNode workflows) {
+    private CompletableFuture<Void> processWorkflowFile(Path file, String token, String entityName) {
         try {
+            logger.info("📄 Processing workflow file for entity: {}", entityName);
             String dtoContent = Files.readString(file);
-            JsonNode dtoJson = new ObjectMapper().readTree(dtoContent);
-            String dtoWorkflowName = dtoJson.path("workflow").get(0).path("operationName").asText();
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode dtoJson = objectMapper.readTree(dtoContent);
 
-            List<CompletableFuture<Void>> deactivationFutures = new ArrayList<>();
+            // Wrap the workflow content in the required format: {"workflows": [file_content]}
+            ObjectNode wrappedContent = objectMapper.createObjectNode();
+            ArrayNode workflowsArray = objectMapper.createArrayNode();
+            workflowsArray.add(dtoJson);
+            wrappedContent.set("workflows", workflowsArray);
 
-            for (JsonNode workflow : workflows) {
-                String name = workflow.path("operationName").asText();
-                boolean active = workflow.path("active").asBoolean();
-                if (active && dtoWorkflowName.equals(name)) {
-                    ((ObjectNode) workflow).put("active", false);
-                    String workflowId = workflow.path("id").asText();
-                    String putPath = "platform-api/statemachine/persisted/workflows/" + workflowId;
-                    String updatedWorkflowJson = workflow.toString();
+            String wrappedContentJson = wrappedContent.toString();
 
-                    CompletableFuture<Void> deactivation = httpUtils.sendPutRequest(
-                                    token, CYODA_API_URL, putPath, updatedWorkflowJson)
-                            .thenAccept(putResponse -> {
-                                int putStatus = putResponse.get("status").asInt();
-                                if (putStatus != 200) {
-                                    throw new RuntimeException("Failed to deactivate workflow with id " + workflowId);
-                                }
-                            });
-                    deactivationFutures.add(deactivation);
-                }
-            }
+            // Use the new endpoint format: model/{entity_name}/{ENTITY_VERSION}/workflow/import
+            String importPath = String.format("model/%s/%s/workflow/import", entityName, ENTITY_VERSION);
+            logger.debug("🔗 Using import endpoint: {}", importPath);
 
-            return CompletableFuture.allOf(deactivationFutures.toArray(new CompletableFuture[0]))
-                    .thenCompose(ignored -> httpUtils.sendPostRequest(
-                            token, CYODA_API_URL, "platform-api/statemachine/import?needRewrite=true",
-                            dtoContent))
+            return httpUtils.sendPostRequest(token, CYODA_API_URL, importPath, wrappedContentJson)
                     .thenApply(response -> {
                         int statusCode = response.get("status").asInt();
                         if (statusCode >= 200 && statusCode < 300) {
-                            logger.info("Successfully imported workflow for entity: {}", entityName);
+                            logger.info("✅ Successfully imported workflow for entity: {}", entityName);
                             return null;
                         } else {
                             String body = response.path("json").toString();
-                            throw new RuntimeException("Failed to import workflow for entity " + entityName +
-                                    ". Status code: " + statusCode +
-                                    ", body: " + body);
+                            String errorMsg = String.format("Failed to import workflow for entity %s. Status code: %d, body: %s",
+                                    entityName, statusCode, body);
+                            logger.error("❌ {}", errorMsg);
+                            throw new RuntimeException(errorMsg);
                         }
                     });
         } catch (IOException e) {
-            logger.error("Error reading file {}: {}", file, e.getMessage(), e);
-            return CompletableFuture.failedFuture(e);
+            logger.error("❌ Error reading workflow file {}: {}", file, e.getMessage());
+            return CompletableFuture.failedFuture(new RuntimeException("Failed to read workflow file for entity " + entityName, e));
+        } catch (Exception e) {
+            logger.error("❌ Unexpected error processing workflow file {}: {}", file, e.getMessage());
+            return CompletableFuture.failedFuture(new RuntimeException("Failed to process workflow file for entity " + entityName, e));
         }
     }
 }
