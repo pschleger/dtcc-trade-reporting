@@ -166,35 +166,35 @@ application/entity/$entity_name/Workflow.json
 
 > **Note**: Workflow configuration files should be placed alongside their corresponding entity classes in the `application/entity/` directory structure.
 
-This file defines the workflow configuration using a **finite-state machine (FSM)**  
+This file defines the workflow configuration using a **finite-state machine (FSM)**
 model, which specifies states and transitions between them.
 
-The FSM JSON should consist of an **ordered dictionary of states**.  
-Each state has a dictionary of **transitions**.  
-Each transition has a `next` attribute, which identifies the next state.  
-Each transition may have an `action` or `condition`.
-Ideally, there should be **one action or condition per transition**.
+The workflow JSON consists of:
+- **Metadata**: `version`, `name`, `desc`, `initialState`, `active`
+- **Global criterion**: Optional workflow-level criterion for applicability
+- **States**: Dictionary of states with their transitions
+- **Transitions**: Each transition has `name`, `next`, `manual` flag, and optional `processors`/`criterion`
 
 **Rules:**
-- Always start from an initial state `'none'`.
+- Start from the defined `initialState`.
 - Avoid loops.
-- If there are **multiple transitions** from one state,  
-  a **condition** is required for each transition to decide which one to use.
-
+- If there are **multiple transitions** from one state,
+  a **criterion** is required for each transition to decide which one to use.
 
 FSM example:
 
 ```json
 {
   "version": "1.0",
-  "description": "Template FSM with structured states, transitions, processors, and criterions",
-  "initial_state": "state_initial",
-  "workflow_name": "template_workflow",
+  "name": "template_workflow",
+  "desc": "Template FSM with structured states, transitions, processors, and criterions",
+  "initialState": "none",
+  "active": true,
   "states": {
-    "state_initial": {
+    "none": {
       "transitions": [
         {
-          "id": "transition_to_01",
+          "name": "transition_to_01",
           "next": "state_01"
         }
       ]
@@ -202,15 +202,18 @@ FSM example:
     "state_01": {
       "transitions": [
         {
-          "id": "transition_to_02",
+          "name": "transition_to_02",
           "next": "state_02",
           "manual": true,
           "processors": [
             {
               "name": "example_function_name",
+              "executionMode": "ASYNC_NEW_TX",
               "config": {
-                "attach_entity": "true",
-                "calculation_nodes_tags": "test_tag_01"
+                "attachEntity": true,
+                "calculationNodesTags": "cyoda_application",
+                "responseTimeoutMs": 3000,
+                "retryPolicy": "FIXED"
               }
             }
           ]
@@ -220,126 +223,142 @@ FSM example:
     "state_02": {
       "transitions": [
         {
-          "id": "transition_with_criterion_simple",
+          "name": "transition_with_criterion_simple",
           "next": "state_criterion_check_01",
           "processors": [
             {
-              "name": "example_function_name"
-            }
-          ],
-          "criteria": [
-            {
-              "type": "function",
-              "function": {
-                "name": "example_function_name_returns_bool"
+              "name": "example_function_name",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "cyoda_application",
+                "responseTimeoutMs": 3000,
+                "retryPolicy": "FIXED"
               }
             }
-          ]
+          ],
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "example_function_name_returns_bool",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "cyoda_application",
+                "responseTimeoutMs": 5000,
+                "retryPolicy": "FIXED"
+              }
+            }
+          }
         }
       ]
     },
     "state_criterion_check_01": {
       "transitions": [
         {
-          "id": "transition_with_criterion_group",
+          "name": "transition_with_criterion_group",
           "next": "state_terminal",
-          "criteria": [
-            {
-              "type": "group",
-              "name": "criterion_group_gamma",
-              "operator": "AND",
-              "parameters": [
-                {
-                  "jsonPath": "sampleFieldA",
-                  "operatorType": "EQUALS",
-                  "value": "template_value_01",
-                  "type": "simple"
-                }
-              ]
-            }
-          ]
+          "criterion": {
+            "type": "group",
+            "operator": "AND",
+            "conditions": [
+              {
+                "type": "simple",
+                "jsonPath": "$.sampleFieldA",
+                "operation": "EQUALS",
+                "value": "template_value_01"
+              }
+            ]
+          }
         }
       ]
+    },
+    "state_terminal": {
+      "transitions": []
     }
   }
 }
 ```
 
-### ✅ Condition Types
+### ✅ Criterion Types
 
-There are **two types of conditions** used to control transitions:
+There are **three types of criteria** used to control transitions:
 
-1. **Function condition** — evaluated on the **client side**  
-   Specify the function name in `condition.function.name`.
-
-   > ⚠️ The method must be implemented inside `entity/$entity_name/Workflow.java`.  
-   > Its name **must be unique and match** `condition.function.name`.
-
-
+1. **Simple criterion** — Direct field comparison
+   Evaluates a single field against a value using an operation.
 
    ```json
-   
-  "criteria": [
-    {
-      "type": "function",
-      "function": {
-        "name": "example_function_name_returns_bool"
-      }
-    }
-  ]
-
+   "criterion": {
+     "type": "simple",
+     "jsonPath": "$.customerType",
+     "operation": "EQUALS",
+     "value": "premium"
+   }
    ```
 
-2. **Group (server-side) condition** — evaluated on the **server**  
-   Defined using `type: "group"` with parameters.  
-   Logic is evaluated by the Cyoda engine.
+2. **Group criterion** — Logical combination of conditions
+   Combines multiple simple or group conditions using logical operators.
 
-   > ✅ **Note:** `Group` (server-side) conditions support **nesting**.
-   > You can include both `simple` and `group` conditions inside the `parameters` array.
+   > ✅ **Note:** `Group` criteria support **nesting**.
+   > You can include both `simple` and `group` conditions inside the `conditions` array.
+
+   ```json
+   "criterion": {
+     "type": "group",
+     "operator": "AND",
+     "conditions": [
+       {
+         "type": "simple",
+         "jsonPath": "$.creditScore",
+         "operation": "GREATER_OR_EQUAL",
+         "value": 700
+       },
+       {
+         "type": "simple",
+         "jsonPath": "$.annualRevenue",
+         "operation": "GREATER_THAN",
+         "value": 1000000
+       }
+     ]
+   }
+   ```
+
+3. **Function criterion** — Custom client-side evaluation
+   Executes a custom function with optional nested criterion.
+
+   > ⚠️ The function must be implemented as a `CyodaCriterion` component.
+   > Its name **must be unique and match** `function.name`.
+
+   ```json
+   "criterion": {
+     "type": "function",
+     "function": {
+       "name": "example_function_name_returns_bool",
+       "config": {
+         "attachEntity": true,
+         "calculationNodesTags": "validation,criteria",
+         "responseTimeoutMs": 5000,
+         "retryPolicy": "FIXED"
+       },
+       "criterion": {
+         "type": "simple",
+         "jsonPath": "$.sampleFieldB",
+         "operation": "GREATER_THAN",
+         "value": 100
+       }
+     }
+   }
+   ```
 
    > **jsonPath field reference:**
    > - Use the **`$.` prefix** for custom (business) fields of the entity.
-   > - Use **no prefix** for built-in entity meta-fields.  
-       >   Supported meta-fields: `state`, `previousTransition`, `creationDate`, `lastUpdateTime`.
+   > - Use **no prefix** for built-in entity meta-fields.
+   >   Supported meta-fields: `state`, `previousTransition`, `creationDate`, `lastUpdateTime`.
 
-Example:
-
-   ```json
-   
-  "criteria": [
-    {
-      "type": "group",
-      "name": "conditionName",
-      "operator": "AND",
-      "parameters": [
-        {
-          "jsonPath": "$.sampleField1",
-          "operatorType": "IEQUALS",
-          "value": "templateValue",
-          "type": "simple"
-        },
-        {
-          "jsonPath": "$.sampleField2",
-          "operatorType": "GREATER_THAN",
-          "value": 1,
-          "type": "simple"
-        },
-        {
-          "jsonPath": "previousTransition",
-          "operatorType": "IEQUALS",
-          "value": "update",
-          "type": "simple"
-        }
-      ]
-    }
-  ]
-
-   ```
-
-Supported condition `types`:
+Supported criterion `types`:
 
 - `simple`
 - `group`
+- `function`
 
 Supported group `operator` values:
 
@@ -347,11 +366,11 @@ Supported group `operator` values:
 - `OR`
 - `NOT`
 
-Supported operatorType values (`I*` - ignore case):
+Supported operation values (`*_OR_EQUAL` includes the boundary):
 
 ```
-EQUALS, NOT_EQUAL, IEQUALS, INOT_EQUAL, IS_NULL, NOT_NULL, GREATER_THAN, GREATER_OR_EQUAL, LESS_THAN, LESS_OR_EQUAL,
-ICONTAINS, ISTARTS_WITH, IENDS_WITH, INOT_CONTAINS, INOT_STARTS_WITH, INOT_ENDS_WITH, MATCHES_PATTERN, BETWEEN, BETWEEN_INCLUSIVE
+EQUALS, NOT_EQUAL, IS_NULL, NOT_NULL, GREATER_THAN, GREATER_OR_EQUAL, LESS_THAN, LESS_OR_EQUAL,
+CONTAINS, STARTS_WITH, ENDS_WITH, NOT_CONTAINS, NOT_STARTS_WITH, NOT_ENDS_WITH, MATCHES_PATTERN, BETWEEN, BETWEEN_INCLUSIVE
 ```
 
 ---
@@ -362,7 +381,7 @@ The logic for processing workflows is implemented using **CyodaProcessor** and *
 
 ### Processor Architecture
 
-Processors implement the `CyodaProcessor` interface and use the **EntityProcessingChain** API for type-safe entity processing:
+Processors implement the `CyodaProcessor` interface and use the **EntityProcessingChain** API for type-safe entity processing. Processors are configured in workflow transitions with execution modes and configuration options:
 
 ```java
 @Component
@@ -388,8 +407,53 @@ public class AddLastModifiedTimestamp implements CyodaProcessor {
     @Override
     public boolean supports(OperationSpecification modelKey) {
         // Match based on processor name from workflow configuration
-        return "AddLastModifiedTimestamp".equals(modelKey.operationName());
+        return "example_function_name".equals(modelKey.operationName());
     }
+}
+```
+
+### Processor Configuration
+
+Processors in workflow transitions support various execution modes and configuration options:
+
+```json
+"processors": [
+  {
+    "name": "example_function_name",
+    "executionMode": "SYNC",
+    "config": {
+      "attachEntity": true,
+      "calculationNodesTags": "test_tag_01",
+      "responseTimeoutMs": 3000,
+      "retryPolicy": "FIXED"
+    }
+  }
+]
+```
+
+**Execution Modes:**
+- `SYNC` - Synchronous execution (default)
+- `ASYNC_SAME_TX` - Asynchronous execution in the same transaction
+- `ASYNC_NEW_TX` - Asynchronous execution in new transaction
+
+**Configuration Options:**
+- `attachEntity` - Whether to attach entity data to the request
+- `calculationNodesTags` - Tags for calculation node selection
+- `responseTimeoutMs` - Response timeout in milliseconds
+- `retryPolicy` - Retry policy for failed executions
+
+### Execution Mode Reference
+
+```json
+"executionMode": {
+  "type": "string",
+  "description": "Execution mode of the processor",
+  "enum": [
+    "SYNC",
+    "ASYNC_SAME_TX",
+    "ASYNC_NEW_TX"
+  ],
+  "default": "SYNC"
 }
 ```
 
@@ -475,7 +539,7 @@ To register a processor or criterion:
 3. **Implement the `supports()` method** to define when this component should be used
 4. **Implement the processing method** (`process()` for processors, `check()` for criteria)
 
-> ✅ Component operation names are matched against the `action.name` or `condition.function.name` in workflow configuration via the `supports()` method. The `supports()` method should return `true` when `modelKey.operationName()` matches the expected operation name.
+> ✅ Component operation names are matched against the `processors[].name` or `criterion.function.name` in workflow configuration via the `supports()` method. The `supports()` method should return `true` when `modelKey.operationName()` matches the expected operation name.
 
 ---
 
