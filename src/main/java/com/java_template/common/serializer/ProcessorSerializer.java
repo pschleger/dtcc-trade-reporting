@@ -48,12 +48,14 @@ public interface ProcessorSerializer {
     String getType();
 
     /**
-     * Executes a custom function with the serializer and returns the result.
+     * Executes a custom function with the serializer and request context.
      * This allows for flexible operations without modifying the interface.
      */
     default <R> R executeFunction(EntityProcessorCalculationRequest request,
-                                  Function<ProcessorSerializer, R> function) {
-        return function.apply(this);
+                                  Function<ProcessorExecutionContext, R> function) {
+        JsonNode payload = extractPayload(request);
+        ProcessorExecutionContext context = new ProcessorExecutionContext(request, payload);
+        return function.apply(context);
     }
 
     /**

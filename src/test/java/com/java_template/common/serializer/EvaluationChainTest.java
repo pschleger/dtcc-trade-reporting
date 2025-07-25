@@ -6,8 +6,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.java_template.common.serializer.jackson.JacksonCriterionSerializer;
 import com.java_template.common.workflow.CyodaEntity;
 import com.java_template.common.workflow.OperationSpecification;
-import lombok.Getter;
-import lombok.Setter;
 import org.cyoda.cloud.api.event.common.DataPayload;
 import org.cyoda.cloud.api.event.common.ModelSpec;
 import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationRequest;
@@ -33,12 +31,14 @@ class EvaluationChainTest {
     private ObjectNode testPayload;
 
     // Test entity for evaluation chain tests
+    @SuppressWarnings({"LombokGetterMayBeUsed", "LombokSetterMayBeUsed"}) // Not here
     static class TestEntity implements CyodaEntity {
         private Long id;
         private String name;
         private String status;
         private String category;
 
+        @SuppressWarnings("unused") // Needed by Jackson
         public TestEntity() {}
 
         public TestEntity(Long id, String name, String status, String category) {

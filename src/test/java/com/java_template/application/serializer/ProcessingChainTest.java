@@ -8,8 +8,6 @@ import com.java_template.common.serializer.ProcessorSerializer;
 import com.java_template.common.serializer.jackson.JacksonProcessorSerializer;
 import com.java_template.common.workflow.CyodaEntity;
 import com.java_template.common.workflow.OperationSpecification;
-import lombok.Getter;
-import lombok.Setter;
 import org.cyoda.cloud.api.event.common.DataPayload;
 import org.cyoda.cloud.api.event.common.ModelSpec;
 import org.cyoda.cloud.api.event.processing.EntityProcessorCalculationRequest;
@@ -35,11 +33,13 @@ class ProcessingChainTest {
     private ObjectNode testPayload;
 
     // Test entity for processing chain tests
+    @SuppressWarnings({"LombokGetterMayBeUsed", "LombokSetterMayBeUsed"}) // not here.
     static class TestEntity implements CyodaEntity {
         private Long id;
         private String name;
         private String status;
 
+        @SuppressWarnings("unused") // Needed by Jackson
         public TestEntity() {}
 
         public TestEntity(Long id, String name, String status) {
@@ -555,21 +555,21 @@ class ProcessingChainTest {
     @DisplayName("ProcessingChain should handle executeFunction")
     void testExecuteFunction() {
         // Given
-        Function<ProcessorSerializer, String> customFunction = serializer ->
-                "Function executed with " + serializer.getType();
+        Function<ProcessorSerializer.ProcessorExecutionContext, String> customFunction = context ->
+                "Function executed with request ID " + context.request().getRequestId();
 
         // When
         String result = serializer.executeFunction(request, customFunction);
 
         // Then
-        assertEquals("Function executed with jackson", result);
+        assertEquals("Function executed with request ID req-456", result);
     }
 
     @Test
     @DisplayName("ProcessingChain should handle executeFunction with error")
     void testExecuteFunctionWithError() {
         // Given
-        Function<ProcessorSerializer, String> faultyFunction = serializer -> {
+        Function<ProcessorSerializer.ProcessorExecutionContext, String> faultyFunction = context -> {
             throw new RuntimeException("Function execution failed");
         };
 
