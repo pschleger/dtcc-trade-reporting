@@ -16,6 +16,18 @@ import java.util.function.Predicate;
 public interface CriterionSerializer {
 
     /**
+     * Context record containing the original request and extracted payload for criterion evaluation.
+     * Provides access to both request metadata (entityId, transactionId) and payload data.
+     */
+    record CriterionEvaluationContext(EntityCriteriaCalculationRequest request, JsonNode payload) {}
+
+    /**
+     * Context record containing the original request and extracted entity for criterion evaluation.
+     * Provides access to both request metadata (entityId, transactionId) and entity data.
+     */
+    record CriterionEntityEvaluationContext<T extends CyodaEntity>(EntityCriteriaCalculationRequest request, T entity) {}
+
+    /**
      * Extracts a typed entity from the request payload.
      */
     <T extends CyodaEntity> T extractEntity(EntityCriteriaCalculationRequest request, Class<T> clazz);
@@ -56,19 +68,21 @@ public interface CriterionSerializer {
      */
     interface EvaluationChain {
         /**
-         * Evaluates the criterion with an outcome provider for the JSON payload.
+         * Evaluates the criterion with an outcome provider for the JSON payload with request context.
+         * Provides access to both request metadata and payload data.
          * @param evaluator Function that returns EvaluationOutcome (Success or Fail)
          * @return EvaluationChain for chaining
          */
-        EvaluationChain evaluate(Function<JsonNode, EvaluationOutcome> evaluator);
+        EvaluationChain evaluate(Function<CriterionEvaluationContext, EvaluationOutcome> evaluator);
 
         /**
-         * Evaluates the criterion with an outcome provider for the extracted entity.
+         * Evaluates the criterion with an outcome provider for the extracted entity with request context.
+         * Provides access to both request metadata and entity data.
          * @param clazz Entity class to extract
          * @param evaluator Function that returns EvaluationOutcome (Success or Fail)
          * @return EvaluationChain for chaining
          */
-        <T extends CyodaEntity> EvaluationChain evaluateEntity(Class<T> clazz, Function<T, EvaluationOutcome> evaluator);
+        <T extends CyodaEntity> EvaluationChain evaluateEntity(Class<T> clazz, Function<CriterionEntityEvaluationContext<T>, EvaluationOutcome> evaluator);
 
         /**
          * Sets the error handler for the evaluation chain.
@@ -116,10 +130,11 @@ public interface CriterionSerializer {
         }
 
         @Override
-        public EvaluationChain evaluate(Function<JsonNode, EvaluationOutcome> evaluator) {
+        public EvaluationChain evaluate(Function<CriterionEvaluationContext, EvaluationOutcome> evaluator) {
             if (error == null && matches == null) {
                 try {
-                    EvaluationOutcome outcome = evaluator.apply(payload);
+                    CriterionEvaluationContext context = new CriterionEvaluationContext(request, payload);
+                    EvaluationOutcome outcome = evaluator.apply(context);
                     if (outcome instanceof EvaluationOutcome.Success) {
                         matches = true;
                         evaluationReason = null;
@@ -135,11 +150,12 @@ public interface CriterionSerializer {
         }
 
         @Override
-        public <T extends CyodaEntity> EvaluationChain evaluateEntity(Class<T> clazz, Function<T, EvaluationOutcome> evaluator) {
+        public <T extends CyodaEntity> EvaluationChain evaluateEntity(Class<T> clazz, Function<CriterionEntityEvaluationContext<T>, EvaluationOutcome> evaluator) {
             if (error == null && matches == null) {
                 try {
                     T entity = serializer.extractEntity(request, clazz);
-                    EvaluationOutcome outcome = evaluator.apply(entity);
+                    CriterionEntityEvaluationContext<T> context = new CriterionEntityEvaluationContext<>(request, entity);
+                    EvaluationOutcome outcome = evaluator.apply(context);
                     if (outcome instanceof EvaluationOutcome.Success) {
                         matches = true;
                         evaluationReason = null;
