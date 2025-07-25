@@ -7,7 +7,6 @@ import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationResponse;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * Criterion serializer interface that integrates with sealed response builders.
@@ -47,7 +46,7 @@ public interface CriterionSerializer {
      * Gets the serializer type identifier.
      */
     String getType();
-    
+
     /**
      * Creates a response builder for the given request.
      * This builder provides a simplified API for both match and error responses.

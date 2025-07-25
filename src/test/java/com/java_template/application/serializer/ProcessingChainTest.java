@@ -8,6 +8,8 @@ import com.java_template.common.serializer.ProcessorSerializer;
 import com.java_template.common.serializer.jackson.JacksonProcessorSerializer;
 import com.java_template.common.workflow.CyodaEntity;
 import com.java_template.common.workflow.OperationSpecification;
+import lombok.Getter;
+import lombok.Setter;
 import org.cyoda.cloud.api.event.common.DataPayload;
 import org.cyoda.cloud.api.event.common.ModelSpec;
 import org.cyoda.cloud.api.event.processing.EntityProcessorCalculationRequest;
@@ -37,22 +39,22 @@ class ProcessingChainTest {
         private Long id;
         private String name;
         private String status;
-        
+
         public TestEntity() {}
-        
+
         public TestEntity(Long id, String name, String status) {
             this.id = id;
             this.name = name;
             this.status = status;
         }
-        
+
         public Long getId() { return id; }
         public void setId(Long id) { this.id = id; }
         public String getName() { return name; }
         public void setName(String name) { this.name = name; }
         public String getStatus() { return status; }
         public void setStatus(String status) { this.status = status; }
-        
+
         @Override
         public OperationSpecification getModelKey() {
             ModelSpec modelSpec = new ModelSpec();
@@ -60,7 +62,7 @@ class ProcessingChainTest {
             modelSpec.setVersion(1);
             return new OperationSpecification.Entity(modelSpec, "test-entity");
         }
-        
+
         @Override
         public boolean isValid() {
             return id != null && name != null && !name.trim().isEmpty();
@@ -71,7 +73,7 @@ class ProcessingChainTest {
     void setUp() {
         objectMapper = new ObjectMapper();
         serializer = new JacksonProcessorSerializer(objectMapper);
-        
+
         // Create test request with real data
         request = new EntityProcessorCalculationRequest();
         request.setId("test-request-123");
@@ -79,13 +81,13 @@ class ProcessingChainTest {
         request.setEntityId("entity-789");
         request.setProcessorId("processor-123");
         request.setProcessorName("TestProcessor");
-        
+
         // Create test payload
         testPayload = objectMapper.createObjectNode();
         testPayload.put("id", 123L);
         testPayload.put("name", "Fluffy");
         testPayload.put("status", "available");
-        
+
         DataPayload payload = new DataPayload();
         payload.setData(testPayload);
         request.setPayload(payload);
@@ -96,7 +98,7 @@ class ProcessingChainTest {
     void testProcessingChainInitialization() {
         // When
         ProcessorSerializer.ProcessingChain chain = serializer.withRequest(request);
-        
+
         // Then
         assertNotNull(chain);
         assertInstanceOf(ProcessorSerializer.ProcessingChainImpl.class, chain);
@@ -113,17 +115,17 @@ class ProcessingChainTest {
             result.put("transformedName", "Transformed: " + payload.get("name").asText());
             return result;
         };
-        
+
         // When
         EntityProcessorCalculationResponse response = serializer.withRequest(request)
                 .map(mapper)
                 .complete();
-        
+
         // Then
         assertNotNull(response);
         assertTrue(response.getSuccess());
         assertNull(response.getError());
-        
+
         JsonNode resultData = response.getPayload().getData();
         assertEquals(246L, resultData.get("transformedId").asLong());
         assertEquals("Transformed: Fluffy", resultData.get("transformedName").asText());
@@ -136,12 +138,12 @@ class ProcessingChainTest {
         Function<ProcessorSerializer.ProcessorExecutionContext, JsonNode> faultyMapper = context -> {
             throw new RuntimeException("Transformation failed");
         };
-        
+
         // When
         EntityProcessorCalculationResponse response = serializer.withRequest(request)
                 .map(faultyMapper)
                 .complete();
-        
+
         // Then
         assertNotNull(response);
         assertFalse(response.getSuccess());
@@ -158,7 +160,7 @@ class ProcessingChainTest {
             result.put("originalId", payload.get("id").asLong());
             return result;
         };
-        
+
         Function<ProcessorSerializer.ProcessorExecutionContext, JsonNode> secondMapper = context -> {
             JsonNode payload = context.payload();
             ObjectNode result = objectMapper.createObjectNode();
@@ -167,17 +169,17 @@ class ProcessingChainTest {
             result.put("finalId", payload.get("originalId").asLong() * 10);
             return result;
         };
-        
+
         // When
         EntityProcessorCalculationResponse response = serializer.withRequest(request)
                 .map(firstMapper)
                 .map(secondMapper)
                 .complete();
-        
+
         // Then
         assertNotNull(response);
         assertTrue(response.getSuccess());
-        
+
         JsonNode resultData = response.getPayload().getData();
         assertEquals("Second transformation", resultData.get("step2").asText());
         assertEquals("First transformation", resultData.get("previousStep").asText());
@@ -191,20 +193,20 @@ class ProcessingChainTest {
         Function<ProcessorSerializer.ProcessorExecutionContext, JsonNode> faultyMapper = context -> {
             throw new RuntimeException("First transformation failed");
         };
-        
+
         Function<ProcessorSerializer.ProcessorExecutionContext, JsonNode> secondMapper = context -> {
             // This should never be called
             ObjectNode result = objectMapper.createObjectNode();
             result.put("shouldNotBeReached", true);
             return result;
         };
-        
+
         // When
         EntityProcessorCalculationResponse response = serializer.withRequest(request)
                 .map(faultyMapper)
                 .map(secondMapper) // Should not execute
                 .complete();
-        
+
         // Then
         assertNotNull(response);
         assertFalse(response.getSuccess());
@@ -214,19 +216,19 @@ class ProcessingChainTest {
     @DisplayName("ProcessingChain should use custom error handler")
     void testCustomErrorHandler() {
         // Given
-        BiFunction<Throwable, JsonNode, ErrorInfo> customErrorHandler = 
+        BiFunction<Throwable, JsonNode, ErrorInfo> customErrorHandler =
             (error, data) -> new ErrorInfo("CUSTOM_ERROR", "Custom: " + error.getMessage());
-        
+
         Function<ProcessorSerializer.ProcessorExecutionContext, JsonNode> faultyMapper = context -> {
             throw new RuntimeException("Processing failed");
         };
-        
+
         // When
         EntityProcessorCalculationResponse response = serializer.withRequest(request)
                 .withErrorHandler(customErrorHandler)
                 .map(faultyMapper)
                 .complete();
-        
+
         // Then
         assertNotNull(response);
         assertFalse(response.getSuccess());
@@ -238,7 +240,7 @@ class ProcessingChainTest {
         // When
         ProcessorSerializer.EntityProcessingChain<TestEntity> entityChain = serializer.withRequest(request)
                 .toEntity(TestEntity.class);
-        
+
         // Then
         assertNotNull(entityChain);
         assertInstanceOf(ProcessorSerializer.EntityProcessingChainImpl.class, entityChain);
@@ -252,17 +254,17 @@ class ProcessingChainTest {
             TestEntity entity = context.entity();
             return new TestEntity(entity.getId(), entity.getName().toUpperCase(), "processed");
         };
-        
+
         // When
         EntityProcessorCalculationResponse response = serializer.withRequest(request)
                 .toEntity(TestEntity.class)
                 .map(entityMapper)
                 .complete();
-        
+
         // Then
         assertNotNull(response);
         assertTrue(response.getSuccess());
-        
+
         JsonNode resultData = response.getPayload().getData();
         assertEquals(123L, resultData.get("id").asLong());
         assertEquals("FLUFFY", resultData.get("name").asText());
@@ -274,23 +276,23 @@ class ProcessingChainTest {
     void testEntityValidation() {
         // Given
         Function<TestEntity, Boolean> validator = entity -> entity.getId() != null && entity.getId() > 100;
-        
+
         Function<ProcessorSerializer.ProcessorEntityExecutionContext<TestEntity>, TestEntity> processor = context -> {
             TestEntity entity = context.entity();
             return new TestEntity(entity.getId(), entity.getName(), "validated");
         };
-        
+
         // When
         EntityProcessorCalculationResponse response = serializer.withRequest(request)
                 .toEntity(TestEntity.class)
                 .validate(validator)
                 .map(processor)
                 .complete();
-        
+
         // Then
         assertNotNull(response);
         assertTrue(response.getSuccess());
-        
+
         JsonNode resultData = response.getPayload().getData();
         assertEquals("validated", resultData.get("status").asText());
     }
@@ -300,13 +302,13 @@ class ProcessingChainTest {
     void testEntityValidationFailure() {
         // Given
         Function<TestEntity, Boolean> validator = entity -> entity.getId() > 1000; // Will fail
-        
+
         // When
         EntityProcessorCalculationResponse response = serializer.withRequest(request)
                 .toEntity(TestEntity.class)
                 .validate(validator)
                 .complete();
-        
+
         // Then
         assertNotNull(response);
         assertFalse(response.getSuccess());
@@ -553,9 +555,8 @@ class ProcessingChainTest {
     @DisplayName("ProcessingChain should handle executeFunction")
     void testExecuteFunction() {
         // Given
-        Function<ProcessorSerializer, String> customFunction = serializer -> {
-            return "Function executed with " + serializer.getType();
-        };
+        Function<ProcessorSerializer, String> customFunction = serializer ->
+                "Function executed with " + serializer.getType();
 
         // When
         String result = serializer.executeFunction(request, customFunction);

@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.java_template.common.serializer.jackson.JacksonCriterionSerializer;
 import com.java_template.common.workflow.CyodaEntity;
 import com.java_template.common.workflow.OperationSpecification;
+import lombok.Getter;
+import lombok.Setter;
 import org.cyoda.cloud.api.event.common.DataPayload;
 import org.cyoda.cloud.api.event.common.ModelSpec;
 import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationRequest;
@@ -36,16 +38,16 @@ class EvaluationChainTest {
         private String name;
         private String status;
         private String category;
-        
+
         public TestEntity() {}
-        
+
         public TestEntity(Long id, String name, String status, String category) {
             this.id = id;
             this.name = name;
             this.status = status;
             this.category = category;
         }
-        
+
         public Long getId() { return id; }
         public void setId(Long id) { this.id = id; }
         public String getName() { return name; }
@@ -54,7 +56,7 @@ class EvaluationChainTest {
         public void setStatus(String status) { this.status = status; }
         public String getCategory() { return category; }
         public void setCategory(String category) { this.category = category; }
-        
+
         @Override
         public OperationSpecification getModelKey() {
             ModelSpec modelSpec = new ModelSpec();
@@ -62,7 +64,7 @@ class EvaluationChainTest {
             modelSpec.setVersion(1);
             return new OperationSpecification.Entity(modelSpec, "test-entity");
         }
-        
+
         @Override
         public boolean isValid() {
             return id != null && name != null && !name.trim().isEmpty();
@@ -73,7 +75,7 @@ class EvaluationChainTest {
     void setUp() {
         objectMapper = new ObjectMapper();
         serializer = new JacksonCriterionSerializer(objectMapper);
-        
+
         // Create test request with real data
         request = new EntityCriteriaCalculationRequest();
         request.setId("test-criteria-123");
@@ -81,14 +83,14 @@ class EvaluationChainTest {
         request.setEntityId("entity-789");
         request.setCriteriaId("criterion-123");
         request.setCriteriaName("TestCriterion");
-        
+
         // Create test payload
         testPayload = objectMapper.createObjectNode();
         testPayload.put("id", 123L);
         testPayload.put("name", "Fluffy");
         testPayload.put("status", "available");
         testPayload.put("category", "pet");
-        
+
         DataPayload payload = new DataPayload();
         payload.setData(testPayload);
         request.setPayload(payload);
@@ -99,7 +101,7 @@ class EvaluationChainTest {
     void testEvaluationChainInitialization() {
         // When
         CriterionSerializer.EvaluationChain chain = serializer.withRequest(request);
-        
+
         // Then
         assertNotNull(chain);
         assertInstanceOf(CriterionSerializer.EvaluationChainImpl.class, chain);
@@ -113,18 +115,18 @@ class EvaluationChainTest {
             JsonNode payload = context.payload();
             assertEquals(testPayload, payload);
             assertEquals(request, context.request());
-            
+
             // Check if pet is available
-            return payload.get("status").asText().equals("available") 
+            return payload.get("status").asText().equals("available")
                 ? EvaluationOutcome.success()
                 : EvaluationOutcome.Fail.businessRuleFailure("Pet not available");
         };
-        
+
         // When
         EntityCriteriaCalculationResponse response = serializer.withRequest(request)
                 .evaluate(evaluator)
                 .complete();
-        
+
         // Then
         assertNotNull(response);
         assertTrue(response.getSuccess());
@@ -137,18 +139,18 @@ class EvaluationChainTest {
         // Given
         Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> evaluator = context -> {
             JsonNode payload = context.payload();
-            
+
             // Check if pet is a dog (it's not)
-            return payload.get("category").asText().equals("dog") 
+            return payload.get("category").asText().equals("dog")
                 ? EvaluationOutcome.success()
                 : EvaluationOutcome.Fail.businessRuleFailure("Not a dog");
         };
-        
+
         // When
         EntityCriteriaCalculationResponse response = serializer.withRequest(request)
                 .evaluate(evaluator)
                 .complete();
-        
+
         // Then
         assertNotNull(response);
         assertTrue(response.getSuccess());
@@ -162,12 +164,12 @@ class EvaluationChainTest {
         Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> faultyEvaluator = context -> {
             throw new RuntimeException("Evaluation failed");
         };
-        
+
         // When
         EntityCriteriaCalculationResponse response = serializer.withRequest(request)
                 .evaluate(faultyEvaluator)
                 .complete();
-        
+
         // Then
         assertNotNull(response);
         assertFalse(response.getSuccess());
@@ -178,19 +180,19 @@ class EvaluationChainTest {
     @DisplayName("EvaluationChain should use custom error handler")
     void testCustomErrorHandler() {
         // Given
-        BiFunction<Throwable, JsonNode, ErrorInfo> customErrorHandler = 
+        BiFunction<Throwable, JsonNode, ErrorInfo> customErrorHandler =
             (error, payload) -> new ErrorInfo("CUSTOM_EVAL_ERROR", "Custom: " + error.getMessage());
-        
+
         Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> faultyEvaluator = context -> {
             throw new RuntimeException("Evaluation failed");
         };
-        
+
         // When
         EntityCriteriaCalculationResponse response = serializer.withRequest(request)
                 .withErrorHandler(customErrorHandler)
                 .evaluate(faultyEvaluator)
                 .complete();
-        
+
         // Then
         assertNotNull(response);
         assertFalse(response.getSuccess());
@@ -206,18 +208,18 @@ class EvaluationChainTest {
             assertEquals(request, context.request());
             assertEquals(123L, entity.getId());
             assertEquals("Fluffy", entity.getName());
-            
+
             // Check if entity is valid and available
             return entity.isValid() && "available".equals(entity.getStatus())
                 ? EvaluationOutcome.success()
                 : EvaluationOutcome.Fail.structuralFailure("Entity validation failed");
         };
-        
+
         // When
         EntityCriteriaCalculationResponse response = serializer.withRequest(request)
                 .evaluateEntity(TestEntity.class, entityEvaluator)
                 .complete();
-        
+
         // Then
         assertNotNull(response);
         assertTrue(response.getSuccess());
@@ -230,21 +232,21 @@ class EvaluationChainTest {
         // Given - Payload that cannot be converted to TestEntity
         ObjectNode badPayload = objectMapper.createObjectNode();
         badPayload.put("invalidField", "invalidValue");
-        
+
         DataPayload payload = new DataPayload();
         payload.setData(badPayload);
         request.setPayload(payload);
-        
+
         Function<CriterionSerializer.CriterionEntityEvaluationContext<TestEntity>, EvaluationOutcome> entityEvaluator = context -> {
             // Should never be called
             return EvaluationOutcome.success();
         };
-        
+
         // When
         EntityCriteriaCalculationResponse response = serializer.withRequest(request)
                 .evaluateEntity(TestEntity.class, entityEvaluator)
                 .complete();
-        
+
         // Then
         assertNotNull(response);
         assertFalse(response.getSuccess());
@@ -258,11 +260,11 @@ class EvaluationChainTest {
         EntityCriteriaCalculationRequest badRequest = new EntityCriteriaCalculationRequest();
         badRequest.setId("bad-request");
         badRequest.setPayload(null);
-        
+
         // When
         EntityCriteriaCalculationResponse response = serializer.withRequest(badRequest)
                 .complete();
-        
+
         // Then
         assertNotNull(response);
         assertFalse(response.getSuccess());
@@ -275,7 +277,7 @@ class EvaluationChainTest {
         // When - Complete without calling evaluate
         EntityCriteriaCalculationResponse response = serializer.withRequest(request)
                 .complete();
-        
+
         // Then
         assertNotNull(response);
         assertFalse(response.getSuccess());
@@ -291,9 +293,8 @@ class EvaluationChainTest {
 
         ReasonAttachmentStrategy customStrategy = ReasonAttachmentStrategy.none();
 
-        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> evaluator = context -> {
-            return EvaluationOutcome.success();
-        };
+        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> evaluator =
+                context -> EvaluationOutcome.success();
 
         // When
         EntityCriteriaCalculationResponse response = serializer.withRequest(request)
@@ -312,9 +313,8 @@ class EvaluationChainTest {
     @DisplayName("EvaluationChain should skip second evaluation if first succeeds")
     void testSkipSecondEvaluation() {
         // Given
-        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> firstEvaluator = context -> {
-            return EvaluationOutcome.success();
-        };
+        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> firstEvaluator =
+                context -> EvaluationOutcome.success();
 
         Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> secondEvaluator = context -> {
             // This should never be called
@@ -363,9 +363,8 @@ class EvaluationChainTest {
     @DisplayName("EvaluationChain should handle mixed evaluation types")
     void testMixedEvaluationTypes() {
         // Given
-        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> jsonEvaluator = context -> {
-            return EvaluationOutcome.success();
-        };
+        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> jsonEvaluator =
+                context -> EvaluationOutcome.success();
 
         Function<CriterionSerializer.CriterionEntityEvaluationContext<TestEntity>, EvaluationOutcome> entityEvaluator = context -> {
             // This should never be called since JSON evaluation already succeeded
@@ -509,9 +508,8 @@ class EvaluationChainTest {
     @DisplayName("EvaluationChain should handle null reason attachment strategy")
     void testNullReasonAttachmentStrategy() {
         // Given
-        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> evaluator = context -> {
-            return EvaluationOutcome.Fail.businessRuleFailure("Test failure");
-        };
+        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> evaluator =
+                context -> EvaluationOutcome.Fail.businessRuleFailure("Test failure");
 
         // When
         EntityCriteriaCalculationResponse response = serializer.withRequest(request)
@@ -529,9 +527,8 @@ class EvaluationChainTest {
     @DisplayName("EvaluationChain should handle evaluation with different failure types")
     void testDifferentFailureTypes() {
         // Test validation failure
-        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> validationEvaluator = context -> {
-            return EvaluationOutcome.Fail.structuralFailure("Validation failed");
-        };
+        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> validationEvaluator =
+                context -> EvaluationOutcome.Fail.structuralFailure("Validation failed");
 
         EntityCriteriaCalculationResponse response1 = serializer.withRequest(request)
                 .evaluate(validationEvaluator)
@@ -542,9 +539,8 @@ class EvaluationChainTest {
         assertFalse(response1.getMatches());
 
         // Test business rule failure
-        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> businessRuleEvaluator = context -> {
-            return EvaluationOutcome.Fail.businessRuleFailure("Business rule failed");
-        };
+        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> businessRuleEvaluator =
+                context -> EvaluationOutcome.Fail.businessRuleFailure("Business rule failed");
 
         EntityCriteriaCalculationResponse response2 = serializer.withRequest(request)
                 .evaluate(businessRuleEvaluator)
@@ -555,9 +551,8 @@ class EvaluationChainTest {
         assertFalse(response2.getMatches());
 
         // Test data quality failure
-        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> dataQualityEvaluator = context -> {
-            return EvaluationOutcome.Fail.dataQualityFailure("Data quality failed");
-        };
+        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> dataQualityEvaluator =
+                context -> EvaluationOutcome.Fail.dataQualityFailure("Data quality failed");
 
         EntityCriteriaCalculationResponse response3 = serializer.withRequest(request)
                 .evaluate(dataQualityEvaluator)
@@ -568,9 +563,8 @@ class EvaluationChainTest {
         assertFalse(response3.getMatches());
 
         // Test structural failure
-        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> structuralEvaluator = context -> {
-            return EvaluationOutcome.Fail.structuralFailure("Structural failure");
-        };
+        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> structuralEvaluator =
+                context -> EvaluationOutcome.Fail.structuralFailure("Structural failure");
 
         EntityCriteriaCalculationResponse response4 = serializer.withRequest(request)
                 .evaluate(structuralEvaluator)
@@ -585,9 +579,8 @@ class EvaluationChainTest {
     @DisplayName("EvaluationChain should handle reason attachment strategies")
     void testReasonAttachmentStrategies() {
         // Test with toWarnings strategy
-        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> evaluator = context -> {
-            return EvaluationOutcome.Fail.businessRuleFailure("Business rule failed");
-        };
+        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> evaluator =
+                context -> EvaluationOutcome.Fail.businessRuleFailure("Business rule failed");
 
         EntityCriteriaCalculationResponse response1 = serializer.withRequest(request)
                 .withReasonAttachment(ReasonAttachmentStrategy.toWarnings())
@@ -690,7 +683,7 @@ class EvaluationChainTest {
         BiFunction<Throwable, JsonNode, ErrorInfo> customErrorHandler =
             (error, payload) -> {
                 // Verify this is called with the expected error
-                assertTrue(error instanceof IllegalStateException);
+                assertInstanceOf(IllegalStateException.class, error);
                 assertEquals("No evaluation was performed", error.getMessage());
                 return new ErrorInfo("NO_EVALUATION_CUSTOM", "Custom: " + error.getMessage());
             };
@@ -731,9 +724,8 @@ class EvaluationChainTest {
     @DisplayName("EvaluationChain should handle structural failure outcome")
     void testStructuralFailureOutcome() {
         // Given - Test structural failure specifically
-        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> structuralFailEvaluator = context -> {
-            return EvaluationOutcome.Fail.structuralFailure("Data structure is invalid");
-        };
+        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> structuralFailEvaluator =
+                context -> EvaluationOutcome.Fail.structuralFailure("Data structure is invalid");
 
         // When
         EntityCriteriaCalculationResponse response = serializer.withRequest(request)
@@ -750,9 +742,8 @@ class EvaluationChainTest {
     @DisplayName("EvaluationChain should handle data quality failure outcome")
     void testDataQualityFailureOutcome() {
         // Given - Test data quality failure specifically
-        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> dataQualityFailEvaluator = context -> {
-            return EvaluationOutcome.Fail.dataQualityFailure("Data quality standards not met");
-        };
+        Function<CriterionSerializer.CriterionEvaluationContext, EvaluationOutcome> dataQualityFailEvaluator =
+                context -> EvaluationOutcome.Fail.dataQualityFailure("Data quality standards not met");
 
         // When
         EntityCriteriaCalculationResponse response = serializer.withRequest(request)

@@ -11,17 +11,19 @@ import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2Clien
 
 /**
  * ABOUTME: Test-based prototype application runner for interactive development and API exploration.
- *
+ * <p>
  * This test launches a full Spring Boot application with only the prototype controller
  * and entity classes, excluding all common module dependencies.
- *
+ * <p>
  * To run: ./gradlew test --tests PrototypeApplicationTest -Dprototype.enabled=true
- *
+ * <p>
  * Access via:
- * - Swagger UI: <a href="http://localhost:8080/swagger-ui/index.html">...</a>
- * - API Docs: <a href="http://localhost:8080/v3/api-docs">...</a>
- * - Base URL: <a href="http://localhost:8080">...</a>
- *
+ * <ul>
+ * <li>Swagger UI: <a href="http://localhost:8080/swagger-ui/index.html">http://localhost:8080/swagger-ui/index.html</a></li>
+ * <li>API Docs: <a href="http://localhost:8080/v3/api-docs">http://localhost:8080/v3/api-docs</a></li>
+ * <li>Base URL: <a href="http://localhost:8080">http://localhost:8080</a></li>
+ * </ul>
+ * <p>
  * Note: This test is disabled by default to prevent it from running during normal test execution.
  * It only runs when the system property 'prototype.enabled' is set to 'true'.
  */
@@ -37,6 +39,7 @@ import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2Clien
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class PrototypeApplicationTest {
 
+    @SuppressWarnings("SpringComponentScan")  // entity packages shows up in concrete implementations of this template
     @Configuration
     @ComponentScan(basePackages = {
         "com.java_template.prototype",
