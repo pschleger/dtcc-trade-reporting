@@ -127,7 +127,7 @@
       "description": "Acknowledgment ID from the regulatory system",
       "maxLength": 100
     },
-    "submissionStatus": {
+    "status": {
       "type": "string",
       "description": "Status of this submission attempt",
       "enum": [
@@ -367,7 +367,7 @@
     "submissionMethod",
     "submissionEndpoint",
     "submissionPayload",
-    "submissionStatus"
+    "status"
   ],
   "additionalProperties": false
 }

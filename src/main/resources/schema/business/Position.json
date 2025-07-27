@@ -331,7 +331,7 @@
           "type": "string",
           "format": "date"
         },
-        "reconciliationStatus": {
+        "status": {
           "type": "string",
           "enum": ["MATCHED", "UNMATCHED", "DISPUTED", "PENDING", "NOT_REQUIRED"]
         },
