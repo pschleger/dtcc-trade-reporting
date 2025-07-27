@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/common/RegulatoryClassification.json",
+  "title": "RegulatoryClassification",
+  "description": "Regulatory classification types and categories",
+  "type": "object",
+  "properties": {
+    "entityType": {
+      "type": "string",
+      "description": "Type of entity for regulatory purposes",
+      "enum": [
+        "FINANCIAL_COUNTERPARTY",
+        "NON_FINANCIAL_COUNTERPARTY",
+        "SMALL_FINANCIAL_COUNTERPARTY",
+        "CENTRAL_COUNTERPARTY",
+        "CLEARING_MEMBER",
+        "TRADE_REPOSITORY",
+        "SWAP_DEALER",
+        "MAJOR_SWAP_PARTICIPANT",
+        "ELIGIBLE_CONTRACT_PARTICIPANT"
+      ]
+    },
+    "jurisdiction": {
+      "type": "string",
+      "description": "Primary regulatory jurisdiction",
+      "pattern": "^[A-Z]{2}$",
+      "examples": ["US", "EU", "UK", "JP", "CA"]
+    },
+    "regulatoryRegime": {
+      "type": "array",
+      "description": "Applicable regulatory regimes",
+      "items": {
+        "type": "string",
+        "enum": [
+          "DODD_FRANK",
+          "EMIR",
+          "UK_EMIR",
+          "CFTC",
+          "ESMA",
+          "FCA",
+          "JFSA",
+          "OSFI",
+          "ASIC",
+          "MAS"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "reportingObligations": {
+      "type": "array",
+      "description": "Specific reporting obligations",
+      "items": {
+        "type": "string",
+        "enum": [
+          "TRADE_REPORTING",
+          "POSITION_REPORTING",
+          "RISK_MITIGATION",
+          "CLEARING_OBLIGATION",
+          "MARGIN_REQUIREMENTS",
+          "CAPITAL_REQUIREMENTS",
+          "LIQUIDITY_REQUIREMENTS"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "thresholds": {
+      "type": "object",
+      "description": "Regulatory thresholds and limits",
+      "properties": {
+        "clearingThreshold": {
+          "$ref": "MonetaryAmount.json",
+          "description": "Clearing threshold amount"
+        },
+        "reportingThreshold": {
+          "$ref": "MonetaryAmount.json",
+          "description": "Reporting threshold amount"
+        },
+        "riskMitigationThreshold": {
+          "$ref": "MonetaryAmount.json",
+          "description": "Risk mitigation threshold amount"
+        }
+      }
+    }
+  },
+  "required": ["entityType", "jurisdiction", "regulatoryRegime"]
+}

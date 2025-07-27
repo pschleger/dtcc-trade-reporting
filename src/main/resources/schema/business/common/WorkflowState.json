@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/common/WorkflowState.json",
+  "title": "WorkflowState",
+  "description": "Common workflow state fields for business entities",
+  "type": "object",
+  "properties": {
+    "state": {
+      "type": "string",
+      "description": "Current workflow state of the entity"
+    },
+    "previousState": {
+      "type": "string",
+      "description": "Previous workflow state before the last transition"
+    },
+    "stateTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the entity entered the current state"
+    },
+    "transitionHistory": {
+      "type": "array",
+      "description": "History of state transitions",
+      "items": {
+        "type": "object",
+        "properties": {
+          "fromState": {
+            "type": "string",
+            "description": "State transitioned from"
+          },
+          "toState": {
+            "type": "string",
+            "description": "State transitioned to"
+          },
+          "transitionName": {
+            "type": "string",
+            "description": "Name of the transition"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the transition occurred"
+          },
+          "actorId": {
+            "type": "string",
+            "description": "ID of the user or system that triggered the transition"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for the transition"
+          }
+        },
+        "required": ["fromState", "toState", "transitionName", "timestamp"]
+      }
+    }
+  },
+  "required": ["state", "stateTimestamp"]
+}

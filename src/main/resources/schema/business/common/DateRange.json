@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/common/DateRange.json",
+  "title": "DateRange",
+  "description": "Date range representation with validation",
+  "type": "object",
+  "properties": {
+    "startDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Start date of the range (inclusive)"
+    },
+    "endDate": {
+      "type": "string",
+      "format": "date",
+      "description": "End date of the range (inclusive)"
+    },
+    "timezone": {
+      "type": "string",
+      "description": "Timezone for date interpretation",
+      "default": "UTC",
+      "examples": ["UTC", "America/New_York", "Europe/London"]
+    }
+  },
+  "required": ["startDate", "endDate"],
+  "additionalProperties": false,
+  "if": {
+    "properties": {
+      "startDate": true,
+      "endDate": true
+    }
+  },
+  "then": {
+    "properties": {
+      "endDate": {
+        "formatMinimum": {
+          "$data": "1/startDate"
+        }
+      }
+    }
+  }
+}

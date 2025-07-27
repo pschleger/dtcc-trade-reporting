@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/common/BusinessEntityMetadata.json",
+  "title": "BusinessEntityMetadata",
+  "description": "Extended metadata for business entities including workflow state management",
+  "allOf": [
+    {
+      "$ref": "EntityMetadata.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "workflowState": {
+          "$ref": "WorkflowState.json",
+          "description": "Workflow state information"
+        },
+        "businessKey": {
+          "type": "string",
+          "description": "Business-meaningful identifier for the entity"
+        },
+        "version": {
+          "type": "integer",
+          "description": "Version number for optimistic locking",
+          "minimum": 1,
+          "default": 1
+        },
+        "lastModifiedBy": {
+          "type": "string",
+          "description": "ID of the user or system that last modified the entity"
+        },
+        "lastModifiedDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the last modification"
+        },
+        "tags": {
+          "type": "array",
+          "description": "Business tags for categorization and search",
+          "items": {
+            "type": "string"
+          }
+        },
+        "externalReferences": {
+          "type": "object",
+          "description": "References to external systems",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["workflowState", "businessKey", "version", "lastModifiedBy", "lastModifiedDate"]
+    }
+  ]
+}

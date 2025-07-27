@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/common/MonetaryAmount.json",
+  "title": "MonetaryAmount",
+  "description": "Standardized monetary value representation",
+  "type": "object",
+  "properties": {
+    "amount": {
+      "type": "number",
+      "description": "Monetary amount value",
+      "multipleOf": 0.01
+    },
+    "currency": {
+      "type": "string",
+      "description": "ISO 4217 currency code",
+      "pattern": "^[A-Z]{3}$",
+      "examples": ["USD", "EUR", "GBP", "JPY"]
+    },
+    "precision": {
+      "type": "integer",
+      "description": "Number of decimal places for the amount",
+      "minimum": 0,
+      "maximum": 8,
+      "default": 2
+    }
+  },
+  "required": ["amount", "currency"]
+}
