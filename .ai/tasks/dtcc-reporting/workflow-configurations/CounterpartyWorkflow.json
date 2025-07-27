@@ -1,0 +1,283 @@
+{
+  "version": "1.0",
+  "name": "CounterpartyWorkflow",
+  "desc": "Manage counterparty master data lifecycle including validation and regulatory compliance",
+  "initialState": "draft",
+  "active": true,
+  "processParams": {
+    "01932b4e-7890-7123-8456-523456789abc": {
+      "name": "validateCounterparty",
+      "description": "Validates counterparty data and LEI information",
+      "type": "validation"
+    },
+    "01932b4e-7890-7123-8456-523456789abd": {
+      "name": "checkDuplicates",
+      "description": "Checks for duplicate counterparty records",
+      "type": "duplicate-check"
+    },
+    "01932b4e-7890-7123-8456-523456789abe": {
+      "name": "updateCounterparty",
+      "description": "Updates counterparty information",
+      "type": "update"
+    },
+    "01932b4e-7890-7123-8456-523456789abf": {
+      "name": "suspendCounterparty",
+      "description": "Suspends counterparty due to compliance issues",
+      "type": "suspension"
+    },
+    "01932b4e-7890-7123-8456-523456789ac0": {
+      "name": "reactivateCounterparty",
+      "description": "Reactivates suspended counterparty",
+      "type": "reactivation"
+    },
+    "01932b4e-7890-7123-8456-523456789ac1": {
+      "name": "archiveCounterparty",
+      "description": "Archives decommissioned counterparty",
+      "type": "archival"
+    },
+    "01932b4e-7890-7123-8456-523456789ac2": {
+      "name": "notifyFailure",
+      "description": "Notifies relevant teams of processing failures",
+      "type": "notification"
+    }
+  },
+  "states": {
+    "draft": {
+      "transitions": [
+        {
+          "name": "startValidation",
+          "next": "validating",
+          "manual": false
+        }
+      ]
+    },
+    "validating": {
+      "transitions": [
+        {
+          "name": "validationSuccess",
+          "next": "validated",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isValidationSuccessful",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "validation",
+                "responseTimeoutMs": 20000,
+                "context": "counterparty-validation"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "validateCounterparty",
+              "executionMode": "SYNC",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "validation",
+                "responseTimeoutMs": 20000,
+                "processParamId": "01932b4e-7890-7123-8456-523456789abc"
+              }
+            },
+            {
+              "name": "checkDuplicates",
+              "executionMode": "SYNC",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "validation",
+                "responseTimeoutMs": 15000,
+                "processParamId": "01932b4e-7890-7123-8456-523456789abd"
+              }
+            }
+          ]
+        },
+        {
+          "name": "validationFailure",
+          "next": "validation-failed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "hasValidationErrors",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "validation",
+                "responseTimeoutMs": 5000,
+                "context": "validation-error-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "notifyFailure",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "notification",
+                "responseTimeoutMs": 10000,
+                "processParamId": "01932b4e-7890-7123-8456-523456789ac2"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "validated": {
+      "transitions": [
+        {
+          "name": "approveActivation",
+          "next": "active",
+          "manual": true
+        }
+      ]
+    },
+    "active": {
+      "transitions": [
+        {
+          "name": "requestUpdate",
+          "next": "updating",
+          "manual": true
+        },
+        {
+          "name": "requestSuspension",
+          "next": "suspending",
+          "manual": true
+        },
+        {
+          "name": "requestArchival",
+          "next": "archiving",
+          "manual": true
+        }
+      ]
+    },
+    "updating": {
+      "transitions": [
+        {
+          "name": "updateComplete",
+          "next": "validating",
+          "manual": false,
+          "processors": [
+            {
+              "name": "updateCounterparty",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "update",
+                "responseTimeoutMs": 30000,
+                "processParamId": "01932b4e-7890-7123-8456-523456789abe"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "suspending": {
+      "transitions": [
+        {
+          "name": "suspensionComplete",
+          "next": "suspended",
+          "manual": false,
+          "processors": [
+            {
+              "name": "suspendCounterparty",
+              "executionMode": "SYNC",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "suspension",
+                "responseTimeoutMs": 15000,
+                "processParamId": "01932b4e-7890-7123-8456-523456789abf"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "suspended": {
+      "transitions": [
+        {
+          "name": "requestReactivation",
+          "next": "reactivating",
+          "manual": true
+        },
+        {
+          "name": "requestArchival",
+          "next": "archiving",
+          "manual": true
+        }
+      ]
+    },
+    "reactivating": {
+      "transitions": [
+        {
+          "name": "reactivationComplete",
+          "next": "validating",
+          "manual": false,
+          "processors": [
+            {
+              "name": "reactivateCounterparty",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "reactivation",
+                "responseTimeoutMs": 20000,
+                "processParamId": "01932b4e-7890-7123-8456-523456789ac0"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "validation-failed": {
+      "transitions": [
+        {
+          "name": "requestManualReview",
+          "next": "manual-review",
+          "manual": true
+        }
+      ]
+    },
+    "manual-review": {
+      "transitions": [
+        {
+          "name": "approveCorrection",
+          "next": "correcting",
+          "manual": true
+        }
+      ]
+    },
+    "correcting": {
+      "transitions": [
+        {
+          "name": "correctionComplete",
+          "next": "validating",
+          "manual": false
+        }
+      ]
+    },
+    "archiving": {
+      "transitions": [
+        {
+          "name": "archivalComplete",
+          "next": "archived",
+          "manual": false,
+          "processors": [
+            {
+              "name": "archiveCounterparty",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "archival",
+                "responseTimeoutMs": 15000,
+                "processParamId": "01932b4e-7890-7123-8456-523456789ac1"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "archived": {
+      "transitions": []
+    }
+  }
+}

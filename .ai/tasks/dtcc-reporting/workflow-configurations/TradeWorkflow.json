@@ -1,0 +1,470 @@
+{
+  "version": "1.0",
+  "name": "TradeWorkflow",
+  "desc": "Manage the complete lifecycle of trade entities from confirmation through maturity",
+  "initialState": "new",
+  "active": true,
+  "processParams": {
+    "01932b4e-7890-7123-8456-223456789abc": {
+      "name": "validateBusinessRules",
+      "description": "Validates trade against business rules and constraints",
+      "type": "validation"
+    },
+    "01932b4e-7890-7123-8456-223456789abd": {
+      "name": "processAmendment",
+      "description": "Processes trade amendment requests",
+      "type": "amendment"
+    },
+    "01932b4e-7890-7123-8456-223456789abe": {
+      "name": "processCancellation",
+      "description": "Processes trade cancellation requests",
+      "type": "cancellation"
+    },
+    "01932b4e-7890-7123-8456-223456789abf": {
+      "name": "processMaturity",
+      "description": "Processes trade maturity events",
+      "type": "maturity"
+    },
+    "01932b4e-7890-7123-8456-223456789ac0": {
+      "name": "archiveTrade",
+      "description": "Archives completed or cancelled trades",
+      "type": "archival"
+    },
+    "01932b4e-7890-7123-8456-223456789ac1": {
+      "name": "notifyFailure",
+      "description": "Notifies relevant teams of processing failures",
+      "type": "notification"
+    }
+  },
+  "states": {
+    "new": {
+      "transitions": [
+        {
+          "name": "startValidation",
+          "next": "validating",
+          "manual": false
+        }
+      ]
+    },
+    "validating": {
+      "transitions": [
+        {
+          "name": "validationSuccess",
+          "next": "validated",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "validateBusinessRules",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "validation",
+                "responseTimeoutMs": 15000,
+                "context": "business-rules-validation"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "validateBusinessRules",
+              "executionMode": "SYNC",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "validation",
+                "responseTimeoutMs": 15000,
+                "processParamId": "01932b4e-7890-7123-8456-223456789abc"
+              }
+            }
+          ]
+        },
+        {
+          "name": "validationFailure",
+          "next": "validation-failed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "hasValidationErrors",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "validation",
+                "responseTimeoutMs": 5000,
+                "context": "validation-error-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "notifyFailure",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "notification",
+                "responseTimeoutMs": 10000,
+                "processParamId": "01932b4e-7890-7123-8456-223456789ac1"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "validated": {
+      "transitions": [
+        {
+          "name": "confirmTrade",
+          "next": "confirmed",
+          "manual": false
+        }
+      ]
+    },
+    "confirmed": {
+      "transitions": [
+        {
+          "name": "activateTrade",
+          "next": "active",
+          "manual": false
+        }
+      ]
+    },
+    "active": {
+      "transitions": [
+        {
+          "name": "requestAmendment",
+          "next": "amending",
+          "manual": true
+        },
+        {
+          "name": "requestCancellation",
+          "next": "cancelling",
+          "manual": true
+        },
+        {
+          "name": "approachMaturity",
+          "next": "maturing",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isApproachingMaturity",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "maturity",
+                "responseTimeoutMs": 5000,
+                "context": "maturity-check"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "amending": {
+      "transitions": [
+        {
+          "name": "amendmentSuccess",
+          "next": "active",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isAmendmentSuccessful",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "amendment",
+                "responseTimeoutMs": 10000,
+                "context": "amendment-success-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "processAmendment",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "amendment",
+                "responseTimeoutMs": 30000,
+                "processParamId": "01932b4e-7890-7123-8456-223456789abd"
+              }
+            }
+          ]
+        },
+        {
+          "name": "amendmentFailure",
+          "next": "amendment-failed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "hasAmendmentErrors",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "amendment",
+                "responseTimeoutMs": 5000,
+                "context": "amendment-error-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "notifyFailure",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "notification",
+                "responseTimeoutMs": 10000,
+                "processParamId": "01932b4e-7890-7123-8456-223456789ac1"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "cancelling": {
+      "transitions": [
+        {
+          "name": "cancellationSuccess",
+          "next": "cancelled",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isCancellationSuccessful",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "cancellation",
+                "responseTimeoutMs": 10000,
+                "context": "cancellation-success-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "processCancellation",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "cancellation",
+                "responseTimeoutMs": 30000,
+                "processParamId": "01932b4e-7890-7123-8456-223456789abe"
+              }
+            }
+          ]
+        },
+        {
+          "name": "cancellationFailure",
+          "next": "cancellation-failed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "hasCancellationErrors",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "cancellation",
+                "responseTimeoutMs": 5000,
+                "context": "cancellation-error-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "notifyFailure",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "notification",
+                "responseTimeoutMs": 10000,
+                "processParamId": "01932b4e-7890-7123-8456-223456789ac1"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "maturing": {
+      "transitions": [
+        {
+          "name": "reachMaturity",
+          "next": "matured",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isMaturityDateReached",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "maturity",
+                "responseTimeoutMs": 5000,
+                "context": "maturity-date-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "processMaturity",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "maturity",
+                "responseTimeoutMs": 20000,
+                "processParamId": "01932b4e-7890-7123-8456-223456789abf"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "validation-failed": {
+      "transitions": [
+        {
+          "name": "requestManualReview",
+          "next": "manual-review",
+          "manual": true
+        }
+      ]
+    },
+    "amendment-failed": {
+      "transitions": [
+        {
+          "name": "requestManualReview",
+          "next": "manual-review",
+          "manual": true
+        }
+      ]
+    },
+    "cancellation-failed": {
+      "transitions": [
+        {
+          "name": "requestManualReview",
+          "next": "manual-review",
+          "manual": true
+        }
+      ]
+    },
+    "manual-review": {
+      "transitions": [
+        {
+          "name": "approveRevalidation",
+          "next": "revalidating",
+          "manual": true
+        },
+        {
+          "name": "rejectPermanently",
+          "next": "rejected",
+          "manual": true
+        }
+      ]
+    },
+    "revalidating": {
+      "transitions": [
+        {
+          "name": "restartValidation",
+          "next": "validating",
+          "manual": false
+        }
+      ]
+    },
+    "cancelled": {
+      "transitions": [
+        {
+          "name": "scheduleArchival",
+          "next": "archived",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isRetentionPeriodMet",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "archival",
+                "responseTimeoutMs": 5000,
+                "context": "retention-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "archiveTrade",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "archival",
+                "responseTimeoutMs": 15000,
+                "processParamId": "01932b4e-7890-7123-8456-223456789ac0"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "matured": {
+      "transitions": [
+        {
+          "name": "scheduleArchival",
+          "next": "archived",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isRetentionPeriodMet",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "archival",
+                "responseTimeoutMs": 5000,
+                "context": "retention-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "archiveTrade",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "archival",
+                "responseTimeoutMs": 15000,
+                "processParamId": "01932b4e-7890-7123-8456-223456789ac0"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "rejected": {
+      "transitions": [
+        {
+          "name": "scheduleArchival",
+          "next": "archived",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isRetentionPeriodMet",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "archival",
+                "responseTimeoutMs": 5000,
+                "context": "retention-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "archiveTrade",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "archival",
+                "responseTimeoutMs": 15000,
+                "processParamId": "01932b4e-7890-7123-8456-223456789ac0"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "archived": {
+      "transitions": []
+    }
+  }
+}

@@ -1,0 +1,491 @@
+{
+  "version": "1.0",
+  "name": "RegulatoryReportWorkflow",
+  "desc": "Generate, validate, and submit regulatory reports to DTCC GTR",
+  "initialState": "generating",
+  "active": true,
+  "processParams": {
+    "01932b4e-7890-7123-8456-423456789abc": {
+      "name": "generateReport",
+      "description": "Generates regulatory report content",
+      "type": "generation"
+    },
+    "01932b4e-7890-7123-8456-423456789abd": {
+      "name": "validateReport",
+      "description": "Validates report against DTCC requirements",
+      "type": "validation"
+    },
+    "01932b4e-7890-7123-8456-423456789abe": {
+      "name": "submitReport",
+      "description": "Submits report to DTCC GTR",
+      "type": "submission"
+    },
+    "01932b4e-7890-7123-8456-423456789abf": {
+      "name": "processAcknowledgment",
+      "description": "Processes DTCC acknowledgment response",
+      "type": "acknowledgment"
+    },
+    "01932b4e-7890-7123-8456-423456789ac0": {
+      "name": "correctReport",
+      "description": "Corrects report based on DTCC rejection",
+      "type": "correction"
+    },
+    "01932b4e-7890-7123-8456-423456789ac1": {
+      "name": "archiveReport",
+      "description": "Archives completed reports",
+      "type": "archival"
+    },
+    "01932b4e-7890-7123-8456-423456789ac2": {
+      "name": "notifyFailure",
+      "description": "Notifies relevant teams of processing failures",
+      "type": "notification"
+    }
+  },
+  "states": {
+    "generating": {
+      "transitions": [
+        {
+          "name": "generationSuccess",
+          "next": "generated",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isGenerationSuccessful",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "reporting",
+                "responseTimeoutMs": 60000,
+                "context": "report-generation"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "generateReport",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "reporting",
+                "responseTimeoutMs": 120000,
+                "processParamId": "01932b4e-7890-7123-8456-423456789abc"
+              }
+            }
+          ]
+        },
+        {
+          "name": "generationFailure",
+          "next": "generation-failed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "hasGenerationErrors",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "reporting",
+                "responseTimeoutMs": 5000,
+                "context": "generation-error-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "notifyFailure",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "notification",
+                "responseTimeoutMs": 10000,
+                "processParamId": "01932b4e-7890-7123-8456-423456789ac2"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "generated": {
+      "transitions": [
+        {
+          "name": "startValidation",
+          "next": "validating",
+          "manual": false
+        }
+      ]
+    },
+    "validating": {
+      "transitions": [
+        {
+          "name": "validationSuccess",
+          "next": "validated",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isValidationSuccessful",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "validation",
+                "responseTimeoutMs": 30000,
+                "context": "dtcc-validation"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "validateReport",
+              "executionMode": "SYNC",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "validation",
+                "responseTimeoutMs": 30000,
+                "processParamId": "01932b4e-7890-7123-8456-423456789abd"
+              }
+            }
+          ]
+        },
+        {
+          "name": "validationFailure",
+          "next": "validation-failed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "hasValidationErrors",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "validation",
+                "responseTimeoutMs": 5000,
+                "context": "validation-error-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "notifyFailure",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "notification",
+                "responseTimeoutMs": 10000,
+                "processParamId": "01932b4e-7890-7123-8456-423456789ac2"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "validated": {
+      "transitions": [
+        {
+          "name": "prepareSubmission",
+          "next": "ready-for-submission",
+          "manual": false
+        }
+      ]
+    },
+    "ready-for-submission": {
+      "transitions": [
+        {
+          "name": "scheduleSubmission",
+          "next": "submitting",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isSubmissionTimeReached",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "submission",
+                "responseTimeoutMs": 5000,
+                "context": "submission-schedule-check"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "submitting": {
+      "transitions": [
+        {
+          "name": "submissionSuccess",
+          "next": "submitted",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isSubmissionSuccessful",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "submission",
+                "responseTimeoutMs": 60000,
+                "context": "dtcc-submission"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "submitReport",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "submission",
+                "responseTimeoutMs": 120000,
+                "processParamId": "01932b4e-7890-7123-8456-423456789abe"
+              }
+            }
+          ]
+        },
+        {
+          "name": "submissionFailure",
+          "next": "submission-failed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "hasSubmissionErrors",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "submission",
+                "responseTimeoutMs": 5000,
+                "context": "submission-error-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "notifyFailure",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "notification",
+                "responseTimeoutMs": 10000,
+                "processParamId": "01932b4e-7890-7123-8456-423456789ac2"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "submitted": {
+      "transitions": [
+        {
+          "name": "receiveAcknowledgment",
+          "next": "acknowledged",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isDtccAcknowledgmentReceived",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "submission",
+                "responseTimeoutMs": 10000,
+                "context": "dtcc-acknowledgment-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "processAcknowledgment",
+              "executionMode": "SYNC",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "submission",
+                "responseTimeoutMs": 15000,
+                "processParamId": "01932b4e-7890-7123-8456-423456789abf"
+              }
+            }
+          ]
+        },
+        {
+          "name": "receiveRejection",
+          "next": "rejected-by-dtcc",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isDtccRejectionReceived",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "submission",
+                "responseTimeoutMs": 10000,
+                "context": "dtcc-rejection-check"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "acknowledged": {
+      "transitions": [
+        {
+          "name": "completeProcessing",
+          "next": "completed",
+          "manual": false
+        }
+      ]
+    },
+    "rejected-by-dtcc": {
+      "transitions": [
+        {
+          "name": "startCorrection",
+          "next": "correcting",
+          "manual": true
+        }
+      ]
+    },
+    "generation-failed": {
+      "transitions": [
+        {
+          "name": "requestManualReview",
+          "next": "manual-review",
+          "manual": true
+        }
+      ]
+    },
+    "validation-failed": {
+      "transitions": [
+        {
+          "name": "requestManualReview",
+          "next": "manual-review",
+          "manual": true
+        }
+      ]
+    },
+    "submission-failed": {
+      "transitions": [
+        {
+          "name": "retrySubmission",
+          "next": "retrying",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "hasRetriesAvailable",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "submission",
+                "responseTimeoutMs": 5000,
+                "context": "retry-availability-check"
+              }
+            }
+          }
+        },
+        {
+          "name": "escalateToManualReview",
+          "next": "manual-review",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isMaxRetriesExceeded",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "submission",
+                "responseTimeoutMs": 5000,
+                "context": "max-retries-check"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "retrying": {
+      "transitions": [
+        {
+          "name": "retryAfterDelay",
+          "next": "submitting",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isRetryDelayElapsed",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "submission",
+                "responseTimeoutMs": 5000,
+                "context": "retry-delay-check"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "correcting": {
+      "transitions": [
+        {
+          "name": "correctionComplete",
+          "next": "regenerating",
+          "manual": true,
+          "processors": [
+            {
+              "name": "correctReport",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "correction",
+                "responseTimeoutMs": 60000,
+                "processParamId": "01932b4e-7890-7123-8456-423456789ac0"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "manual-review": {
+      "transitions": [
+        {
+          "name": "approveRegeneration",
+          "next": "regenerating",
+          "manual": true
+        }
+      ]
+    },
+    "regenerating": {
+      "transitions": [
+        {
+          "name": "restartGeneration",
+          "next": "generating",
+          "manual": false
+        }
+      ]
+    },
+    "completed": {
+      "transitions": [
+        {
+          "name": "scheduleArchival",
+          "next": "archived",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isRetentionPeriodMet",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "archival",
+                "responseTimeoutMs": 5000,
+                "context": "retention-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "archiveReport",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "archival",
+                "responseTimeoutMs": 15000,
+                "processParamId": "01932b4e-7890-7123-8456-423456789ac1"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "archived": {
+      "transitions": []
+    }
+  }
+}
