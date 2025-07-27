@@ -1,0 +1,227 @@
+erDiagram
+    %% Master Data Entities
+    Counterparty {
+        string lei PK "Legal Entity Identifier"
+        string legalName
+        string jurisdiction
+        string regulatoryClassification
+        string contactInfo
+        timestamp createdDate
+        timestamp lastUpdated
+        string status
+    }
+    
+    ReferenceData {
+        string dataId PK
+        string dataType
+        string dataValue
+        date effectiveDate
+        date expiryDate
+        string sourceSystem
+        string validationStatus
+        timestamp lastRefresh
+    }
+    
+    Product {
+        string productId PK
+        string assetClass
+        string productType
+        string subType
+        json economicTerms
+        string regulatoryClassification
+        string[] supportedCurrencies
+        string status
+    }
+    
+    LegalEntity {
+        string entityId PK
+        string entityName
+        string parentEntityId FK
+        string jurisdiction
+        string[] regulatoryRegistrations
+        json reportingObligations
+        string status
+    }
+    
+    %% Transactional Data Entities
+    TradeConfirmation {
+        string messageId PK
+        string senderId
+        timestamp receivedTimestamp
+        text fpmlContent
+        string validationStatus
+        string[] errorDetails
+        string processingStatus
+        string correlationId
+    }
+    
+    Trade {
+        string tradeId PK
+        string uti "Unique Trade Identifier"
+        string usi "Unique Swap Identifier"
+        string confirmationId FK
+        string counterpartyId FK
+        string productId FK
+        decimal notionalAmount
+        string currency
+        date tradeDate
+        date effectiveDate
+        date maturityDate
+        json economicTerms
+        string tradeStatus
+        timestamp lastModified
+    }
+    
+    Position {
+        string positionId PK
+        string counterpartyId FK
+        string productId FK
+        string positionType
+        decimal netNotional
+        decimal marketValue
+        json riskMetrics
+        timestamp calculationTimestamp
+        string calculationMethod
+        string reportingStatus
+    }
+    
+    Amendment {
+        string amendmentId PK
+        string originalTradeId FK
+        string amendmentType
+        date effectiveDate
+        json changedFields
+        string amendmentReason
+        string authorizationId
+        timestamp processedTimestamp
+        string status
+    }
+    
+    Cancellation {
+        string cancellationId PK
+        string originalTradeId FK
+        string cancellationReason
+        date effectiveDate
+        string authorizationId
+        json impactAssessment
+        timestamp processedTimestamp
+        string status
+    }
+    
+    %% Reporting Data Entities
+    RegulatoryReport {
+        string reportId PK
+        string positionId FK
+        string reportType
+        string regulatoryRegime
+        date reportingDate
+        date submissionDeadline
+        text reportContent
+        string reportFormat
+        string submissionStatus
+        timestamp generatedTimestamp
+    }
+    
+    ReportingObligation {
+        string obligationId PK
+        string entityId FK
+        string obligationType
+        string regulatoryRegime
+        json applicableThresholds
+        string reportingFrequency
+        date nextDueDate
+        string complianceStatus
+    }
+    
+    SubmissionStatus {
+        string submissionId PK
+        string reportId FK
+        int attemptNumber
+        timestamp submissionTimestamp
+        string responseCode
+        string responseMessage
+        string submissionStatus
+        json performanceMetrics
+    }
+    
+    AuditTrail {
+        string auditId PK
+        string entityType
+        string entityId
+        string fromState
+        string toState
+        string actorId
+        timestamp transactionTimestamp
+        json changeDetails
+        string businessJustification
+    }
+    
+    %% Processing Control Entities
+    ProcessingBatch {
+        string batchId PK
+        string batchType
+        json processingScope
+        timestamp startTimestamp
+        timestamp endTimestamp
+        int successCount
+        int failureCount
+        string batchStatus
+        json errorSummary
+    }
+    
+    ValidationResult {
+        string validationId PK
+        string entityType
+        string entityId
+        string ruleSetVersion
+        string validationOutcome
+        string severity
+        string[] errorDetails
+        json remediationRecommendations
+        timestamp validationTimestamp
+        string status
+    }
+    
+    ReconciliationResult {
+        string reconciliationId PK
+        string reconciliationType
+        string[] entityIds
+        string comparisonMethod
+        json discrepancies
+        decimal discrepancyAmount
+        string resolutionStatus
+        json resolutionActions
+        timestamp reconciliationTimestamp
+    }
+    
+    %% Master Data Relationships
+    LegalEntity ||--o{ Counterparty : "owns"
+    LegalEntity ||--o{ LegalEntity : "parent-child"
+    
+    %% Transactional Data Relationships
+    TradeConfirmation ||--|| Trade : "generates"
+    Trade }o--|| Counterparty : "involves"
+    Trade }o--|| Product : "references"
+    Trade ||--o{ Amendment : "modified-by"
+    Trade ||--o{ Cancellation : "cancelled-by"
+    Trade }o--|| Position : "aggregated-into"
+    Position }o--|| Counterparty : "with"
+    Position }o--|| Product : "for"
+    
+    %% Reporting Relationships
+    Position ||--o{ RegulatoryReport : "generates"
+    LegalEntity ||--o{ ReportingObligation : "subject-to"
+    RegulatoryReport ||--o{ SubmissionStatus : "tracked-by"
+    
+    %% Processing Control Relationships
+    Trade ||--o{ ValidationResult : "validated-by"
+    Position ||--o{ ValidationResult : "validated-by"
+    Position ||--o{ ReconciliationResult : "reconciled-by"
+    
+    %% Audit Relationships
+    Counterparty ||--o{ AuditTrail : "audited"
+    Trade ||--o{ AuditTrail : "audited"
+    Position ||--o{ AuditTrail : "audited"
+    RegulatoryReport ||--o{ AuditTrail : "audited"
+    Amendment ||--o{ AuditTrail : "audited"
+    Cancellation ||--o{ AuditTrail : "audited"

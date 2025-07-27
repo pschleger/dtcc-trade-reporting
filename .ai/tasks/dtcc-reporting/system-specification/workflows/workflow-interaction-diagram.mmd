@@ -1,0 +1,56 @@
+graph TB
+    subgraph "Master Data Workflows"
+        CP[Counterparty<br/>draft → active]
+        PD[Product<br/>draft → active]
+    end
+    
+    subgraph "Core Processing Workflows"
+        TC[TradeConfirmation<br/>received → processed]
+        TR[Trade<br/>new → active]
+        POS[Position<br/>calculating → current]
+        RR[RegulatoryReport<br/>generating → completed]
+    end
+    
+    subgraph "Modification Workflows"
+        AM[Amendment<br/>pending → applied]
+        CN[Cancellation<br/>requested → executed]
+    end
+    
+    subgraph "Quality Assurance Workflows"
+        RC[ReconciliationResult<br/>initiated → completed]
+        PB[ProcessingBatch<br/>scheduled → completed]
+    end
+    
+    %% Master Data Dependencies
+    CP --> TR
+    PD --> TR
+    
+    %% Core Processing Chain
+    TC --> TR
+    TR --> POS
+    POS --> RR
+    
+    %% Modification Dependencies
+    TR --> AM
+    TR --> CN
+    AM --> POS
+    CN --> POS
+    
+    %% Quality Assurance Dependencies
+    POS --> RC
+    PB --> RC
+    
+    %% Feedback Loops
+    RC --> POS
+    RR --> POS
+    
+    %% Styling
+    classDef masterData fill:#e8f5e8,stroke:#4caf50
+    classDef coreProcess fill:#e3f2fd,stroke:#2196f3
+    classDef modification fill:#fff3e0,stroke:#ff9800
+    classDef quality fill:#f3e5f5,stroke:#9c27b0
+    
+    class CP,PD masterData
+    class TC,TR,POS,RR coreProcess
+    class AM,CN modification
+    class RC,PB quality

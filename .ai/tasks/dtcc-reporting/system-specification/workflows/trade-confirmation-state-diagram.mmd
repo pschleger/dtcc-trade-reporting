@@ -1,0 +1,25 @@
+graph TD
+    A[received] --> B[validating]
+    B --> C[validated]
+    B --> D[validation-failed]
+    C --> E[processing]
+    E --> F[processed]
+    E --> G[processing-failed]
+    D --> H[manual-review]
+    G --> H
+    H --> I[reprocessing]
+    H --> J[rejected]
+    I --> E
+    F --> K[archived]
+    J --> K
+    
+    %% Styling
+    classDef initial fill:#e1f5fe
+    classDef terminal fill:#f3e5f5
+    classDef error fill:#ffebee
+    classDef manual fill:#fff3e0
+    
+    class A initial
+    class F,J,K terminal
+    class D,G error
+    class H manual
