@@ -1,0 +1,315 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/Amendment.json",
+  "title": "Amendment",
+  "description": "Trade modification records tracking changes to existing trades",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "$ref": "common/BusinessEntityMetadata.json",
+      "description": "Entity metadata including workflow state"
+    },
+    "amendmentId": {
+      "type": "string",
+      "description": "Unique amendment identifier",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "originalTradeId": {
+      "type": "string",
+      "description": "Reference to the original Trade entity being amended"
+    },
+    "originalUti": {
+      "type": "string",
+      "description": "UTI of the original trade"
+    },
+    "newTradeId": {
+      "type": "string",
+      "description": "Reference to the new Trade entity created by this amendment"
+    },
+    "newUti": {
+      "type": "string",
+      "description": "UTI of the amended trade"
+    },
+    "amendmentType": {
+      "type": "string",
+      "description": "Type of amendment",
+      "enum": [
+        "PARTIAL_TERMINATION",
+        "NOTIONAL_CHANGE",
+        "RATE_CHANGE",
+        "MATURITY_EXTENSION",
+        "MATURITY_REDUCTION",
+        "PAYMENT_FREQUENCY_CHANGE",
+        "BUSINESS_DAY_CONVENTION_CHANGE",
+        "COLLATERAL_CHANGE",
+        "OTHER"
+      ]
+    },
+    "effectiveDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when the amendment becomes effective"
+    },
+    "amendmentDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when the amendment was agreed"
+    },
+    "changedFields": {
+      "type": "object",
+      "description": "Detailed information about changed fields",
+      "properties": {
+        "fieldChanges": {
+          "type": "array",
+          "description": "List of field changes",
+          "items": {
+            "type": "object",
+            "properties": {
+              "fieldName": {
+                "type": "string",
+                "description": "Name of the changed field"
+              },
+              "fieldPath": {
+                "type": "string",
+                "description": "JSON path to the field in the trade object"
+              },
+              "oldValue": {
+                "description": "Previous value of the field",
+                "oneOf": [
+                  {"type": "string"},
+                  {"type": "number"},
+                  {"type": "boolean"},
+                  {"type": "object"},
+                  {"type": "array"}
+                ]
+              },
+              "newValue": {
+                "description": "New value of the field",
+                "oneOf": [
+                  {"type": "string"},
+                  {"type": "number"},
+                  {"type": "boolean"},
+                  {"type": "object"},
+                  {"type": "array"}
+                ]
+              },
+              "changeReason": {
+                "type": "string",
+                "description": "Reason for the change"
+              }
+            },
+            "required": ["fieldName", "fieldPath", "oldValue", "newValue"]
+          }
+        },
+        "impactSummary": {
+          "type": "object",
+          "description": "Summary of the amendment impact",
+          "properties": {
+            "notionalImpact": {
+              "$ref": "common/MonetaryAmount.json",
+              "description": "Change in notional amount"
+            },
+            "marketValueImpact": {
+              "$ref": "common/MonetaryAmount.json",
+              "description": "Change in market value"
+            },
+            "riskImpact": {
+              "type": "object",
+              "description": "Change in risk metrics",
+              "properties": {
+                "pv01Change": {
+                  "type": "number"
+                },
+                "deltaChange": {
+                  "type": "number"
+                },
+                "vegaChange": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      },
+      "required": ["fieldChanges"]
+    },
+    "amendmentReason": {
+      "type": "string",
+      "description": "Business reason for the amendment",
+      "enum": [
+        "MARKET_DISRUPTION",
+        "CREDIT_EVENT",
+        "REGULATORY_CHANGE",
+        "OPERATIONAL_ERROR_CORRECTION",
+        "MUTUAL_AGREEMENT",
+        "EXERCISE_OF_OPTION",
+        "EARLY_TERMINATION_RIGHT",
+        "OTHER"
+      ]
+    },
+    "amendmentReasonDescription": {
+      "type": "string",
+      "description": "Detailed description of the amendment reason",
+      "maxLength": 1000
+    },
+    "initiatingParty": {
+      "type": "string",
+      "description": "LEI of the party that initiated the amendment",
+      "pattern": "^[A-Z0-9]{18}[0-9]{2}$"
+    },
+    "authorizationId": {
+      "type": "string",
+      "description": "Authorization identifier for the amendment",
+      "maxLength": 100
+    },
+    "authorizedBy": {
+      "type": "string",
+      "description": "ID of the person who authorized the amendment",
+      "maxLength": 100
+    },
+    "authorizationTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the amendment was authorized"
+    },
+    "confirmationDetails": {
+      "type": "object",
+      "description": "Amendment confirmation details",
+      "properties": {
+        "confirmationMethod": {
+          "type": "string",
+          "enum": ["ELECTRONIC", "VOICE", "EMAIL", "FAX", "WRITTEN"]
+        },
+        "confirmationTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "confirmationReference": {
+          "type": "string",
+          "description": "Reference to the confirmation message"
+        },
+        "counterpartyConfirmation": {
+          "type": "boolean",
+          "description": "Whether counterparty has confirmed the amendment"
+        },
+        "counterpartyConfirmationTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["confirmationMethod", "confirmationTimestamp"]
+    },
+    "regulatoryReporting": {
+      "type": "object",
+      "description": "Regulatory reporting requirements for the amendment",
+      "properties": {
+        "reportingRequired": {
+          "type": "boolean",
+          "description": "Whether regulatory reporting is required"
+        },
+        "reportingRegimes": {
+          "type": "array",
+          "description": "Regimes requiring reporting",
+          "items": {
+            "type": "string",
+            "enum": ["DODD_FRANK", "EMIR", "UK_EMIR", "JFSA", "ASIC", "MAS"]
+          },
+          "uniqueItems": true
+        },
+        "reportingDeadlines": {
+          "type": "object",
+          "description": "Reporting deadlines by regime",
+          "additionalProperties": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "reportingStatus": {
+          "type": "object",
+          "description": "Reporting status by regime",
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["PENDING", "SUBMITTED", "ACKNOWLEDGED", "REJECTED"]
+          }
+        }
+      },
+      "required": ["reportingRequired"]
+    },
+    "positionImpact": {
+      "type": "object",
+      "description": "Impact on related positions",
+      "properties": {
+        "affectedPositions": {
+          "type": "array",
+          "description": "Positions affected by this amendment",
+          "items": {
+            "type": "string",
+            "description": "Position ID"
+          }
+        },
+        "recalculationRequired": {
+          "type": "boolean",
+          "description": "Whether position recalculation is required"
+        },
+        "recalculationTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When position recalculation was completed"
+        }
+      }
+    },
+    "validationResults": {
+      "type": "array",
+      "description": "Validation results for the amendment",
+      "items": {
+        "type": "object",
+        "properties": {
+          "validationType": {
+            "type": "string",
+            "enum": ["BUSINESS_RULE", "AUTHORIZATION", "MARKET_DATA", "REGULATORY"]
+          },
+          "validationStatus": {
+            "type": "string",
+            "enum": ["PASS", "FAIL", "WARNING"]
+          },
+          "validationMessage": {
+            "type": "string"
+          },
+          "validationTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["validationType", "validationStatus", "validationTimestamp"]
+      }
+    },
+    "processedTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the amendment was fully processed"
+    },
+    "status": {
+      "type": "string",
+      "description": "Current status of the amendment",
+      "enum": ["PENDING", "VALIDATED", "APPLIED", "REPORTED", "FAILED", "REJECTED", "CANCELLED"]
+    }
+  },
+  "required": [
+    "metadata",
+    "amendmentId",
+    "originalTradeId",
+    "originalUti",
+    "amendmentType",
+    "effectiveDate",
+    "amendmentDate",
+    "changedFields",
+    "amendmentReason",
+    "initiatingParty",
+    "authorizationId",
+    "confirmationDetails",
+    "regulatoryReporting",
+    "status"
+  ],
+  "additionalProperties": false
+}

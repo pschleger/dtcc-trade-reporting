@@ -1,0 +1,365 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/RegulatoryReport.json",
+  "title": "RegulatoryReport",
+  "description": "DTCC GTR submission records for regulatory compliance",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "$ref": "common/BusinessEntityMetadata.json",
+      "description": "Entity metadata including workflow state"
+    },
+    "reportId": {
+      "type": "string",
+      "description": "Unique regulatory report identifier",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "reportType": {
+      "type": "string",
+      "description": "Type of regulatory report",
+      "enum": [
+        "TRADE_REPORT",
+        "POSITION_REPORT",
+        "LARGE_POSITION_REPORT",
+        "CONCENTRATION_REPORT",
+        "RISK_MITIGATION_REPORT",
+        "CLEARING_REPORT",
+        "MARGIN_REPORT",
+        "COLLATERAL_REPORT"
+      ]
+    },
+    "regulatoryRegime": {
+      "type": "string",
+      "description": "Regulatory regime for this report",
+      "enum": ["DODD_FRANK", "EMIR", "UK_EMIR", "JFSA", "ASIC", "MAS", "CFTC", "SEC", "ESMA", "FCA"]
+    },
+    "reportingEntity": {
+      "type": "object",
+      "description": "Entity submitting the report",
+      "properties": {
+        "entityId": {
+          "type": "string",
+          "description": "Internal entity ID"
+        },
+        "lei": {
+          "type": "string",
+          "description": "LEI of the reporting entity",
+          "pattern": "^[A-Z0-9]{18}[0-9]{2}$"
+        },
+        "reportingRole": {
+          "type": "string",
+          "enum": ["REPORTING_COUNTERPARTY", "NON_REPORTING_COUNTERPARTY", "DELEGATED_REPORTER"]
+        }
+      },
+      "required": ["entityId", "lei", "reportingRole"]
+    },
+    "reportingDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date for which the report is generated"
+    },
+    "reportingPeriod": {
+      "$ref": "common/DateRange.json",
+      "description": "Reporting period covered by this report"
+    },
+    "submissionDeadline": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Regulatory deadline for submission"
+    },
+    "generatedTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the report was generated"
+    },
+    "reportContent": {
+      "type": "object",
+      "description": "Content of the regulatory report",
+      "properties": {
+        "reportFormat": {
+          "type": "string",
+          "enum": ["XML", "JSON", "CSV", "FIX", "SWIFT"]
+        },
+        "reportData": {
+          "type": "string",
+          "description": "Serialized report data",
+          "contentEncoding": "base64"
+        },
+        "reportSize": {
+          "type": "integer",
+          "description": "Size of the report in bytes",
+          "minimum": 0
+        },
+        "reportHash": {
+          "type": "string",
+          "description": "SHA-256 hash of the report content",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "recordCount": {
+          "type": "integer",
+          "description": "Number of records in the report",
+          "minimum": 0
+        }
+      },
+      "required": ["reportFormat", "reportData", "reportHash", "recordCount"]
+    },
+    "sourceData": {
+      "type": "object",
+      "description": "Source data used to generate the report",
+      "properties": {
+        "positionIds": {
+          "type": "array",
+          "description": "Position entities included in the report",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tradeIds": {
+          "type": "array",
+          "description": "Trade entities included in the report",
+          "items": {
+            "type": "string"
+          }
+        },
+        "dataAsOfDate": {
+          "type": "string",
+          "format": "date",
+          "description": "As-of date for the source data"
+        },
+        "dataAsOfTime": {
+          "type": "string",
+          "format": "time",
+          "description": "As-of time for the source data"
+        }
+      }
+    },
+    "validationResults": {
+      "type": "array",
+      "description": "Validation results for the report",
+      "items": {
+        "type": "object",
+        "properties": {
+          "validationType": {
+            "type": "string",
+            "enum": ["SCHEMA", "BUSINESS_RULE", "REGULATORY_RULE", "DATA_QUALITY", "COMPLETENESS"]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["ERROR", "WARNING", "INFO"]
+          },
+          "ruleId": {
+            "type": "string",
+            "description": "Identifier of the validation rule"
+          },
+          "ruleDescription": {
+            "type": "string",
+            "description": "Description of the validation rule"
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "Validation error message"
+          },
+          "fieldPath": {
+            "type": "string",
+            "description": "Path to the field causing the error"
+          },
+          "recordNumber": {
+            "type": "integer",
+            "description": "Record number where the error occurred"
+          },
+          "validationTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["validationType", "severity", "ruleId", "errorMessage", "validationTimestamp"]
+      }
+    },
+    "submissionStatus": {
+      "type": "string",
+      "description": "Current submission status",
+      "enum": [
+        "GENERATED",
+        "VALIDATED",
+        "READY_FOR_SUBMISSION",
+        "SUBMITTING",
+        "SUBMITTED",
+        "ACKNOWLEDGED",
+        "REJECTED",
+        "RESUBMITTED",
+        "FAILED"
+      ]
+    },
+    "submissionAttempts": {
+      "type": "array",
+      "description": "History of submission attempts",
+      "items": {
+        "type": "object",
+        "properties": {
+          "attemptNumber": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "submissionTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "submissionMethod": {
+            "type": "string",
+            "enum": ["API", "SFTP", "WEB_PORTAL", "EMAIL"]
+          },
+          "submissionEndpoint": {
+            "type": "string",
+            "description": "Endpoint or destination for submission"
+          },
+          "responseCode": {
+            "type": "string",
+            "description": "Response code from the regulatory system"
+          },
+          "responseMessage": {
+            "type": "string",
+            "description": "Response message from the regulatory system"
+          },
+          "acknowledgmentId": {
+            "type": "string",
+            "description": "Acknowledgment ID from the regulatory system"
+          },
+          "submissionStatus": {
+            "type": "string",
+            "enum": ["SUCCESS", "FAILURE", "PENDING", "TIMEOUT"]
+          },
+          "errorDetails": {
+            "type": "array",
+            "description": "Detailed error information",
+            "items": {
+              "type": "object",
+              "properties": {
+                "errorCode": {
+                  "type": "string"
+                },
+                "errorMessage": {
+                  "type": "string"
+                },
+                "errorSeverity": {
+                  "type": "string",
+                  "enum": ["FATAL", "ERROR", "WARNING"]
+                }
+              },
+              "required": ["errorCode", "errorMessage", "errorSeverity"]
+            }
+          }
+        },
+        "required": ["attemptNumber", "submissionTimestamp", "submissionMethod", "submissionStatus"]
+      }
+    },
+    "regulatoryAcknowledgment": {
+      "type": "object",
+      "description": "Acknowledgment from the regulatory authority",
+      "properties": {
+        "acknowledgmentReceived": {
+          "type": "boolean",
+          "description": "Whether acknowledgment was received"
+        },
+        "acknowledgmentTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "acknowledgmentId": {
+          "type": "string",
+          "description": "Unique acknowledgment identifier"
+        },
+        "acknowledgmentStatus": {
+          "type": "string",
+          "enum": ["ACCEPTED", "REJECTED", "PARTIALLY_ACCEPTED", "UNDER_REVIEW"]
+        },
+        "rejectionReasons": {
+          "type": "array",
+          "description": "Reasons for rejection if applicable",
+          "items": {
+            "type": "object",
+            "properties": {
+              "reasonCode": {
+                "type": "string"
+              },
+              "reasonDescription": {
+                "type": "string"
+              },
+              "affectedRecords": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              }
+            },
+            "required": ["reasonCode", "reasonDescription"]
+          }
+        }
+      },
+      "required": ["acknowledgmentReceived"]
+    },
+    "performanceMetrics": {
+      "type": "object",
+      "description": "Performance metrics for report generation and submission",
+      "properties": {
+        "generationDuration": {
+          "type": "integer",
+          "description": "Time taken to generate the report in milliseconds"
+        },
+        "validationDuration": {
+          "type": "integer",
+          "description": "Time taken to validate the report in milliseconds"
+        },
+        "submissionDuration": {
+          "type": "integer",
+          "description": "Time taken to submit the report in milliseconds"
+        },
+        "totalProcessingTime": {
+          "type": "integer",
+          "description": "Total processing time in milliseconds"
+        },
+        "dataRetrievalTime": {
+          "type": "integer",
+          "description": "Time taken to retrieve source data in milliseconds"
+        }
+      }
+    },
+    "retentionInformation": {
+      "type": "object",
+      "description": "Data retention information",
+      "properties": {
+        "retentionPeriod": {
+          "type": "string",
+          "description": "Required retention period",
+          "pattern": "^P(?:\\d+Y)?(?:\\d+M)?(?:\\d+D)?$"
+        },
+        "archiveLocation": {
+          "type": "string",
+          "description": "Location where the report is archived"
+        },
+        "archiveTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "destructionDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Scheduled destruction date"
+        }
+      }
+    }
+  },
+  "required": [
+    "metadata",
+    "reportId",
+    "reportType",
+    "regulatoryRegime",
+    "reportingEntity",
+    "reportingDate",
+    "submissionDeadline",
+    "generatedTimestamp",
+    "reportContent",
+    "submissionStatus"
+  ],
+  "additionalProperties": false
+}

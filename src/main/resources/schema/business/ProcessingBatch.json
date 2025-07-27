@@ -1,0 +1,471 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/ProcessingBatch.json",
+  "title": "ProcessingBatch",
+  "description": "Coordination of batch processing operations",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "$ref": "common/BusinessEntityMetadata.json",
+      "description": "Entity metadata including workflow state"
+    },
+    "batchId": {
+      "type": "string",
+      "description": "Unique batch identifier",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "batchType": {
+      "type": "string",
+      "description": "Type of batch processing",
+      "enum": [
+        "TRADE_PROCESSING",
+        "POSITION_CALCULATION",
+        "REGULATORY_REPORTING",
+        "DATA_VALIDATION",
+        "RECONCILIATION",
+        "MARKET_DATA_REFRESH",
+        "EOD_PROCESSING",
+        "MONTH_END_PROCESSING",
+        "ARCHIVAL",
+        "CLEANUP"
+      ]
+    },
+    "batchName": {
+      "type": "string",
+      "description": "Human-readable name for the batch",
+      "maxLength": 200
+    },
+    "batchDescription": {
+      "type": "string",
+      "description": "Description of what this batch does",
+      "maxLength": 1000
+    },
+    "schedulingInformation": {
+      "type": "object",
+      "description": "Batch scheduling information",
+      "properties": {
+        "scheduledStartTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Scheduled start time for the batch"
+        },
+        "actualStartTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Actual start time of the batch"
+        },
+        "scheduledEndTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Scheduled end time for the batch"
+        },
+        "actualEndTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Actual end time of the batch"
+        },
+        "scheduleType": {
+          "type": "string",
+          "enum": ["MANUAL", "SCHEDULED", "EVENT_DRIVEN", "DEPENDENCY_TRIGGERED"]
+        },
+        "cronExpression": {
+          "type": "string",
+          "description": "Cron expression for scheduled batches"
+        },
+        "triggerEvent": {
+          "type": "string",
+          "description": "Event that triggered this batch if event-driven"
+        }
+      },
+      "required": ["scheduleType"]
+    },
+    "processingScope": {
+      "type": "object",
+      "description": "Scope of the batch processing",
+      "properties": {
+        "entityTypes": {
+          "type": "array",
+          "description": "Types of entities to be processed",
+          "items": {
+            "type": "string",
+            "enum": [
+              "TRADE_CONFIRMATION",
+              "TRADE",
+              "POSITION",
+              "COUNTERPARTY",
+              "PRODUCT",
+              "REFERENCE_DATA",
+              "REGULATORY_REPORT"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "filterCriteria": {
+          "type": "object",
+          "description": "Criteria for selecting entities to process",
+          "properties": {
+            "dateRange": {
+              "$ref": "common/DateRange.json",
+              "description": "Date range filter"
+            },
+            "counterpartyIds": {
+              "type": "array",
+              "description": "Specific counterparty IDs to process",
+              "items": {
+                "type": "string"
+              }
+            },
+            "assetClasses": {
+              "type": "array",
+              "description": "Asset classes to include",
+              "items": {
+                "type": "string",
+                "enum": ["INTEREST_RATE", "CREDIT", "EQUITY", "FOREIGN_EXCHANGE", "COMMODITY", "OTHER"]
+              }
+            },
+            "customFilters": {
+              "type": "object",
+              "description": "Custom filter criteria",
+              "additionalProperties": true
+            }
+          }
+        },
+        "expectedItemCount": {
+          "type": "integer",
+          "description": "Expected number of items to process",
+          "minimum": 0
+        },
+        "actualItemCount": {
+          "type": "integer",
+          "description": "Actual number of items processed",
+          "minimum": 0
+        }
+      }
+    },
+    "executionDetails": {
+      "type": "object",
+      "description": "Batch execution details",
+      "properties": {
+        "executionMode": {
+          "type": "string",
+          "enum": ["SEQUENTIAL", "PARALLEL", "DISTRIBUTED"]
+        },
+        "threadCount": {
+          "type": "integer",
+          "description": "Number of threads used for parallel processing",
+          "minimum": 1
+        },
+        "chunkSize": {
+          "type": "integer",
+          "description": "Size of processing chunks",
+          "minimum": 1
+        },
+        "timeoutMinutes": {
+          "type": "integer",
+          "description": "Timeout for the batch in minutes",
+          "minimum": 1
+        },
+        "retryPolicy": {
+          "type": "object",
+          "properties": {
+            "maxRetries": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "retryInterval": {
+              "type": "integer",
+              "description": "Retry interval in seconds",
+              "minimum": 1
+            },
+            "backoffStrategy": {
+              "type": "string",
+              "enum": ["FIXED", "LINEAR", "EXPONENTIAL"]
+            }
+          },
+          "required": ["maxRetries"]
+        }
+      },
+      "required": ["executionMode"]
+    },
+    "progressTracking": {
+      "type": "object",
+      "description": "Progress tracking information",
+      "properties": {
+        "totalItems": {
+          "type": "integer",
+          "description": "Total number of items to process",
+          "minimum": 0
+        },
+        "processedItems": {
+          "type": "integer",
+          "description": "Number of items processed",
+          "minimum": 0
+        },
+        "successfulItems": {
+          "type": "integer",
+          "description": "Number of items processed successfully",
+          "minimum": 0
+        },
+        "failedItems": {
+          "type": "integer",
+          "description": "Number of items that failed processing",
+          "minimum": 0
+        },
+        "skippedItems": {
+          "type": "integer",
+          "description": "Number of items skipped",
+          "minimum": 0
+        },
+        "percentComplete": {
+          "type": "number",
+          "description": "Percentage of completion",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "estimatedTimeRemaining": {
+          "type": "integer",
+          "description": "Estimated time remaining in seconds"
+        },
+        "currentPhase": {
+          "type": "string",
+          "description": "Current processing phase",
+          "examples": ["INITIALIZATION", "DATA_RETRIEVAL", "PROCESSING", "VALIDATION", "FINALIZATION"]
+        }
+      }
+    },
+    "performanceMetrics": {
+      "type": "object",
+      "description": "Performance metrics for the batch",
+      "properties": {
+        "totalExecutionTime": {
+          "type": "integer",
+          "description": "Total execution time in milliseconds"
+        },
+        "averageItemProcessingTime": {
+          "type": "number",
+          "description": "Average time to process one item in milliseconds"
+        },
+        "throughput": {
+          "type": "number",
+          "description": "Items processed per second"
+        },
+        "peakMemoryUsage": {
+          "type": "integer",
+          "description": "Peak memory usage in bytes"
+        },
+        "averageMemoryUsage": {
+          "type": "integer",
+          "description": "Average memory usage in bytes"
+        },
+        "cpuUtilization": {
+          "type": "number",
+          "description": "Average CPU utilization percentage",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "ioOperations": {
+          "type": "integer",
+          "description": "Number of I/O operations performed"
+        },
+        "networkTraffic": {
+          "type": "integer",
+          "description": "Network traffic in bytes"
+        }
+      }
+    },
+    "errorSummary": {
+      "type": "object",
+      "description": "Summary of errors encountered during batch processing",
+      "properties": {
+        "totalErrors": {
+          "type": "integer",
+          "description": "Total number of errors",
+          "minimum": 0
+        },
+        "errorsByCategory": {
+          "type": "object",
+          "description": "Errors grouped by category",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "errorsByType": {
+          "type": "object",
+          "description": "Errors grouped by type",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "criticalErrors": {
+          "type": "array",
+          "description": "List of critical errors",
+          "items": {
+            "type": "object",
+            "properties": {
+              "errorId": {
+                "type": "string"
+              },
+              "errorCode": {
+                "type": "string"
+              },
+              "errorMessage": {
+                "type": "string"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "entityId": {
+                "type": "string",
+                "description": "ID of the entity that caused the error"
+              },
+              "stackTrace": {
+                "type": "string"
+              }
+            },
+            "required": ["errorId", "errorCode", "errorMessage", "timestamp"]
+          }
+        }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "Dependencies on other batches or processes",
+      "items": {
+        "type": "object",
+        "properties": {
+          "dependencyType": {
+            "type": "string",
+            "enum": ["BATCH", "PROCESS", "DATA_FEED", "EXTERNAL_SYSTEM"]
+          },
+          "dependencyId": {
+            "type": "string",
+            "description": "ID of the dependency"
+          },
+          "dependencyName": {
+            "type": "string",
+            "description": "Name of the dependency"
+          },
+          "dependencyStatus": {
+            "type": "string",
+            "enum": ["PENDING", "SATISFIED", "FAILED", "TIMEOUT"]
+          },
+          "waitTimeout": {
+            "type": "integer",
+            "description": "Maximum wait time for dependency in minutes"
+          }
+        },
+        "required": ["dependencyType", "dependencyId", "dependencyStatus"]
+      }
+    },
+    "notifications": {
+      "type": "object",
+      "description": "Notification settings and status",
+      "properties": {
+        "notificationEnabled": {
+          "type": "boolean",
+          "description": "Whether notifications are enabled"
+        },
+        "notificationRecipients": {
+          "type": "array",
+          "description": "List of notification recipients",
+          "items": {
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "notificationEvents": {
+          "type": "array",
+          "description": "Events that trigger notifications",
+          "items": {
+            "type": "string",
+            "enum": ["START", "COMPLETION", "FAILURE", "WARNING", "MILESTONE"]
+          }
+        },
+        "notificationsSent": {
+          "type": "array",
+          "description": "Notifications that have been sent",
+          "items": {
+            "type": "object",
+            "properties": {
+              "event": {
+                "type": "string"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "recipients": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "status": {
+                "type": "string",
+                "enum": ["SENT", "FAILED", "PENDING"]
+              }
+            },
+            "required": ["event", "timestamp", "status"]
+          }
+        }
+      },
+      "required": ["notificationEnabled"]
+    },
+    "batchStatus": {
+      "type": "string",
+      "description": "Current status of the batch",
+      "enum": [
+        "SCHEDULED",
+        "WAITING_FOR_DEPENDENCIES",
+        "STARTING",
+        "RUNNING",
+        "PAUSED",
+        "COMPLETED",
+        "FAILED",
+        "CANCELLED",
+        "TIMEOUT"
+      ]
+    },
+    "statusHistory": {
+      "type": "array",
+      "description": "History of status changes",
+      "items": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for the status change"
+          },
+          "actor": {
+            "type": "string",
+            "description": "Who or what caused the status change"
+          }
+        },
+        "required": ["status", "timestamp"]
+      }
+    }
+  },
+  "required": [
+    "metadata",
+    "batchId",
+    "batchType",
+    "batchName",
+    "schedulingInformation",
+    "processingScope",
+    "executionDetails",
+    "progressTracking",
+    "batchStatus"
+  ],
+  "additionalProperties": false
+}

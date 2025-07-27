@@ -1,0 +1,266 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/Product.json",
+  "title": "Product",
+  "description": "OTC derivative product definitions and specifications",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "$ref": "common/BusinessEntityMetadata.json",
+      "description": "Entity metadata including workflow state"
+    },
+    "productId": {
+      "type": "string",
+      "description": "Unique product identifier",
+      "minLength": 1,
+      "maxLength": 50
+    },
+    "taxonomy": {
+      "type": "object",
+      "description": "Product taxonomy classification",
+      "properties": {
+        "assetClass": {
+          "type": "string",
+          "description": "Primary asset class",
+          "enum": [
+            "INTEREST_RATE",
+            "CREDIT",
+            "EQUITY",
+            "FOREIGN_EXCHANGE",
+            "COMMODITY",
+            "OTHER"
+          ]
+        },
+        "productType": {
+          "type": "string",
+          "description": "Product type within asset class",
+          "examples": ["SWAP", "OPTION", "FORWARD", "FUTURE", "SWAPTION"]
+        },
+        "subType": {
+          "type": "string",
+          "description": "Product sub-type for detailed classification",
+          "examples": ["VANILLA", "BARRIER", "ASIAN", "DIGITAL"]
+        },
+        "cfiFiCode": {
+          "type": "string",
+          "description": "CFI (Classification of Financial Instruments) code",
+          "pattern": "^[A-Z]{6}$"
+        }
+      },
+      "required": ["assetClass", "productType"]
+    },
+    "economicTerms": {
+      "type": "object",
+      "description": "Standard economic terms and calculation methodologies",
+      "properties": {
+        "notionalCurrency": {
+          "type": "string",
+          "description": "Primary notional currency",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "supportedCurrencies": {
+          "type": "array",
+          "description": "All supported currencies for this product",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "uniqueItems": true
+        },
+        "dayCountConvention": {
+          "type": "string",
+          "description": "Day count convention",
+          "enum": [
+            "ACT_360",
+            "ACT_365",
+            "ACT_ACT",
+            "30_360",
+            "30E_360",
+            "BUS_252"
+          ]
+        },
+        "businessDayConvention": {
+          "type": "string",
+          "description": "Business day adjustment convention",
+          "enum": [
+            "FOLLOWING",
+            "MODIFIED_FOLLOWING",
+            "PRECEDING",
+            "MODIFIED_PRECEDING",
+            "NONE"
+          ]
+        },
+        "paymentFrequency": {
+          "type": "string",
+          "description": "Standard payment frequency",
+          "enum": [
+            "DAILY",
+            "WEEKLY",
+            "MONTHLY",
+            "QUARTERLY",
+            "SEMI_ANNUALLY",
+            "ANNUALLY",
+            "AT_MATURITY",
+            "IRREGULAR"
+          ]
+        },
+        "settlementType": {
+          "type": "string",
+          "description": "Settlement type",
+          "enum": ["CASH", "PHYSICAL", "OPTIONAL"]
+        },
+        "calculationAgent": {
+          "type": "string",
+          "description": "Standard calculation agent designation",
+          "enum": ["PARTY_A", "PARTY_B", "BOTH", "THIRD_PARTY"]
+        }
+      },
+      "required": ["notionalCurrency", "supportedCurrencies"]
+    },
+    "riskCharacteristics": {
+      "type": "object",
+      "description": "Risk characteristics and sensitivities",
+      "properties": {
+        "primaryRiskFactors": {
+          "type": "array",
+          "description": "Primary risk factors",
+          "items": {
+            "type": "string",
+            "enum": [
+              "INTEREST_RATE",
+              "CREDIT_SPREAD",
+              "EQUITY_PRICE",
+              "FX_RATE",
+              "COMMODITY_PRICE",
+              "VOLATILITY",
+              "CORRELATION"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "complexityLevel": {
+          "type": "string",
+          "description": "Product complexity level",
+          "enum": ["VANILLA", "STRUCTURED", "EXOTIC", "HIGHLY_COMPLEX"]
+        },
+        "liquidityProfile": {
+          "type": "string",
+          "description": "Expected liquidity profile",
+          "enum": ["HIGHLY_LIQUID", "LIQUID", "ILLIQUID", "VERY_ILLIQUID"]
+        }
+      }
+    },
+    "regulatoryClassification": {
+      "type": "object",
+      "description": "Regulatory classification and requirements",
+      "properties": {
+        "clearingEligible": {
+          "type": "boolean",
+          "description": "Whether the product is eligible for central clearing"
+        },
+        "clearingMandatory": {
+          "type": "boolean",
+          "description": "Whether central clearing is mandatory"
+        },
+        "reportingRequired": {
+          "type": "boolean",
+          "description": "Whether trade reporting is required"
+        },
+        "marginRequirements": {
+          "type": "object",
+          "properties": {
+            "initialMarginRequired": {
+              "type": "boolean"
+            },
+            "variationMarginRequired": {
+              "type": "boolean"
+            }
+          }
+        },
+        "capitalTreatment": {
+          "type": "string",
+          "description": "Capital treatment classification",
+          "enum": ["BANKING_BOOK", "TRADING_BOOK", "HYBRID"]
+        }
+      },
+      "required": ["clearingEligible", "reportingRequired"]
+    },
+    "marketData": {
+      "type": "object",
+      "description": "Market data requirements",
+      "properties": {
+        "requiredCurves": {
+          "type": "array",
+          "description": "Required market curves for valuation",
+          "items": {
+            "type": "string",
+            "examples": ["USD_LIBOR", "EUR_EURIBOR", "GBP_SONIA"]
+          }
+        },
+        "requiredSurfaces": {
+          "type": "array",
+          "description": "Required volatility surfaces",
+          "items": {
+            "type": "string",
+            "examples": ["USD_SWAPTION_VOL", "EUR_CAP_FLOOR_VOL"]
+          }
+        },
+        "benchmarkRates": {
+          "type": "array",
+          "description": "Benchmark rates used in the product",
+          "items": {
+            "type": "string",
+            "examples": ["SOFR", "SONIA", "ESTER", "TONAR"]
+          }
+        }
+      }
+    },
+    "documentation": {
+      "type": "object",
+      "description": "Legal documentation requirements",
+      "properties": {
+        "masterAgreementType": {
+          "type": "string",
+          "description": "Type of master agreement",
+          "enum": ["ISDA", "GMRA", "GMSLA", "CUSTOM"]
+        },
+        "confirmationTemplate": {
+          "type": "string",
+          "description": "Standard confirmation template identifier"
+        },
+        "additionalTerms": {
+          "type": "array",
+          "description": "Additional terms and conditions",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "description": "Product status",
+      "enum": ["DRAFT", "APPROVED", "ACTIVE", "DEPRECATED", "ARCHIVED"]
+    },
+    "effectiveDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when the product became effective"
+    },
+    "expiryDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when the product expires or was deprecated"
+    }
+  },
+  "required": [
+    "metadata",
+    "productId",
+    "taxonomy",
+    "economicTerms",
+    "regulatoryClassification",
+    "status",
+    "effectiveDate"
+  ],
+  "additionalProperties": false
+}

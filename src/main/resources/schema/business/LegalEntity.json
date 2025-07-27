@@ -1,0 +1,318 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/LegalEntity.json",
+  "title": "LegalEntity",
+  "description": "Internal and external legal entity registry for regulatory reporting",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "$ref": "common/BusinessEntityMetadata.json",
+      "description": "Entity metadata including workflow state"
+    },
+    "entityId": {
+      "type": "string",
+      "description": "Unique entity identifier",
+      "minLength": 1,
+      "maxLength": 50
+    },
+    "lei": {
+      "type": "string",
+      "description": "Legal Entity Identifier (LEI) if available",
+      "pattern": "^[A-Z0-9]{18}[0-9]{2}$"
+    },
+    "entityName": {
+      "type": "string",
+      "description": "Legal name of the entity",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "entityType": {
+      "type": "string",
+      "description": "Type of legal entity",
+      "enum": [
+        "CORPORATION",
+        "LIMITED_LIABILITY_COMPANY",
+        "PARTNERSHIP",
+        "TRUST",
+        "FUND",
+        "BRANCH",
+        "SUBSIDIARY",
+        "GOVERNMENT_ENTITY",
+        "SUPRANATIONAL",
+        "OTHER"
+      ]
+    },
+    "parentEntityId": {
+      "type": "string",
+      "description": "Reference to parent entity if applicable"
+    },
+    "ultimateParentEntityId": {
+      "type": "string",
+      "description": "Reference to ultimate parent entity"
+    },
+    "jurisdiction": {
+      "type": "string",
+      "description": "Jurisdiction of incorporation",
+      "pattern": "^[A-Z]{2}$"
+    },
+    "incorporationDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of incorporation"
+    },
+    "registrationNumbers": {
+      "type": "object",
+      "description": "Various registration numbers",
+      "properties": {
+        "companyRegistrationNumber": {
+          "type": "string",
+          "description": "Company registration number"
+        },
+        "taxIdentificationNumber": {
+          "type": "string",
+          "description": "Tax identification number"
+        },
+        "vatNumber": {
+          "type": "string",
+          "description": "VAT registration number"
+        },
+        "duns": {
+          "type": "string",
+          "description": "DUNS number",
+          "pattern": "^[0-9]{9}$"
+        }
+      }
+    },
+    "regulatoryRegistrations": {
+      "type": "array",
+      "description": "Regulatory registrations and licenses",
+      "items": {
+        "type": "object",
+        "properties": {
+          "regulator": {
+            "type": "string",
+            "description": "Regulatory authority",
+            "examples": ["CFTC", "SEC", "FCA", "ESMA", "JFSA"]
+          },
+          "registrationType": {
+            "type": "string",
+            "description": "Type of registration",
+            "examples": ["SWAP_DEALER", "INVESTMENT_ADVISER", "BANK", "INSURANCE_COMPANY"]
+          },
+          "registrationNumber": {
+            "type": "string",
+            "description": "Registration number with the regulator"
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Effective date of registration"
+          },
+          "expiryDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Expiry date of registration"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["ACTIVE", "SUSPENDED", "REVOKED", "EXPIRED", "PENDING"]
+          }
+        },
+        "required": ["regulator", "registrationType", "registrationNumber", "effectiveDate", "status"]
+      }
+    },
+    "reportingObligations": {
+      "type": "object",
+      "description": "Regulatory reporting obligations",
+      "properties": {
+        "tradeReporting": {
+          "type": "array",
+          "description": "Trade reporting obligations",
+          "items": {
+            "type": "object",
+            "properties": {
+              "regime": {
+                "type": "string",
+                "enum": ["DODD_FRANK", "EMIR", "UK_EMIR", "JFSA", "ASIC", "MAS"]
+              },
+              "reportingRole": {
+                "type": "string",
+                "enum": ["REPORTING_COUNTERPARTY", "NON_REPORTING_COUNTERPARTY", "DELEGATED"]
+              },
+              "tradeRepository": {
+                "type": "string",
+                "description": "Designated trade repository"
+              },
+              "reportingThreshold": {
+                "$ref": "common/MonetaryAmount.json"
+              }
+            },
+            "required": ["regime", "reportingRole"]
+          }
+        },
+        "positionReporting": {
+          "type": "array",
+          "description": "Position reporting obligations",
+          "items": {
+            "type": "object",
+            "properties": {
+              "regime": {
+                "type": "string"
+              },
+              "reportingFrequency": {
+                "type": "string",
+                "enum": ["DAILY", "WEEKLY", "MONTHLY", "QUARTERLY"]
+              },
+              "reportingThreshold": {
+                "$ref": "common/MonetaryAmount.json"
+              }
+            },
+            "required": ["regime", "reportingFrequency"]
+          }
+        }
+      }
+    },
+    "businessActivities": {
+      "type": "array",
+      "description": "Primary business activities",
+      "items": {
+        "type": "string",
+        "enum": [
+          "INVESTMENT_BANKING",
+          "COMMERCIAL_BANKING",
+          "ASSET_MANAGEMENT",
+          "INSURANCE",
+          "PENSION_FUND",
+          "HEDGE_FUND",
+          "PROPRIETARY_TRADING",
+          "MARKET_MAKING",
+          "CLEARING",
+          "CUSTODY",
+          "CORPORATE_TREASURY",
+          "OTHER"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "authorizedTradingRelationships": {
+      "type": "array",
+      "description": "Entities authorized to trade on behalf of this entity",
+      "items": {
+        "type": "object",
+        "properties": {
+          "authorizedEntityId": {
+            "type": "string",
+            "description": "ID of the authorized entity"
+          },
+          "authorizationType": {
+            "type": "string",
+            "enum": ["FULL_AUTHORITY", "LIMITED_AUTHORITY", "SPECIFIC_PRODUCTS"]
+          },
+          "productScope": {
+            "type": "array",
+            "description": "Authorized product types if limited",
+            "items": {
+              "type": "string"
+            }
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "expiryDate": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": ["authorizedEntityId", "authorizationType", "effectiveDate"]
+      }
+    },
+    "contactInformation": {
+      "type": "object",
+      "description": "Entity contact information",
+      "properties": {
+        "headquarters": {
+          "type": "object",
+          "properties": {
+            "address": {
+              "type": "object",
+              "properties": {
+                "street": {
+                  "type": "string"
+                },
+                "city": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string"
+                },
+                "postalCode": {
+                  "type": "string"
+                },
+                "country": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{2}$"
+                }
+              },
+              "required": ["street", "city", "country"]
+            },
+            "phone": {
+              "type": "string"
+            },
+            "website": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "required": ["address"]
+        },
+        "legalContact": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string",
+              "format": "email"
+            },
+            "phone": {
+              "type": "string"
+            }
+          },
+          "required": ["name", "email"]
+        }
+      },
+      "required": ["headquarters", "legalContact"]
+    },
+    "status": {
+      "type": "string",
+      "description": "Current entity status",
+      "enum": ["ACTIVE", "INACTIVE", "SUSPENDED", "DISSOLVED", "UNDER_REVIEW"]
+    },
+    "effectiveDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when the entity record became effective"
+    },
+    "terminationDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when the entity was terminated or dissolved"
+    }
+  },
+  "required": [
+    "metadata",
+    "entityId",
+    "entityName",
+    "entityType",
+    "jurisdiction",
+    "contactInformation",
+    "status",
+    "effectiveDate"
+  ],
+  "additionalProperties": false
+}

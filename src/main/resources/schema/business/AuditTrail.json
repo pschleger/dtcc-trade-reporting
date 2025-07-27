@@ -1,0 +1,392 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/AuditTrail.json",
+  "title": "AuditTrail",
+  "description": "Complete immutable record of all entity state changes",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "$ref": "common/BusinessEntityMetadata.json",
+      "description": "Entity metadata including workflow state"
+    },
+    "auditId": {
+      "type": "string",
+      "description": "Unique audit trail identifier",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "entityType": {
+      "type": "string",
+      "description": "Type of entity being audited",
+      "enum": [
+        "COUNTERPARTY",
+        "PRODUCT",
+        "REFERENCE_DATA",
+        "LEGAL_ENTITY",
+        "TRADE_CONFIRMATION",
+        "TRADE",
+        "POSITION",
+        "AMENDMENT",
+        "CANCELLATION",
+        "REGULATORY_REPORT",
+        "REPORTING_OBLIGATION",
+        "SUBMISSION_STATUS",
+        "PROCESSING_BATCH",
+        "VALIDATION_RESULT",
+        "RECONCILIATION_RESULT"
+      ]
+    },
+    "entityId": {
+      "type": "string",
+      "description": "Identifier of the entity being audited"
+    },
+    "entityVersion": {
+      "type": "integer",
+      "description": "Version of the entity at the time of this audit record",
+      "minimum": 1
+    },
+    "transactionTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the transaction occurred"
+    },
+    "transactionId": {
+      "type": "string",
+      "description": "Unique identifier for the transaction",
+      "maxLength": 100
+    },
+    "transactionType": {
+      "type": "string",
+      "description": "Type of transaction",
+      "enum": [
+        "CREATE",
+        "UPDATE",
+        "DELETE",
+        "STATE_TRANSITION",
+        "VALIDATION",
+        "PROCESSING",
+        "SUBMISSION",
+        "RECONCILIATION",
+        "APPROVAL",
+        "REJECTION",
+        "CORRECTION",
+        "ARCHIVE"
+      ]
+    },
+    "fromState": {
+      "type": "string",
+      "description": "Previous state of the entity"
+    },
+    "toState": {
+      "type": "string",
+      "description": "New state of the entity"
+    },
+    "transitionName": {
+      "type": "string",
+      "description": "Name of the state transition if applicable"
+    },
+    "actorId": {
+      "type": "string",
+      "description": "Identifier of the user or system that performed the action",
+      "maxLength": 100
+    },
+    "actorType": {
+      "type": "string",
+      "description": "Type of actor",
+      "enum": ["USER", "SYSTEM", "BATCH_PROCESS", "EXTERNAL_SYSTEM", "SCHEDULER", "API_CLIENT"]
+    },
+    "actorDetails": {
+      "type": "object",
+      "description": "Additional details about the actor",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "User ID if actor is a user"
+        },
+        "userName": {
+          "type": "string",
+          "description": "User name if actor is a user"
+        },
+        "systemName": {
+          "type": "string",
+          "description": "System name if actor is a system"
+        },
+        "processName": {
+          "type": "string",
+          "description": "Process name if actor is a batch process"
+        },
+        "ipAddress": {
+          "type": "string",
+          "description": "IP address of the actor",
+          "format": "ipv4"
+        },
+        "sessionId": {
+          "type": "string",
+          "description": "Session ID if applicable"
+        },
+        "clientApplication": {
+          "type": "string",
+          "description": "Client application used"
+        }
+      }
+    },
+    "changeDetails": {
+      "type": "object",
+      "description": "Detailed information about the changes made",
+      "properties": {
+        "changedFields": {
+          "type": "array",
+          "description": "List of fields that were changed",
+          "items": {
+            "type": "object",
+            "properties": {
+              "fieldName": {
+                "type": "string",
+                "description": "Name of the changed field"
+              },
+              "fieldPath": {
+                "type": "string",
+                "description": "JSON path to the field"
+              },
+              "oldValue": {
+                "description": "Previous value of the field",
+                "oneOf": [
+                  {"type": "string"},
+                  {"type": "number"},
+                  {"type": "boolean"},
+                  {"type": "object"},
+                  {"type": "array"},
+                  {"type": "null"}
+                ]
+              },
+              "newValue": {
+                "description": "New value of the field",
+                "oneOf": [
+                  {"type": "string"},
+                  {"type": "number"},
+                  {"type": "boolean"},
+                  {"type": "object"},
+                  {"type": "array"},
+                  {"type": "null"}
+                ]
+              },
+              "changeType": {
+                "type": "string",
+                "enum": ["ADDED", "MODIFIED", "REMOVED"]
+              }
+            },
+            "required": ["fieldName", "fieldPath", "changeType"]
+          }
+        },
+        "changeReason": {
+          "type": "string",
+          "description": "Reason for the change",
+          "maxLength": 500
+        },
+        "changeSummary": {
+          "type": "string",
+          "description": "Summary of the changes made",
+          "maxLength": 1000
+        },
+        "impactAssessment": {
+          "type": "string",
+          "description": "Assessment of the impact of the changes",
+          "maxLength": 1000
+        }
+      }
+    },
+    "businessJustification": {
+      "type": "string",
+      "description": "Business justification for the action",
+      "maxLength": 2000
+    },
+    "approvalInformation": {
+      "type": "object",
+      "description": "Approval information if the action required approval",
+      "properties": {
+        "approvalRequired": {
+          "type": "boolean",
+          "description": "Whether approval was required for this action"
+        },
+        "approvalStatus": {
+          "type": "string",
+          "enum": ["PENDING", "APPROVED", "REJECTED", "NOT_REQUIRED"]
+        },
+        "approverId": {
+          "type": "string",
+          "description": "ID of the approver"
+        },
+        "approverName": {
+          "type": "string",
+          "description": "Name of the approver"
+        },
+        "approvalTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "approvalComments": {
+          "type": "string",
+          "description": "Comments from the approver"
+        }
+      },
+      "required": ["approvalRequired", "approvalStatus"]
+    },
+    "validationResults": {
+      "type": "array",
+      "description": "Validation results associated with this action",
+      "items": {
+        "type": "object",
+        "properties": {
+          "validationType": {
+            "type": "string",
+            "enum": ["BUSINESS_RULE", "DATA_QUALITY", "REGULATORY", "TECHNICAL", "AUTHORIZATION"]
+          },
+          "validationStatus": {
+            "type": "string",
+            "enum": ["PASS", "FAIL", "WARNING", "SKIPPED"]
+          },
+          "validationMessage": {
+            "type": "string"
+          },
+          "ruleId": {
+            "type": "string",
+            "description": "ID of the validation rule"
+          }
+        },
+        "required": ["validationType", "validationStatus"]
+      }
+    },
+    "relatedEntities": {
+      "type": "array",
+      "description": "Other entities affected by this action",
+      "items": {
+        "type": "object",
+        "properties": {
+          "entityType": {
+            "type": "string"
+          },
+          "entityId": {
+            "type": "string"
+          },
+          "relationshipType": {
+            "type": "string",
+            "enum": ["PARENT", "CHILD", "REFERENCE", "DEPENDENCY", "AGGREGATION"]
+          },
+          "impactType": {
+            "type": "string",
+            "enum": ["DIRECT", "INDIRECT", "CASCADING", "NOTIFICATION_ONLY"]
+          }
+        },
+        "required": ["entityType", "entityId", "relationshipType", "impactType"]
+      }
+    },
+    "technicalDetails": {
+      "type": "object",
+      "description": "Technical details about the audit record",
+      "properties": {
+        "sourceSystem": {
+          "type": "string",
+          "description": "System that generated this audit record"
+        },
+        "sourceVersion": {
+          "type": "string",
+          "description": "Version of the source system"
+        },
+        "correlationId": {
+          "type": "string",
+          "description": "Correlation ID for tracking related operations"
+        },
+        "requestId": {
+          "type": "string",
+          "description": "Request ID that triggered this action"
+        },
+        "batchId": {
+          "type": "string",
+          "description": "Batch ID if this was part of a batch operation"
+        },
+        "executionTime": {
+          "type": "integer",
+          "description": "Execution time in milliseconds"
+        },
+        "memoryUsage": {
+          "type": "integer",
+          "description": "Memory usage in bytes"
+        }
+      }
+    },
+    "complianceInformation": {
+      "type": "object",
+      "description": "Compliance-related information",
+      "properties": {
+        "regulatoryImpact": {
+          "type": "boolean",
+          "description": "Whether this action has regulatory impact"
+        },
+        "reportingRequired": {
+          "type": "boolean",
+          "description": "Whether regulatory reporting is required"
+        },
+        "retentionPeriod": {
+          "type": "string",
+          "description": "Required retention period for this audit record",
+          "pattern": "^P(?:\\d+Y)?(?:\\d+M)?(?:\\d+D)?$"
+        },
+        "dataClassification": {
+          "type": "string",
+          "enum": ["PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED", "TOP_SECRET"]
+        },
+        "privacyImpact": {
+          "type": "boolean",
+          "description": "Whether this action involves personal data"
+        }
+      }
+    },
+    "errorInformation": {
+      "type": "object",
+      "description": "Error information if the action failed",
+      "properties": {
+        "errorOccurred": {
+          "type": "boolean",
+          "description": "Whether an error occurred"
+        },
+        "errorCode": {
+          "type": "string",
+          "description": "Error code"
+        },
+        "errorMessage": {
+          "type": "string",
+          "description": "Error message"
+        },
+        "errorStackTrace": {
+          "type": "string",
+          "description": "Stack trace if available"
+        },
+        "recoveryAction": {
+          "type": "string",
+          "description": "Action taken to recover from the error"
+        }
+      },
+      "required": ["errorOccurred"]
+    },
+    "immutableSignature": {
+      "type": "string",
+      "description": "Digital signature to ensure immutability of the audit record",
+      "pattern": "^[a-fA-F0-9]+$"
+    }
+  },
+  "required": [
+    "metadata",
+    "auditId",
+    "entityType",
+    "entityId",
+    "entityVersion",
+    "transactionTimestamp",
+    "transactionId",
+    "transactionType",
+    "actorId",
+    "actorType",
+    "businessJustification",
+    "immutableSignature"
+  ],
+  "additionalProperties": false
+}

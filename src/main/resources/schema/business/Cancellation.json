@@ -1,0 +1,375 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/Cancellation.json",
+  "title": "Cancellation",
+  "description": "Trade cancellation records for lifecycle management",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "$ref": "common/BusinessEntityMetadata.json",
+      "description": "Entity metadata including workflow state"
+    },
+    "cancellationId": {
+      "type": "string",
+      "description": "Unique cancellation identifier",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "originalTradeId": {
+      "type": "string",
+      "description": "Reference to the original Trade entity being cancelled"
+    },
+    "originalUti": {
+      "type": "string",
+      "description": "UTI of the original trade"
+    },
+    "cancellationType": {
+      "type": "string",
+      "description": "Type of cancellation",
+      "enum": [
+        "FULL_CANCELLATION",
+        "PARTIAL_CANCELLATION",
+        "EARLY_TERMINATION",
+        "MUTUAL_TERMINATION",
+        "EXERCISE_TERMINATION",
+        "DEFAULT_TERMINATION",
+        "REGULATORY_TERMINATION",
+        "ERROR_CORRECTION"
+      ]
+    },
+    "cancellationReason": {
+      "type": "string",
+      "description": "Reason for cancellation",
+      "enum": [
+        "MUTUAL_AGREEMENT",
+        "CREDIT_EVENT",
+        "MARKET_DISRUPTION",
+        "REGULATORY_REQUIREMENT",
+        "OPERATIONAL_ERROR",
+        "DUPLICATE_TRADE",
+        "EXERCISE_OF_OPTION",
+        "BREACH_OF_AGREEMENT",
+        "FORCE_MAJEURE",
+        "OTHER"
+      ]
+    },
+    "cancellationReasonDescription": {
+      "type": "string",
+      "description": "Detailed description of the cancellation reason",
+      "maxLength": 1000
+    },
+    "effectiveDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when the cancellation becomes effective"
+    },
+    "cancellationDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when the cancellation was agreed"
+    },
+    "initiatingParty": {
+      "type": "string",
+      "description": "LEI of the party that initiated the cancellation",
+      "pattern": "^[A-Z0-9]{18}[0-9]{2}$"
+    },
+    "authorizationId": {
+      "type": "string",
+      "description": "Authorization identifier for the cancellation",
+      "maxLength": 100
+    },
+    "authorizedBy": {
+      "type": "string",
+      "description": "ID of the person who authorized the cancellation",
+      "maxLength": 100
+    },
+    "authorizationTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the cancellation was authorized"
+    },
+    "impactAssessment": {
+      "type": "object",
+      "description": "Assessment of the cancellation impact",
+      "properties": {
+        "financialImpact": {
+          "type": "object",
+          "properties": {
+            "terminationPayment": {
+              "$ref": "common/MonetaryAmount.json",
+              "description": "Termination payment amount"
+            },
+            "terminationPaymentDirection": {
+              "type": "string",
+              "enum": ["PAY", "RECEIVE"],
+              "description": "Direction of termination payment"
+            },
+            "marketValueAtCancellation": {
+              "$ref": "common/MonetaryAmount.json",
+              "description": "Market value at time of cancellation"
+            },
+            "unrealizedPnL": {
+              "$ref": "common/MonetaryAmount.json",
+              "description": "Unrealized P&L at cancellation"
+            },
+            "accruedInterest": {
+              "$ref": "common/MonetaryAmount.json",
+              "description": "Accrued interest at cancellation"
+            }
+          }
+        },
+        "riskImpact": {
+          "type": "object",
+          "description": "Risk impact of the cancellation",
+          "properties": {
+            "releasedNotional": {
+              "$ref": "common/MonetaryAmount.json",
+              "description": "Notional amount released"
+            },
+            "riskReduction": {
+              "type": "object",
+              "properties": {
+                "pv01Reduction": {
+                  "type": "number"
+                },
+                "deltaReduction": {
+                  "type": "number"
+                },
+                "vegaReduction": {
+                  "type": "number"
+                }
+              }
+            },
+            "creditExposureReduction": {
+              "$ref": "common/MonetaryAmount.json",
+              "description": "Reduction in credit exposure"
+            }
+          }
+        },
+        "operationalImpact": {
+          "type": "object",
+          "description": "Operational impact of the cancellation",
+          "properties": {
+            "collateralRelease": {
+              "$ref": "common/MonetaryAmount.json",
+              "description": "Collateral to be released"
+            },
+            "marginRelease": {
+              "$ref": "common/MonetaryAmount.json",
+              "description": "Margin to be released"
+            },
+            "settlementObligations": {
+              "type": "array",
+              "description": "Outstanding settlement obligations",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "settlementDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "amount": {
+                    "$ref": "common/MonetaryAmount.json"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["PENDING", "CANCELLED", "SETTLED"]
+                  }
+                },
+                "required": ["settlementDate", "amount", "status"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "confirmationDetails": {
+      "type": "object",
+      "description": "Cancellation confirmation details",
+      "properties": {
+        "confirmationMethod": {
+          "type": "string",
+          "enum": ["ELECTRONIC", "VOICE", "EMAIL", "FAX", "WRITTEN"]
+        },
+        "confirmationTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "confirmationReference": {
+          "type": "string",
+          "description": "Reference to the confirmation message"
+        },
+        "counterpartyConfirmation": {
+          "type": "boolean",
+          "description": "Whether counterparty has confirmed the cancellation"
+        },
+        "counterpartyConfirmationTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["confirmationMethod", "confirmationTimestamp"]
+    },
+    "regulatoryReporting": {
+      "type": "object",
+      "description": "Regulatory reporting requirements for the cancellation",
+      "properties": {
+        "reportingRequired": {
+          "type": "boolean",
+          "description": "Whether regulatory reporting is required"
+        },
+        "reportingRegimes": {
+          "type": "array",
+          "description": "Regimes requiring reporting",
+          "items": {
+            "type": "string",
+            "enum": ["DODD_FRANK", "EMIR", "UK_EMIR", "JFSA", "ASIC", "MAS"]
+          },
+          "uniqueItems": true
+        },
+        "reportingDeadlines": {
+          "type": "object",
+          "description": "Reporting deadlines by regime",
+          "additionalProperties": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "reportingStatus": {
+          "type": "object",
+          "description": "Reporting status by regime",
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["PENDING", "SUBMITTED", "ACKNOWLEDGED", "REJECTED"]
+          }
+        }
+      },
+      "required": ["reportingRequired"]
+    },
+    "positionImpact": {
+      "type": "object",
+      "description": "Impact on related positions",
+      "properties": {
+        "affectedPositions": {
+          "type": "array",
+          "description": "Positions affected by this cancellation",
+          "items": {
+            "type": "string",
+            "description": "Position ID"
+          }
+        },
+        "recalculationRequired": {
+          "type": "boolean",
+          "description": "Whether position recalculation is required"
+        },
+        "recalculationTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When position recalculation was completed"
+        }
+      }
+    },
+    "settlementInstructions": {
+      "type": "object",
+      "description": "Settlement instructions for the cancellation",
+      "properties": {
+        "settlementRequired": {
+          "type": "boolean",
+          "description": "Whether settlement is required"
+        },
+        "settlementDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Settlement date"
+        },
+        "settlementAmount": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Net settlement amount"
+        },
+        "settlementCurrency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "paymentInstructions": {
+          "type": "object",
+          "description": "Payment instructions",
+          "properties": {
+            "paymentMethod": {
+              "type": "string",
+              "enum": ["WIRE", "ACH", "CHECK", "NETTING"]
+            },
+            "bankDetails": {
+              "type": "object",
+              "properties": {
+                "bankName": {
+                  "type": "string"
+                },
+                "accountNumber": {
+                  "type": "string"
+                },
+                "routingNumber": {
+                  "type": "string"
+                },
+                "swiftCode": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "required": ["settlementRequired"]
+    },
+    "validationResults": {
+      "type": "array",
+      "description": "Validation results for the cancellation",
+      "items": {
+        "type": "object",
+        "properties": {
+          "validationType": {
+            "type": "string",
+            "enum": ["BUSINESS_RULE", "AUTHORIZATION", "MARKET_DATA", "REGULATORY", "SETTLEMENT"]
+          },
+          "validationStatus": {
+            "type": "string",
+            "enum": ["PASS", "FAIL", "WARNING"]
+          },
+          "validationMessage": {
+            "type": "string"
+          },
+          "validationTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["validationType", "validationStatus", "validationTimestamp"]
+      }
+    },
+    "processedTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the cancellation was fully processed"
+    },
+    "status": {
+      "type": "string",
+      "description": "Current status of the cancellation",
+      "enum": ["PENDING", "VALIDATED", "EXECUTED", "SETTLED", "REPORTED", "FAILED", "REJECTED", "CANCELLED"]
+    }
+  },
+  "required": [
+    "metadata",
+    "cancellationId",
+    "originalTradeId",
+    "originalUti",
+    "cancellationType",
+    "cancellationReason",
+    "effectiveDate",
+    "cancellationDate",
+    "initiatingParty",
+    "authorizationId",
+    "confirmationDetails",
+    "regulatoryReporting",
+    "status"
+  ],
+  "additionalProperties": false
+}
