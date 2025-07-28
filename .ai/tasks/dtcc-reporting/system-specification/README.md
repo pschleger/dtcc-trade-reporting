@@ -11,6 +11,7 @@ This directory contains the complete system specification for the DTCC Regulator
 System architecture and design documentation
 - **system-architecture.md** - Comprehensive system architecture document
 - **system-architecture-diagram.mmd** - Mermaid system architecture diagram
+- **entity-driven-architecture.md** - Cyoda EDBMS entity-driven architecture principles
 
 ### 🏢 entities/
 Entity definitions, relationships, and data models
@@ -42,8 +43,9 @@ System requirements and service level agreements
 
 ### Core Foundation Documents
 1. **system-description.md** - Start here for system overview
-2. **architecture/system-architecture.md** - System design and components
-3. **entities/entity-overview.md** - Business entity landscape
+2. **architecture/entity-driven-architecture.md** - Cyoda EDBMS architecture principles
+3. **architecture/system-architecture.md** - System design and components
+4. **entities/entity-overview.md** - Business entity landscape
 
 ### Design and Implementation Guides
 - **standards/naming-conventions.md** - Follow for consistent naming
@@ -59,9 +61,10 @@ System requirements and service level agreements
 
 ### For System Architects
 1. Start with `system-description.md`
-2. Review `architecture/system-architecture.md`
-3. Study `entities/entity-overview.md`
-4. Examine `events/event-driven-architecture.md`
+2. Review `architecture/entity-driven-architecture.md`
+3. Study `architecture/system-architecture.md`
+4. Examine `entities/entity-overview.md`
+5. Review `events/event-driven-architecture.md`
 
 ### For Business Analysts
 1. Begin with `system-description.md`
@@ -85,8 +88,9 @@ System requirements and service level agreements
 
 | Document | Status | Last Updated |
 |----------|--------|--------------|
-| system-description.md | ✅ Complete | Initial |
-| architecture/system-architecture.md | ✅ Complete | 2024-11-27 |
+| system-description.md | ✅ Complete | Updated 2024-11-27 |
+| architecture/entity-driven-architecture.md | ✅ Complete | New 2024-11-27 |
+| architecture/system-architecture.md | ✅ Complete | Updated 2024-11-27 |
 | entities/entity-overview.md | ✅ Complete | 2024-11-27 |
 | events/event-driven-architecture.md | ✅ Complete | 2024-11-27 |
 | standards/naming-conventions.md | ✅ Complete | 2024-11-27 |

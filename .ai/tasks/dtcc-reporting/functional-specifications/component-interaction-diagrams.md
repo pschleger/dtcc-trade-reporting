@@ -1,98 +1,129 @@
-# Component Interaction Diagrams
+# Entity Workflow Interaction Diagrams
 
 ## Overview
 
-This document provides comprehensive diagrams showing data flow and interactions between workflow components in the DTCC regulatory reporting system. Each diagram illustrates how processors and criteria work together to implement business workflows.
+This document provides comprehensive diagrams showing entity state transitions and workflow interactions in the DTCC regulatory reporting system. Each diagram illustrates how entity workflows process business events through state machines, with processors and criteria implementing the workflow logic within each entity.
 
-## Trade Confirmation Processing Flow
+## TradeConfirmation Entity Workflow
 
 ```mermaid
 graph TD
-    A[FpML Message Received] --> B[validateFpMLMessage Processor]
-    B --> C{validateFpMLMessage Criterion}
-    C -->|Success| D[convertToTrade Processor]
-    C -->|Failure| E[notifyProcessingFailure Processor]
-    D --> F{isTradeCreated Criterion}
-    F -->|Success| G[archiveConfirmation Processor]
-    F -->|Failure| H[Manual Review Queue]
-    G --> I[Trade Entity Created]
-    E --> J[Error Notification Sent]
-    
-    subgraph "Data Flow"
-        K[FpML XML] --> L[Validation Results]
-        L --> M[Trade Entity Data]
-        M --> N[Archived Confirmation]
+    A[FpML Message Received] --> B[TradeConfirmation Entity Created]
+    B --> C[Received State]
+    C --> D[validateFpMLMessage Processor]
+    D --> E{validateFpMLMessage Criterion}
+    E -->|Success| F[Validated State]
+    E -->|Failure| G[Failed State]
+    F --> H[convertToTrade Processor]
+    H --> I{isTradeCreated Criterion}
+    I -->|Success| J[Processed State]
+    I -->|Failure| K[Review State]
+    J --> L[archiveConfirmation Processor]
+    L --> M[Archived State]
+    G --> N[notifyProcessingFailure Processor]
+    N --> O[Error State]
+
+    subgraph "Entity State Machine"
+        P[Received] --> Q[Validated]
+        Q --> R[Processed]
+        R --> S[Archived]
+        P --> T[Failed]
+        T --> U[Error]
     end
 ```
 
-## Trade Lifecycle Management Flow
+## Trade Entity Lifecycle Workflow
 
 ```mermaid
 graph TD
-    A[Trade Entity] --> B[validateBusinessRules Processor]
-    B --> C{validateBusinessRules Criterion}
-    C -->|Success| D[Trade Active State]
-    D --> E{isApproachingMaturity Criterion}
-    E -->|True| F[processMaturity Processor]
-    E -->|False| G[Continue Active]
-    D --> H{Amendment Request}
-    H -->|Yes| I[processAmendment Processor]
-    D --> J{Cancellation Request}
-    J -->|Yes| K[processCancellation Processor]
-    F --> L[Trade Matured]
-    I --> M[Trade Amended]
-    K --> N[Trade Cancelled]
-    
-    subgraph "Error Handling"
-        O[Processing Errors] --> P[notifyFailure Processor]
-        P --> Q[archiveTrade Processor]
+    A[Trade Entity Created] --> B[Draft State]
+    B --> C[validateBusinessRules Processor]
+    C --> D{validateBusinessRules Criterion}
+    D -->|Success| E[Active State]
+    D -->|Failure| F[Invalid State]
+    E --> G{isApproachingMaturity Criterion}
+    G -->|True| H[processMaturity Processor]
+    G -->|False| I[Continue Active]
+    E --> J{Amendment Event}
+    J -->|Received| K[Amendment State]
+    E --> L{Cancellation Event}
+    L -->|Received| M[Cancellation State]
+    H --> N[Matured State]
+    K --> O[processAmendment Processor]
+    O --> P[Amended State]
+    M --> Q[processCancellation Processor]
+    Q --> R[Cancelled State]
+
+    subgraph "Entity State Machine"
+        S[Draft] --> T[Active]
+        T --> U[Matured]
+        T --> V[Amended]
+        T --> W[Cancelled]
+        S --> X[Invalid]
     end
 ```
 
-## Position Management Flow
+## Position Entity Workflow
 
 ```mermaid
 graph TD
-    A[Trade Data] --> B[calculatePosition Processor]
-    B --> C{isCalculationSuccessful Criterion}
-    C -->|Success| D[validatePosition Processor]
-    C -->|Failure| E[Calculation Failed State]
-    D --> F{isValidationSuccessful Criterion}
-    F -->|Success| G[reconcilePosition Processor]
-    F -->|Failure| H[Validation Failed State]
-    G --> I{isReconciliationSuccessful Criterion}
-    I -->|Success| J[generateReport Processor]
-    I -->|Failure| K[Reconciliation Failed State]
-    J --> L[Position Report Generated]
-    
-    subgraph "Data Dependencies"
-        M[Trade Aggregation] --> N[Position Calculation]
-        N --> O[Position Validation]
-        O --> P[Reconciliation Data]
+    A[Trade State Change] --> B[Position Entity Updated]
+    B --> C[Calculating State]
+    C --> D[calculatePosition Processor]
+    D --> E{isCalculationSuccessful Criterion}
+    E -->|Success| F[Calculated State]
+    E -->|Failure| G[Calculation Failed State]
+    F --> H[validatePosition Processor]
+    H --> I{isValidationSuccessful Criterion}
+    I -->|Success| J[Validated State]
+    I -->|Failure| K[Validation Failed State]
+    J --> L[reconcilePosition Processor]
+    L --> M{isReconciliationSuccessful Criterion}
+    M -->|Success| N[Reconciled State]
+    M -->|Failure| O[Reconciliation Failed State]
+    N --> P[Ready for Reporting State]
+
+    subgraph "Entity State Machine"
+        Q[Calculating] --> R[Calculated]
+        R --> S[Validated]
+        S --> T[Reconciled]
+        T --> U[Ready for Reporting]
+        Q --> V[Failed]
     end
 ```
 
-## Regulatory Reporting Flow
+## RegulatoryReport Entity Workflow
 
 ```mermaid
 graph TD
-    A[Position/Trade Data] --> B[generateReport Processor]
-    B --> C{isGenerationSuccessful Criterion}
-    C -->|Success| D[validateReport Processor]
-    C -->|Failure| E[Generation Failed State]
-    D --> F{isValidationSuccessful Criterion}
-    F -->|Success| G[submitReport Processor]
-    F -->|Failure| H[Validation Failed State]
-    G --> I{isSubmissionSuccessful Criterion}
-    I -->|Success| J[processAcknowledgment Processor]
-    I -->|Failure| K[Submission Failed State]
-    J --> L{isDtccAcknowledgmentReceived Criterion}
-    L -->|Success| M[archiveReport Processor]
-    L -->|Rejection| N[correctReport Processor]
-    
-    subgraph "External Integration"
-        O[DTCC GTR] --> P[Acknowledgment/Rejection]
-        Q[Report Submission] --> O
+    A[Position Ready for Reporting] --> B[RegulatoryReport Entity Created]
+    B --> C[Draft State]
+    C --> D[generateReport Processor]
+    D --> E{isGenerationSuccessful Criterion}
+    E -->|Success| F[Generated State]
+    E -->|Failure| G[Generation Failed State]
+    F --> H[validateReport Processor]
+    H --> I{isValidationSuccessful Criterion}
+    I -->|Success| J[Validated State]
+    I -->|Failure| K[Validation Failed State]
+    J --> L[submitReport Processor]
+    L --> M{isSubmissionSuccessful Criterion}
+    M -->|Success| N[Submitted State]
+    M -->|Failure| O[Submission Failed State]
+    N --> P[processAcknowledgment Processor]
+    P --> Q{isDtccAcknowledgmentReceived Criterion}
+    Q -->|Success| R[Acknowledged State]
+    Q -->|Rejection| S[Rejected State]
+    R --> T[archiveReport Processor]
+    T --> U[Archived State]
+
+    subgraph "Entity State Machine"
+        V[Draft] --> W[Generated]
+        W --> X[Validated]
+        X --> Y[Submitted]
+        Y --> Z[Acknowledged]
+        Z --> AA[Archived]
+        Y --> BB[Rejected]
     end
 ```
 
@@ -247,34 +278,34 @@ graph TD
     end
 ```
 
-## Component Interaction Summary
+## Entity Workflow Interaction Summary
 
-### Key Interaction Patterns
+### Key Entity Workflow Patterns
 
-1. **Sequential Processing**: Components execute in defined order with validation gates
-2. **Conditional Branching**: Criteria determine processing paths based on business logic
-3. **Error Propagation**: Failures trigger appropriate error handling and notification
-4. **Parallel Execution**: Batch processing enables concurrent component execution
-5. **Data Transformation**: Processors transform data between workflow states
-6. **External Integration**: Components interact with external services for validation and submission
+1. **State-Driven Processing**: Entity workflows execute through defined state transitions with validation gates
+2. **Conditional State Transitions**: Criteria determine entity state changes based on business logic
+3. **Error State Management**: Failures transition entities to appropriate error states with notification workflows
+4. **Concurrent Entity Processing**: Multiple entity workflows execute concurrently across the platform
+5. **Entity Data Transformation**: Processors transform entity data during state transitions
+6. **External System Integration**: Entity workflows interact with external services through defined interfaces
 
 ### Performance Considerations
 
-1. **Caching Strategy**: Shared cache for master data and configuration reduces latency
-2. **Load Distribution**: Processing nodes distribute workload for scalability
-3. **Timeout Management**: Each component has appropriate timeout configurations
-4. **Resource Optimization**: Components designed for efficient resource utilization
+1. **Entity Caching**: Frequently accessed entities cached for rapid state retrieval
+2. **Distributed Processing**: Entity workflows distributed across platform nodes for scalability
+3. **Workflow Timeout Management**: Each entity workflow has appropriate timeout configurations
+4. **Resource Optimization**: Entity workflows designed for efficient platform resource utilization
 
 ### Error Handling Strategy
 
-1. **Graceful Degradation**: Components handle partial failures appropriately
-2. **Retry Mechanisms**: Transient errors trigger automatic retry with backoff
-3. **Manual Intervention**: Complex errors route to manual review queues
-4. **Escalation Paths**: Critical errors escalate to operations teams
+1. **Error State Management**: Entity workflows transition to appropriate error states for partial failures
+2. **Retry Workflows**: Transient errors trigger automatic retry workflows with backoff
+3. **Manual Review States**: Complex errors transition entities to manual review states
+4. **Escalation Workflows**: Critical errors trigger escalation entity workflows to operations teams
 
-### Data Flow Integrity
+### Entity Data Integrity
 
-1. **Validation Gates**: Each processing step includes validation checkpoints
-2. **Audit Trail**: All component interactions logged for compliance
-3. **Data Quality**: Continuous quality assessment throughout processing
-4. **Consistency Checks**: Cross-component data consistency validation
+1. **State Transition Validation**: Each entity state transition includes validation checkpoints
+2. **Audit Trail Entities**: All entity interactions create audit trail entities for compliance
+3. **Data Quality Workflows**: Continuous quality assessment through dedicated entity workflows
+4. **Cross-Entity Consistency**: Entity relationships maintain data consistency through workflow coordination

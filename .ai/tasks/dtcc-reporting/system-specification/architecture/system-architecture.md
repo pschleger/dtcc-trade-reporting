@@ -23,81 +23,86 @@ The system does not need to incorporate the CQRS pattern, since the data held in
 #### Saga Pattern
 There is no need to implement the Saga pattern within the system itself. The system can be assumed to handle events transactionally such that the data remains consistent at all times. Only for interactions with external systems is a saga pattern eventually required. There is no eventual consistency for any of the data held by the system, it is consistent by its transactional design.
 
-### High-Level System Components
+### Core Entity Types and Workflows
 
-#### 1. Ingestion Layer
-- **FpML Message Processor**: Receives and validates incoming trade confirmations
-- **Message Router**: Routes messages to appropriate processing workflows
-- **Data Validation Engine**: Ensures message integrity and business rule compliance
+The system is built around entities that encapsulate both data and behavior through workflows. There are no separate processing engines - all business logic is embedded within entity workflows.
 
-#### 2. Entity Processing Layer
-- **Trade Processing Engine**: Converts FpML messages to Trade entities
-- **Position Calculation Engine**: Aggregates trades into position entities
-- **Amendment/Cancellation Processor**: Handles trade lifecycle events
-- **Reference Data Manager**: Maintains counterparty and product master data
+#### 1. Master Data Entities
+- **Counterparty**: Legal entity information with validation and enrichment workflows
+- **Product**: Financial instrument definitions with lifecycle management workflows
+- **ReferenceData**: Market data and configuration with update and validation workflows
+- **LegalEntity**: Organizational hierarchy with compliance and reporting workflows
 
-#### 3. Regulatory Reporting Layer
-- **Report Generation Engine**: Creates DTCC GTR compliant reports
-- **Submission Manager**: Manages report delivery to regulatory authorities
-- **Compliance Monitor**: Tracks reporting obligations and deadlines
-- **Audit Trail Manager**: Maintains complete processing history
+#### 2. Transactional Entities
+- **TradeConfirmation**: FpML message processing with validation, parsing, and conversion workflows
+- **Trade**: Core trade data with lifecycle management, amendment, and cancellation workflows
+- **Position**: Aggregated trade positions with calculation, reconciliation, and reporting workflows
+- **Amendment**: Trade modification requests with validation, approval, and application workflows
+- **Cancellation**: Trade termination requests with validation, approval, and processing workflows
 
-#### 4. Data Persistence Layer
-- **Cyoda Entity Database**: Stores all entities with full versioning
-- **Workflow State Store**: Maintains entity state and transition history
-- **Reference Data Store**: Caches frequently accessed master data
+#### 3. Regulatory Entities
+- **RegulatoryReport**: DTCC GTR reports with generation, validation, and submission workflows
+- **ReportingObligation**: Compliance tracking with monitoring, escalation, and resolution workflows
+- **SubmissionStatus**: Report delivery tracking with retry, acknowledgment, and error handling workflows
+- **AuditTrail**: Compliance history with archival and retrieval workflows
+
+#### 4. Processing Control Entities
+- **ProcessingBatch**: Batch operation coordination with initialization, monitoring, and completion workflows
+- **ValidationResult**: Data quality assessment with scoring, review, and approval workflows
+- **ReconciliationResult**: Position verification with comparison, exception handling, and resolution workflows
 
 ### Integration Points
 
 #### External Systems
-- **Trading Systems**: Source of FpML trade confirmations
-- **DTCC GTR**: Target for regulatory report submissions
-- **Reference Data Providers**: Market data and counterparty information
-- **Risk Management Systems**: Position and exposure data consumers
+- **Trading Systems**: Source of FpML trade confirmations that trigger TradeConfirmation entity workflows
+- **DTCC GTR**: Target for regulatory report submissions via RegulatoryReport entity workflows
+- **Reference Data Providers**: Market data sources that update ReferenceData entity workflows
+- **Risk Management Systems**: Consumers of Position entity data via API queries
 
 #### Internal Interfaces
-- **REST APIs**: Entity query and management interfaces
-- **Event Streaming**: Real-time event publication for downstream systems
-- **Batch Processing**: Scheduled reconciliation and reporting jobs
-- **Monitoring & Alerting**: Operational health and compliance monitoring
+- **Entity APIs**: Direct entity query and management through Cyoda platform
+- **Workflow Events**: Entity state transitions trigger downstream entity workflows
+- **Scheduled Workflows**: Time-based entity processing for reconciliation and reporting
+- **Monitoring Workflows**: Entity state monitoring and alerting through dedicated entities
 
-## Data Flow Architecture
+## Entity Workflow Architecture
 
-### Primary Data Flows
+### Primary Entity Workflows
 
-1. **Trade Ingestion Flow**
+1. **Trade Confirmation Processing**
    ```
-   FpML Message → Validation → Trade Entity → Position Update → Regulatory Report
-   ```
-
-2. **Amendment Flow**
-   ```
-   Amendment Message → Trade Lookup → Position Recalculation → Report Update
+   FpML Message → TradeConfirmation Entity → Trade Entity → Position Entity → RegulatoryReport Entity
    ```
 
-3. **Regulatory Reporting Flow**
+2. **Trade Amendment Processing**
    ```
-   Position Entity → Report Generation → Submission → Status Tracking
+   Amendment Request → Amendment Entity → Trade Entity Update → Position Recalculation → Report Update
    ```
 
-### Event-Driven Interactions
+3. **Regulatory Reporting Processing**
+   ```
+   Position Entity → RegulatoryReport Entity → SubmissionStatus Entity → AuditTrail Entity
+   ```
 
-- **Trade Confirmed**: Triggers position calculation and regulatory assessment
-- **Position Updated**: Triggers report generation if thresholds met
-- **Report Generated**: Triggers submission workflow
-- **Submission Failed**: Triggers retry and alerting workflows
+### Entity State Transitions
+
+- **TradeConfirmation.Validated**: Triggers Trade entity creation workflow
+- **Trade.Active**: Triggers Position entity calculation workflow
+- **Position.Updated**: Triggers RegulatoryReport entity generation workflow
+- **RegulatoryReport.Generated**: Triggers SubmissionStatus entity workflow
+- **SubmissionStatus.Failed**: Triggers retry workflow and alert entity creation
 
 ## Scalability and Performance
 
 ### Horizontal Scaling
-- **Stateless Processing**: All business logic encapsulated in entity workflows
-- **Event Partitioning**: Messages partitioned by counterparty or product type
-- **Parallel Processing**: Independent entity workflows enable concurrent execution
+- **Entity-Driven Architecture**: All business logic encapsulated in entity workflows enables stateless scaling
+- **Workflow Partitioning**: Entity workflows partitioned by counterparty, product type, or processing batch
+- **Concurrent Entity Processing**: Independent entity workflows execute concurrently across multiple nodes
 
 ### Performance Optimization
-- **Caching Strategy**: Frequently accessed reference data cached in memory
-- **Batch Processing**: Non-urgent operations batched for efficiency
-- **Asynchronous Processing**: Long-running operations executed asynchronously
+- **Entity Caching**: Frequently accessed entities cached for rapid state retrieval
+- **Batch Entity Processing**: ProcessingBatch entities coordinate bulk operations efficiently
+- **Asynchronous Workflows**: Long-running entity workflows execute asynchronously with state persistence
 
 ## Security and Compliance
 
@@ -126,16 +131,15 @@ There is no need to implement the Saga pattern within the system itself. The sys
 ## Technology Stack
 
 ### Core Platform
-- **Cyoda EDBMS**: Entity database and workflow engine
-- **Java/Spring Boot**: Application runtime and dependency injection
-- **PostgreSQL**: Underlying data persistence
-- **Apache Kafka**: Event streaming and message queuing
+- **Cyoda EDBMS**: Complete entity database, workflow engine, and event processing platform
+- **Java/Spring Boot**: Application runtime for custom processors and criteria implementation
+- **Cyoda Platform Services**: Built-in data persistence, event streaming, and workflow orchestration
 
 ### Supporting Technologies
-- **Docker/Kubernetes**: Containerization and orchestration
-- **Prometheus/Grafana**: Metrics collection and visualization
-- **ELK Stack**: Centralized logging and analysis
-- **Jenkins**: CI/CD pipeline automation
+- **Docker/Kubernetes**: Containerization and orchestration for Cyoda platform deployment
+- **Prometheus/Grafana**: Metrics collection and visualization for platform monitoring
+- **ELK Stack**: Centralized logging and analysis for audit and debugging
+- **Jenkins**: CI/CD pipeline automation for workflow and processor deployment
 
 ## Future Considerations
 

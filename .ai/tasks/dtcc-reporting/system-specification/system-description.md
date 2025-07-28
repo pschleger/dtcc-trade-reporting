@@ -2,14 +2,14 @@
 
 ## System Overview
 
-This system processes OTC derivatives trades and manages regulatory reporting obligations to the DTCC Global Trade Repository (GTR). It serves as a comprehensive post-trade processing platform that:
+This system processes OTC derivatives trades and manages regulatory reporting obligations to the DTCC Global Trade Repository (GTR). Built on the Cyoda EDBMS platform, it operates as an entity-driven processing system where:
 
-- **Ingests FpML trade confirmation messages** from trading systems and counterparties
-- **Builds and maintains accurate trade positions** through real-time aggregation and reconciliation
-- **Manages the complete lifecycle** of trade data from confirmation through position keeping to regulatory submission
-- **Ensures regulatory compliance** by automatically generating and submitting required reports to DTCC GTR within mandated timeframes
-- **Maintains counterparty and reference data** necessary for accurate reporting and position calculation
-- **Operates on an event-driven architecture** where business logic is encapsulated in entity workflows, enabling scalable and auditable processing
+- **TradeConfirmation entities** process FpML trade confirmation messages through validation and conversion workflows
+- **Trade and Position entities** maintain accurate trade positions through automated aggregation and reconciliation workflows
+- **Entity workflows manage the complete lifecycle** of trade data from confirmation through position keeping to regulatory submission
+- **RegulatoryReport entities** ensure compliance by automatically generating and submitting required reports to DTCC GTR within mandated timeframes
+- **Master data entities** (Counterparty, Product, ReferenceData) maintain necessary information through validation and enrichment workflows
+- **All processing is entity-driven** where business logic is encapsulated within entity workflows and state machines, with no separate processing engines
 
 ## Business Context
 
@@ -25,12 +25,13 @@ The system handles the complexities of OTC derivatives markets including trade a
 
 ## Architecture Principles
 
-The system shall be built using an event-driven architecture where:
-- Business logic is encapsulated within entity workflows using the Cyoda platform
-- All processing follows defined state machines with clear transition criteria
-- Events trigger automated processing chains while maintaining audit trails
-- External integrations are managed through well-defined interfaces
-- Scalability is achieved through distributed processing capabilities
+The system shall be built using the Cyoda EDBMS entity-driven architecture where:
+- All business data is modeled as entities with defined lifecycles and workflows
+- Business logic is encapsulated within entity workflows, not separate processing engines
+- Entity state transitions trigger automated workflows while maintaining complete audit trails
+- External integrations interact directly with entity workflows through well-defined interfaces
+- Scalability is achieved through distributed entity processing across the Cyoda platform
+- There are no special engines that process events - the Cyoda platform processes events based on defined entity workflows and state machines
 
 ### Reference Documents
 

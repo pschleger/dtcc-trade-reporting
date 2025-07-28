@@ -1,21 +1,262 @@
-# Business Events Specifications
+# External Business Events Specifications
 
 ## Overview
 
-Business events represent meaningful business occurrences in the OTC derivatives trading lifecycle. These events drive the core business processes and maintain the regulatory compliance requirements of the DTCC Regulatory Reporting System.
+External business events are the only true "events" in the DTCC Regulatory Reporting System. These represent external stimuli that trigger business processes and originate from systems outside our control.
 
-## Trade Lifecycle Events
+**Key Principle**: Events are external triggers only. Internal processing, state transitions, and system coordination are handled through workflow mechanisms, not events.
 
-### TradeConfirmationReceived
+## 1. External Trading System Events
 
-**Event ID**: `trade.confirmation.received`  
-**Event Type**: `BusinessEvent`  
-**Category**: `Trade Lifecycle`  
-**Version**: `1.0.0`  
-**Status**: `Active`
+### FpMLMessageReceived
+
+**Event ID**: `trading.fpml.message.received`
+**Event Type**: `ExternalEvent`
+**Source**: External Trading Systems
+**Criticality**: Critical
 
 #### Overview
-Triggered when an FpML trade confirmation message is received from external trading systems. This is the entry point for all trade processing workflows.
+Triggered when an FpML trade confirmation, amendment, or cancellation message is received from external trading systems.
+
+#### Triggering Source
+- External trading platforms
+- Counterparty trading systems
+- Trade capture systems
+- Electronic trading networks
+
+#### Business Impact
+- Initiates TradeConfirmationWorkflow
+- Creates TRADE_CONFIRMATION entity
+- Triggers validation and processing workflows
+
+---
+
+### AmendmentRequested
+
+**Event ID**: `trading.amendment.requested`
+**Event Type**: `ExternalEvent`
+**Source**: External Trading Systems
+**Criticality**: High
+
+#### Overview
+Triggered when an external system requests amendment of an existing trade.
+
+#### Triggering Source
+- Trading system amendment requests
+- Counterparty amendment notifications
+- Operations team amendment submissions
+
+#### Business Impact
+- Initiates AmendmentWorkflow
+- Creates AMENDMENT entity
+- Triggers impact assessment and validation
+
+---
+
+### CancellationRequested
+
+**Event ID**: `trading.cancellation.requested`
+**Event Type**: `ExternalEvent`
+**Source**: External Trading Systems
+**Criticality**: High
+
+#### Overview
+Triggered when an external system requests cancellation of an existing trade.
+
+#### Triggering Source
+- Trading system cancellation requests
+- Counterparty cancellation notifications
+- Operations team cancellation submissions
+
+#### Business Impact
+- Initiates CancellationWorkflow
+- Creates CANCELLATION entity
+- Triggers impact assessment and validation
+
+---
+
+## 2. External Regulatory Authority Events
+
+### GTRAcknowledgmentReceived
+
+**Event ID**: `gtr.acknowledgment.received`
+**Event Type**: `ExternalEvent`
+**Source**: DTCC Global Trade Repository
+**Criticality**: Critical
+
+#### Overview
+Triggered when DTCC GTR acknowledges receipt and successful processing of a regulatory report.
+
+#### Triggering Source
+- DTCC GTR response systems
+- Regulatory authority acknowledgment services
+
+#### Business Impact
+- Updates SUBMISSION_STATUS entity
+- Completes regulatory reporting obligation
+- Triggers compliance tracking updates
+
+---
+
+### GTRRejectionReceived
+
+**Event ID**: `gtr.rejection.received`
+**Event Type**: `ExternalEvent`
+**Source**: DTCC Global Trade Repository
+**Criticality**: Critical
+
+#### Overview
+Triggered when DTCC GTR rejects a regulatory report submission due to validation errors or compliance issues.
+
+#### Triggering Source
+- DTCC GTR validation systems
+- Regulatory authority rejection notifications
+
+#### Business Impact
+- Updates SUBMISSION_STATUS entity to failed state
+- Triggers error resolution workflow
+- Initiates resubmission process
+
+---
+
+### ComplianceDeadlineApproaching
+
+**Event ID**: `regulatory.deadline.approaching`
+**Event Type**: `ExternalEvent`
+**Source**: Compliance Monitoring Systems
+**Criticality**: High
+
+#### Overview
+Triggered by external compliance monitoring systems when regulatory reporting deadlines are approaching.
+
+#### Triggering Source
+- External compliance monitoring platforms
+- Regulatory calendar systems
+- Deadline notification services
+
+#### Business Impact
+- Triggers urgent processing workflows
+- Escalates pending regulatory reports
+- Initiates deadline compliance procedures
+
+---
+
+## 3. External Reference Data Events
+
+### LEIDataSynchronized
+
+**Event ID**: `gleif.lei.data.synchronized`
+**Event Type**: `ExternalEvent`
+**Source**: GLEIF Registry
+**Criticality**: Medium
+
+#### Overview
+Triggered when LEI reference data is updated from the GLEIF registry.
+
+#### Triggering Source
+- GLEIF data synchronization services
+- LEI registry update notifications
+- Scheduled data refresh processes
+
+#### Business Impact
+- Updates REFERENCE_DATA entities
+- Triggers counterparty data validation
+- Updates LEI validation rules
+
+---
+
+### ReferenceDataUpdated
+
+**Event ID**: `reference.data.updated`
+**Event Type**: `ExternalEvent`
+**Source**: External Data Vendors
+**Criticality**: Medium
+
+#### Overview
+Triggered when market reference data is updated from external data providers.
+
+#### Triggering Source
+- Market data vendors
+- Reference data providers
+- Regulatory data services
+
+#### Business Impact
+- Updates REFERENCE_DATA entities
+- Triggers data quality validation
+- Updates pricing and valuation data
+
+---
+
+## 4. External Monitoring Events
+
+### MonitoringAlertTriggered
+
+**Event ID**: `monitoring.alert.triggered`
+**Event Type**: `ExternalEvent`
+**Source**: External Monitoring Systems
+**Criticality**: High
+
+#### Overview
+Triggered when external monitoring systems detect conditions requiring attention.
+
+#### Triggering Source
+- External monitoring platforms
+- Infrastructure monitoring systems
+- Business process monitoring tools
+
+#### Business Impact
+- Triggers incident response procedures
+- Initiates system health checks
+- Escalates operational issues
+
+---
+
+### ScheduledProcessTriggered
+
+**Event ID**: `scheduled.process.triggered`
+**Event Type**: `ExternalEvent`
+**Source**: External Schedulers
+**Criticality**: Medium
+
+#### Overview
+Triggered by external scheduling systems to initiate batch processing operations.
+
+#### Triggering Source
+- Enterprise job schedulers
+- Batch processing systems
+- Time-based trigger systems
+
+#### Business Impact
+- Initiates batch processing workflows
+- Triggers scheduled reconciliation
+- Starts end-of-day processing
+
+---
+
+## Event Processing Philosophy
+
+### External Trigger Pattern
+All events follow the external trigger pattern:
+1. **External System** generates event
+2. **Event Gateway** receives and validates event
+3. **Workflow Engine** initiates appropriate business workflow
+4. **Internal Processing** handled through workflow state transitions
+
+### No Internal Events
+The system does not generate events for:
+- Internal state transitions (handled by workflow)
+- System coordination (handled by direct calls)
+- Error conditions (handled by workflow error states)
+- Audit activities (handled by transaction records)
+
+### Event-to-Workflow Mapping
+Each external event maps to specific workflows:
+- **FpMLMessageReceived** → TradeConfirmationWorkflow
+- **AmendmentRequested** → AmendmentWorkflow
+- **CancellationRequested** → CancellationWorkflow
+- **GTRAcknowledgmentReceived** → SubmissionStatusWorkflow
+- **LEIDataSynchronized** → ReferenceDataWorkflow
+- **ScheduledProcessTriggered** → BatchProcessingWorkflow
 
 #### Event Structure
 ```json
@@ -64,7 +305,7 @@ Triggered when an FpML trade confirmation message is received from external trad
 - **Primary Handlers**: TradeConfirmationWorkflow
 - **Processing SLA**: 5 seconds
 - **Retry Policy**: 3 retries with exponential backoff
-- **Downstream Events**: TradeValidated, ValidationError
+- **Downstream Events**: TradeValidated (success), entity transitions to `validation-failed` state (failure)
 
 ---
 
@@ -325,7 +566,7 @@ Triggered when a regulatory report has been successfully generated and is ready 
 #### Event Processing
 - **Primary Handlers**: RegulatoryReportWorkflow
 - **Processing SLA**: 5 seconds
-- **Downstream Events**: ReportSubmitted, ReportSubmissionFailed
+- **Downstream Events**: ReportSubmitted (success), entity transitions to `submission-failed` state (failure)
 
 ---
 
@@ -391,7 +632,7 @@ Triggered when a trade amendment request is received, requiring validation and p
 #### Event Processing
 - **Primary Handlers**: AmendmentWorkflow
 - **Processing SLA**: 10 seconds
-- **Downstream Events**: AmendmentValidated, AmendmentRejected
+- **Downstream Events**: AmendmentValidated (success), entity transitions to `validation-failed` state (failure)
 
 ---
 

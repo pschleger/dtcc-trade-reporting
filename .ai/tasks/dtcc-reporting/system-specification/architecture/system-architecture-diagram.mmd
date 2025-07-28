@@ -6,45 +6,23 @@ graph TB
         RDP[Reference Data Providers]
         RMS[Risk Management Systems]
     end
-    
-    %% Ingestion Layer
-    subgraph "Ingestion Layer"
-        FMP[FpML Message Processor]
-        MR[Message Router]
-        DVE[Data Validation Engine]
+
+    %% Cyoda EDBMS Platform
+    subgraph "Cyoda EDBMS Platform"
+        subgraph "Entity Workflows"
+            CWF[Cyoda Workflow Engine]
+            CDB[Cyoda Entity Database]
+            CSM[Cyoda State Machine]
+        end
+
+        subgraph "Platform Services"
+            API[Entity APIs]
+            ES[Workflow Events]
+            BP[Batch Coordination]
+            MA[Entity Monitoring]
+        end
     end
-    
-    %% Entity Processing Layer
-    subgraph "Entity Processing Layer"
-        TPE[Trade Processing Engine]
-        PCE[Position Calculation Engine]
-        ACP[Amendment/Cancellation Processor]
-        RDM[Reference Data Manager]
-    end
-    
-    %% Regulatory Reporting Layer
-    subgraph "Regulatory Reporting Layer"
-        RGE[Report Generation Engine]
-        SM[Submission Manager]
-        CM[Compliance Monitor]
-        ATM[Audit Trail Manager]
-    end
-    
-    %% Data Persistence Layer
-    subgraph "Data Persistence Layer"
-        CED[Cyoda Entity Database]
-        WSS[Workflow State Store]
-        RDS[Reference Data Store]
-    end
-    
-    %% Integration Layer
-    subgraph "Integration Layer"
-        API[REST APIs]
-        ES[Event Streaming]
-        BP[Batch Processing]
-        MA[Monitoring & Alerting]
-    end
-    
+
     %% Entity Types
     subgraph "Core Entities"
         subgraph "Master Data"
@@ -53,7 +31,7 @@ graph TB
             PR[Product]
             LE[LegalEntity]
         end
-        
+
         subgraph "Transactional Data"
             TC[TradeConfirmation]
             TR[Trade]
@@ -61,107 +39,89 @@ graph TB
             AM[Amendment]
             CN[Cancellation]
         end
-        
+
         subgraph "Reporting Data"
             RR[RegulatoryReport]
             RO[ReportingObligation]
             SS[SubmissionStatus]
             AT[AuditTrail]
         end
-        
+
         subgraph "Processing Control"
             PB[ProcessingBatch]
             VR[ValidationResult]
             RCR[ReconciliationResult]
         end
     end
-    
+
     %% External System Connections
-    TS -->|FpML Messages| FMP
-    RDP -->|Market Data| RDM
-    SM -->|Reports| DTCC
+    TS -->|FpML Messages| TC
+    RDP -->|Market Data| RD
+    RR -->|Reports| DTCC
     API -->|Position Data| RMS
-    
-    %% Ingestion Flow
-    FMP --> MR
-    MR --> DVE
-    DVE --> TPE
-    
-    %% Processing Flow
-    TPE --> TR
-    TR --> PCE
-    PCE --> POS
-    ACP --> AM
-    ACP --> CN
-    RDM --> RD
-    RDM --> CP
-    RDM --> PR
-    RDM --> LE
-    
-    %% Reporting Flow
-    POS --> RGE
-    RGE --> RR
-    RR --> SM
-    SM --> SS
-    CM --> RO
-    ATM --> AT
-    
-    %% Data Persistence
-    TR --> CED
-    POS --> CED
-    RR --> CED
-    CP --> CED
-    RD --> RDS
-    TR --> WSS
-    POS --> WSS
-    RR --> WSS
-    
-    %% Integration Points
-    CED --> API
-    WSS --> ES
-    PB --> BP
-    VR --> MA
-    RCR --> MA
-    
-    %% Event-Driven Connections (dashed lines for events)
-    TR -.->|Trade Confirmed| PCE
-    POS -.->|Position Updated| RGE
-    RR -.->|Report Generated| SM
-    SS -.->|Submission Failed| MA
-    AM -.->|Amendment Applied| PCE
-    CN -.->|Cancellation Applied| PCE
-    
-    %% Validation and Control
-    DVE --> VR
-    PCE --> RCR
-    TPE --> PB
-    RGE --> PB
-    
-    %% Audit Trail Generation
-    TR -.-> ATM
-    POS -.-> ATM
-    RR -.-> ATM
-    AM -.-> ATM
-    CN -.-> ATM
-    
+
+    %% Entity Workflow Connections
+    TC --> CWF
+    TR --> CWF
+    POS --> CWF
+    RR --> CWF
+    AM --> CWF
+    CN --> CWF
+
+    %% Platform Data Flow
+    CWF --> CDB
+    CWF --> CSM
+    CDB --> API
+    CSM --> ES
+
+    %% Entity Creation and Updates
+    TC -.->|Creates| TR
+    TR -.->|Updates| POS
+    POS -.->|Triggers| RR
+    AM -.->|Modifies| TR
+    CN -.->|Terminates| TR
+
+    %% Master Data Relationships
+    CP -.->|References| TR
+    PR -.->|References| TR
+    LE -.->|References| CP
+    RD -.->|Enriches| TR
+
+    %% Workflow State Transitions (dashed lines for state changes)
+    TC -.->|Validated| TR
+    TR -.->|Active| POS
+    POS -.->|Updated| RR
+    RR -.->|Generated| SS
+    SS -.->|Failed| MA
+    AM -.->|Applied| POS
+    CN -.->|Applied| POS
+
+    %% Control Entity Workflows
+    PB -.->|Coordinates| TR
+    PB -.->|Coordinates| POS
+    PB -.->|Coordinates| RR
+    VR -.->|Validates| TC
+    RCR -.->|Reconciles| POS
+
+    %% Audit Trail Entity Creation
+    TR -.->|Creates| AT
+    POS -.->|Creates| AT
+    RR -.->|Creates| AT
+    AM -.->|Creates| AT
+    CN -.->|Creates| AT
+
     %% Styling
     classDef external fill:#e1f5fe
-    classDef ingestion fill:#f3e5f5
-    classDef processing fill:#e8f5e8
-    classDef reporting fill:#fff3e0
-    classDef persistence fill:#fce4ec
-    classDef integration fill:#f1f8e9
+    classDef platform fill:#f3e5f5
+    classDef services fill:#e8f5e8
     classDef masterData fill:#e3f2fd
     classDef transactional fill:#e8f5e8
     classDef reportingData fill:#fff8e1
     classDef control fill:#fafafa
-    
+
     class TS,DTCC,RDP,RMS external
-    class FMP,MR,DVE ingestion
-    class TPE,PCE,ACP,RDM processing
-    class RGE,SM,CM,ATM reporting
-    class CED,WSS,RDS persistence
-    class API,ES,BP,MA integration
+    class CWF,CDB,CSM platform
+    class API,ES,BP,MA services
     class CP,RD,PR,LE masterData
     class TC,TR,POS,AM,CN transactional
     class RR,RO,SS,AT reportingData
