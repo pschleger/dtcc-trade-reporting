@@ -19,15 +19,15 @@ This system is designed as an event-driven architecture that:
 
 ## Documentation Structure
 
-### [Specification](/content/specification/)
+### [Background](/content/Background/)
 
-The core specification documents that define the system requirements and design:
+The core background documents that define the system requirements and design:
 
-- **[DTCC Reporting](/content/specification/dtcc-reporting/)** - Task decomposition and system overview
-- **[Design Principles](/content/specification/cyoda-design-principles/)** - Cyoda design principles and guidelines
-- **[Workflow Configuration Guide](/content/specification/workflow-config-guide/)** - Guide for configuring entity workflows
+- **[How We Got Here](/content/Background/how-we-got-here/)** - Project background and context
+- **[Design Principles](/content/Background/cyoda-design-principles/)** - Cyoda design principles and guidelines
+- **[Workflow Configuration Guide](/content/Background/workflow-config-guide/)** - Guide for configuring entity workflows
 
-### [System Specification](/content/specification/system-specification/)
+### [System Specification](/content/System-Specification/)
 
 Detailed technical specifications including:
 
@@ -41,7 +41,7 @@ Detailed technical specifications including:
 - **Standards** - Coding and design standards
 - **Workflows** - Business process workflows
 
-### [External Interfaces](/content/specification/external-interfaces/)
+### [External Interfaces](/content/System-Specification/external-interfaces/)
 
 Documentation for system integrations:
 
@@ -49,16 +49,6 @@ Documentation for system integrations:
 - Integration testing guides
 - Interface interaction diagrams
 - Security and compliance requirements
-
-### [Schema](/content/specification/schema/)
-
-JSON Schema definitions for:
-
-- **Common** - Shared schema components
-- **Entity** - Entity-related schemas
-- **Model** - Data model schemas
-- **Processing** - Processing-related schemas
-- **Search** - Search functionality schemas
 
 ## Key Features
 
@@ -70,10 +60,10 @@ JSON Schema definitions for:
 
 ## Getting Started
 
-1. Start with the [DTCC Reporting specification](/content/specification/dtcc-reporting/) for an overview
-2. Review the [Design Principles](/content/specification/cyoda-design-principles/) to understand the architectural approach
-3. Explore the [System Specification](/content/specification/system-specification/) for detailed technical information
-4. Check the [Schema documentation](/content/specification/schema/) for data structure definitions
+1. Start with the [Background documentation](/content/Background/how-we-got-here/) for an overview
+2. Review the [Design Principles](/content/Background/cyoda-design-principles/) to understand the architectural approach
+3. Explore the [System Specification](/content/System-Specification/) for detailed technical information
+4. Check the [Entity documentation](/content/System-Specification/entities/) for data structure definitions
 
 ## Business Logic Encapsulation
 
