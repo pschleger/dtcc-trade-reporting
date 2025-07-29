@@ -2,6 +2,8 @@
 
 **Problem:** Create detailed swimlane diagrams showing counterparty data management, reference data processing, product lifecycle management, and comprehensive error handling and remediation flows across all system components.
 
+Place the swimlane diagrams in the specification/dtcc-reporting/system-specification/events directory or appropriate sub-directories.
+
 **Dependencies:** Task-8-1
 
 **Plan:**

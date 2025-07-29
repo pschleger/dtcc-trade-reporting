@@ -2,6 +2,9 @@
 
 **Problem:** Document all incoming events and create comprehensive swimlane diagrams showing the flow of events through the system, including all involved entities and their interactions, to provide clear operational understanding of the system behavior.
 
+Place the docs in the specification/dtcc-reporting/system-specification/events directory or appropriate sub-directories.
+
+
 **Dependencies:** 7-Define-Detailed-External-Interface-Specifications
 
 **Plan:**

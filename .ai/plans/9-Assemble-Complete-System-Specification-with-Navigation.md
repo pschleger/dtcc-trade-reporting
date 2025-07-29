@@ -2,6 +2,10 @@
 
 **Problem:** Create a comprehensive system specification document that integrates all the detailed artifacts produced in previous tasks, providing clear navigation and cross-references to enable stakeholders to understand and use the complete DTCC reporting system specification.
 
+All artefacts are located in the specification/dtcc-reporting/system-specification/ directory.
+Place the docs in the specification/dtcc-reporting/system-specification/ directory.
+
+
 **Dependencies:** 8-Create-Detailed-Event-Documentation-and-Swimlane-Diagrams
 
 **Plan:**
