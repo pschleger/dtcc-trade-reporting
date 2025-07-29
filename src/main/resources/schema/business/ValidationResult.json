@@ -1,0 +1,394 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/ValidationResult.json",
+  "title": "ValidationResult",
+  "description": "Detailed outcomes of data validation processes",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "$ref": "common/BusinessEntityMetadata.json",
+      "description": "Entity metadata including workflow state"
+    },
+    "validationId": {
+      "type": "string",
+      "description": "Unique validation result identifier",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "entityType": {
+      "type": "string",
+      "description": "Type of entity being validated",
+      "enum": [
+        "COUNTERPARTY",
+        "PRODUCT",
+        "REFERENCE_DATA",
+        "LEGAL_ENTITY",
+        "TRADE_CONFIRMATION",
+        "TRADE",
+        "POSITION",
+        "AMENDMENT",
+        "CANCELLATION",
+        "REGULATORY_REPORT"
+      ]
+    },
+    "entityId": {
+      "type": "string",
+      "description": "Identifier of the entity being validated"
+    },
+    "entityVersion": {
+      "type": "integer",
+      "description": "Version of the entity at the time of validation",
+      "minimum": 1
+    },
+    "validationType": {
+      "type": "string",
+      "description": "Type of validation performed",
+      "enum": [
+        "SCHEMA_VALIDATION",
+        "BUSINESS_RULE_VALIDATION",
+        "REGULATORY_VALIDATION",
+        "DATA_QUALITY_VALIDATION",
+        "REFERENCE_DATA_VALIDATION",
+        "CROSS_ENTITY_VALIDATION",
+        "COMPLETENESS_VALIDATION",
+        "CONSISTENCY_VALIDATION",
+        "AUTHORIZATION_VALIDATION"
+      ]
+    },
+    "validationScope": {
+      "type": "string",
+      "description": "Scope of the validation",
+      "enum": ["FULL_ENTITY", "FIELD_LEVEL", "CROSS_REFERENCE", "AGGREGATE", "DELTA"]
+    },
+    "ruleSetVersion": {
+      "type": "string",
+      "description": "Version of the validation rule set used",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "validationTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the validation was performed"
+    },
+    "validationDuration": {
+      "type": "integer",
+      "description": "Duration of validation in milliseconds",
+      "minimum": 0
+    },
+    "validationOutcome": {
+      "type": "string",
+      "description": "Overall outcome of the validation",
+      "enum": ["PASS", "FAIL", "WARNING", "CONDITIONAL_PASS", "SKIPPED", "ERROR"]
+    },
+    "overallSeverity": {
+      "type": "string",
+      "description": "Highest severity level found",
+      "enum": ["INFO", "WARNING", "ERROR", "CRITICAL"]
+    },
+    "validationRules": {
+      "type": "array",
+      "description": "Individual validation rules and their results",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ruleId": {
+            "type": "string",
+            "description": "Unique identifier for the validation rule"
+          },
+          "ruleName": {
+            "type": "string",
+            "description": "Human-readable name of the rule"
+          },
+          "ruleDescription": {
+            "type": "string",
+            "description": "Description of what the rule validates"
+          },
+          "ruleCategory": {
+            "type": "string",
+            "enum": [
+              "MANDATORY_FIELD",
+              "FORMAT_CHECK",
+              "RANGE_CHECK",
+              "BUSINESS_LOGIC",
+              "REGULATORY_COMPLIANCE",
+              "DATA_CONSISTENCY",
+              "REFERENCE_INTEGRITY",
+              "AUTHORIZATION"
+            ]
+          },
+          "ruleResult": {
+            "type": "string",
+            "enum": ["PASS", "FAIL", "WARNING", "SKIPPED", "ERROR"]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["INFO", "WARNING", "ERROR", "CRITICAL"]
+          },
+          "fieldPath": {
+            "type": "string",
+            "description": "JSON path to the field being validated"
+          },
+          "fieldName": {
+            "type": "string",
+            "description": "Name of the field being validated"
+          },
+          "actualValue": {
+            "description": "Actual value found in the field",
+            "oneOf": [
+              {"type": "string"},
+              {"type": "number"},
+              {"type": "boolean"},
+              {"type": "object"},
+              {"type": "array"},
+              {"type": "null"}
+            ]
+          },
+          "expectedValue": {
+            "description": "Expected value or pattern",
+            "oneOf": [
+              {"type": "string"},
+              {"type": "number"},
+              {"type": "boolean"},
+              {"type": "object"},
+              {"type": "array"}
+            ]
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "Error message if validation failed"
+          },
+          "errorCode": {
+            "type": "string",
+            "description": "Standardized error code"
+          },
+          "ruleParameters": {
+            "type": "object",
+            "description": "Parameters used for the rule",
+            "additionalProperties": true
+          },
+          "executionTime": {
+            "type": "integer",
+            "description": "Time taken to execute this rule in milliseconds",
+            "minimum": 0
+          }
+        },
+        "required": ["ruleId", "ruleName", "ruleCategory", "ruleResult", "severity"]
+      }
+    },
+    "errorDetails": {
+      "type": "array",
+      "description": "Detailed error information",
+      "items": {
+        "type": "object",
+        "properties": {
+          "errorId": {
+            "type": "string",
+            "description": "Unique error identifier"
+          },
+          "errorCode": {
+            "type": "string",
+            "description": "Standardized error code"
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "Human-readable error message"
+          },
+          "errorSeverity": {
+            "type": "string",
+            "enum": ["INFO", "WARNING", "ERROR", "CRITICAL"]
+          },
+          "errorCategory": {
+            "type": "string",
+            "enum": [
+              "MISSING_DATA",
+              "INVALID_FORMAT",
+              "OUT_OF_RANGE",
+              "BUSINESS_RULE_VIOLATION",
+              "REGULATORY_VIOLATION",
+              "REFERENCE_DATA_MISSING",
+              "INCONSISTENT_DATA",
+              "AUTHORIZATION_FAILURE"
+            ]
+          },
+          "fieldPath": {
+            "type": "string",
+            "description": "JSON path to the field with the error"
+          },
+          "fieldName": {
+            "type": "string",
+            "description": "Name of the field with the error"
+          },
+          "contextInformation": {
+            "type": "object",
+            "description": "Additional context about the error",
+            "additionalProperties": true
+          }
+        },
+        "required": ["errorId", "errorCode", "errorMessage", "errorSeverity", "errorCategory"]
+      }
+    },
+    "remediationRecommendations": {
+      "type": "array",
+      "description": "Recommendations for fixing validation failures",
+      "items": {
+        "type": "object",
+        "properties": {
+          "recommendationId": {
+            "type": "string",
+            "description": "Unique recommendation identifier"
+          },
+          "recommendationType": {
+            "type": "string",
+            "enum": [
+              "DATA_CORRECTION",
+              "PROCESS_CHANGE",
+              "CONFIGURATION_UPDATE",
+              "MANUAL_REVIEW",
+              "ESCALATION",
+              "WAIVER_REQUEST"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the recommended action"
+          },
+          "estimatedEffort": {
+            "type": "string",
+            "description": "Estimated effort to implement the recommendation"
+          },
+          "relatedErrors": {
+            "type": "array",
+            "description": "Error IDs that this recommendation addresses",
+            "items": {
+              "type": "string"
+            }
+          },
+          "automationPossible": {
+            "type": "boolean",
+            "description": "Whether this recommendation can be automated"
+          }
+        },
+        "required": ["recommendationId", "recommendationType", "priority", "description"]
+      }
+    },
+    "validationContext": {
+      "type": "object",
+      "description": "Context information for the validation",
+      "properties": {
+        "validationTrigger": {
+          "type": "string",
+          "enum": ["ENTITY_CREATION", "ENTITY_UPDATE", "SCHEDULED_VALIDATION", "MANUAL_VALIDATION", "BATCH_VALIDATION"]
+        },
+        "validationEnvironment": {
+          "type": "string",
+          "enum": ["DEVELOPMENT", "TEST", "UAT", "PRODUCTION"]
+        },
+        "validationMode": {
+          "type": "string",
+          "enum": ["STRICT", "LENIENT", "WARNING_ONLY", "BYPASS"]
+        },
+        "businessDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Business date for the validation"
+        },
+        "marketDataAsOfDate": {
+          "type": "string",
+          "format": "date",
+          "description": "As-of date for market data used in validation"
+        },
+        "referenceDataVersion": {
+          "type": "string",
+          "description": "Version of reference data used"
+        }
+      }
+    },
+    "performanceMetrics": {
+      "type": "object",
+      "description": "Performance metrics for the validation",
+      "properties": {
+        "totalRulesExecuted": {
+          "type": "integer",
+          "description": "Total number of rules executed",
+          "minimum": 0
+        },
+        "rulesPassedCount": {
+          "type": "integer",
+          "description": "Number of rules that passed",
+          "minimum": 0
+        },
+        "rulesFailedCount": {
+          "type": "integer",
+          "description": "Number of rules that failed",
+          "minimum": 0
+        },
+        "rulesSkippedCount": {
+          "type": "integer",
+          "description": "Number of rules that were skipped",
+          "minimum": 0
+        },
+        "averageRuleExecutionTime": {
+          "type": "number",
+          "description": "Average time per rule in milliseconds"
+        },
+        "memoryUsage": {
+          "type": "integer",
+          "description": "Memory usage during validation in bytes"
+        },
+        "cacheHitRate": {
+          "type": "number",
+          "description": "Cache hit rate percentage",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "relatedValidations": {
+      "type": "array",
+      "description": "Related validation results",
+      "items": {
+        "type": "object",
+        "properties": {
+          "validationId": {
+            "type": "string",
+            "description": "ID of the related validation"
+          },
+          "relationshipType": {
+            "type": "string",
+            "enum": ["PARENT", "CHILD", "DEPENDENCY", "CROSS_REFERENCE", "FOLLOW_UP"]
+          },
+          "entityId": {
+            "type": "string",
+            "description": "ID of the entity in the related validation"
+          }
+        },
+        "required": ["validationId", "relationshipType"]
+      }
+    },
+    "status": {
+      "type": "string",
+      "description": "Current status of the validation result",
+      "enum": ["ACTIVE", "SUPERSEDED", "ARCHIVED", "UNDER_REVIEW", "RESOLVED"]
+    }
+  },
+  "required": [
+    "metadata",
+    "validationId",
+    "entityType",
+    "entityId",
+    "entityVersion",
+    "validationType",
+    "validationScope",
+    "ruleSetVersion",
+    "validationTimestamp",
+    "validationOutcome",
+    "overallSeverity",
+    "validationRules",
+    "status"
+  ],
+  "additionalProperties": false
+}

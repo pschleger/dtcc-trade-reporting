@@ -1,0 +1,61 @@
+sequenceDiagram
+    participant DTCC as DTCC GTR
+    participant MS as Monitoring Service
+    participant AP as Acknowledgment Processor
+    participant WF as Workflow Engine
+    participant AS as Audit Service
+    participant NS as Notification Service
+    participant CS as Compliance Service
+
+    Note over DTCC,CS: SLA: Process acknowledgment within 5 minutes
+
+    DTCC->>+MS: Send Acknowledgment/Rejection
+    Note right of MS: SLA: < 1 minute detection
+    MS->>MS: Receive DTCC Response
+    MS->>MS: Parse Response Message
+    MS->>MS: Validate Response Format
+    
+    MS->>+AP: Process DTCC Response
+    Note right of AP: SLA: < 3 minutes processing
+    AP->>AP: Extract Response Details
+    AP->>AP: Match to Original Report
+    
+    alt Acknowledgment Received
+        AP->>+WF: Report Acknowledged
+        WF->>WF: Transition to acknowledged state
+        AP->>+AS: Log Acknowledgment
+        AS->>AS: Record Success Details
+        AS->>AS: Update Compliance Status
+        AS-->>-AP: Audit Complete
+        AP->>+CS: Update Compliance Record
+        CS->>CS: Mark Obligation Fulfilled
+        CS-->>-AP: Compliance Updated
+        AP->>+NS: Send Success Notification
+        NS->>NS: Notify Regulatory Team
+        NS-->>-AP: Notification Sent
+        WF-->>-AP: State Updated
+    else Rejection Received
+        AP->>+WF: Report Rejected
+        WF->>WF: Transition to rejected-by-dtcc state
+        AP->>AP: Parse Rejection Reasons
+        AP->>+AS: Log Rejection Details
+        AS->>AS: Record Rejection Reasons
+        AS->>AS: Store Correction Instructions
+        AS-->>-AP: Audit Complete
+        AP->>+NS: Send Rejection Alert
+        NS->>NS: Alert Operations Team
+        NS->>NS: Escalate to Regulatory Team
+        NS-->>-AP: Alerts Sent
+        WF-->>-AP: State Updated
+    else Timeout/No Response
+        AP->>+NS: Send Timeout Alert
+        NS->>NS: Alert Operations Team
+        NS-->>-AP: Alert Sent
+        AP->>+AS: Log Timeout Event
+        AS-->>-AP: Audit Complete
+    end
+    
+    AP-->>-MS: Processing Complete
+    MS-->>-DTCC: Response Processed
+
+    Note over DTCC,CS: End-to-End SLA: < 5 minutes acknowledgment processing

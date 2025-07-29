@@ -1,0 +1,375 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/ReportingObligation.json",
+  "title": "ReportingObligation",
+  "description": "Tracking of regulatory reporting requirements and deadlines",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "$ref": "common/BusinessEntityMetadata.json",
+      "description": "Entity metadata including workflow state"
+    },
+    "obligationId": {
+      "type": "string",
+      "description": "Unique reporting obligation identifier",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "entityId": {
+      "type": "string",
+      "description": "Reference to the LegalEntity subject to this obligation"
+    },
+    "entityLei": {
+      "type": "string",
+      "description": "LEI of the entity subject to this obligation",
+      "pattern": "^[A-Z0-9]{18}[0-9]{2}$"
+    },
+    "obligationType": {
+      "type": "string",
+      "description": "Type of reporting obligation",
+      "enum": [
+        "TRADE_REPORTING",
+        "POSITION_REPORTING",
+        "LARGE_POSITION_REPORTING",
+        "CONCENTRATION_REPORTING",
+        "RISK_MITIGATION_REPORTING",
+        "CLEARING_REPORTING",
+        "MARGIN_REPORTING",
+        "COLLATERAL_REPORTING",
+        "CAPITAL_REPORTING",
+        "LIQUIDITY_REPORTING"
+      ]
+    },
+    "regulatoryRegime": {
+      "type": "string",
+      "description": "Regulatory regime imposing this obligation",
+      "enum": ["DODD_FRANK", "EMIR", "UK_EMIR", "JFSA", "ASIC", "MAS", "CFTC", "SEC", "ESMA", "FCA"]
+    },
+    "regulatoryAuthority": {
+      "type": "string",
+      "description": "Specific regulatory authority",
+      "examples": ["CFTC", "SEC", "ESMA", "FCA", "JFSA", "ASIC", "MAS"]
+    },
+    "applicableThresholds": {
+      "type": "object",
+      "description": "Thresholds that trigger this reporting obligation",
+      "properties": {
+        "notionalThreshold": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Notional amount threshold"
+        },
+        "marketValueThreshold": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Market value threshold"
+        },
+        "concentrationThreshold": {
+          "type": "number",
+          "description": "Concentration percentage threshold",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "positionCountThreshold": {
+          "type": "integer",
+          "description": "Number of positions threshold",
+          "minimum": 0
+        },
+        "thresholdPeriod": {
+          "type": "string",
+          "description": "Period over which threshold is measured",
+          "enum": ["DAILY", "WEEKLY", "MONTHLY", "QUARTERLY", "ANNUALLY"]
+        }
+      }
+    },
+    "reportingScope": {
+      "type": "object",
+      "description": "Scope of the reporting obligation",
+      "properties": {
+        "assetClasses": {
+          "type": "array",
+          "description": "Asset classes covered by this obligation",
+          "items": {
+            "type": "string",
+            "enum": ["INTEREST_RATE", "CREDIT", "EQUITY", "FOREIGN_EXCHANGE", "COMMODITY", "OTHER"]
+          },
+          "uniqueItems": true
+        },
+        "productTypes": {
+          "type": "array",
+          "description": "Product types covered",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "counterpartyTypes": {
+          "type": "array",
+          "description": "Types of counterparties covered",
+          "items": {
+            "type": "string",
+            "enum": [
+              "FINANCIAL_COUNTERPARTY",
+              "NON_FINANCIAL_COUNTERPARTY",
+              "CENTRAL_COUNTERPARTY",
+              "ALL"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "jurisdictions": {
+          "type": "array",
+          "description": "Jurisdictions covered by this obligation",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "reportingFrequency": {
+      "type": "string",
+      "description": "Frequency of reporting",
+      "enum": [
+        "REAL_TIME",
+        "END_OF_DAY",
+        "DAILY",
+        "WEEKLY",
+        "MONTHLY",
+        "QUARTERLY",
+        "SEMI_ANNUALLY",
+        "ANNUALLY",
+        "ON_BREACH",
+        "AD_HOC"
+      ]
+    },
+    "reportingDeadlines": {
+      "type": "object",
+      "description": "Reporting deadline specifications",
+      "properties": {
+        "standardDeadline": {
+          "type": "string",
+          "description": "Standard deadline (e.g., 'T+1', 'End of month + 5 business days')"
+        },
+        "deadlineBusinessDays": {
+          "type": "integer",
+          "description": "Number of business days for deadline calculation",
+          "minimum": 0
+        },
+        "deadlineCalendarDays": {
+          "type": "integer",
+          "description": "Number of calendar days for deadline calculation",
+          "minimum": 0
+        },
+        "businessDayConvention": {
+          "type": "string",
+          "enum": ["FOLLOWING", "MODIFIED_FOLLOWING", "PRECEDING", "MODIFIED_PRECEDING"]
+        },
+        "businessCenters": {
+          "type": "array",
+          "description": "Business centers for deadline calculation",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z]{4}$"
+          }
+        },
+        "cutoffTime": {
+          "type": "string",
+          "format": "time",
+          "description": "Cut-off time for reporting"
+        },
+        "timezone": {
+          "type": "string",
+          "description": "Timezone for deadline calculation",
+          "examples": ["UTC", "America/New_York", "Europe/London"]
+        }
+      },
+      "required": ["standardDeadline"]
+    },
+    "nextDueDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Next reporting due date"
+    },
+    "lastReportDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date of last successful report"
+    },
+    "complianceStatus": {
+      "type": "string",
+      "description": "Current compliance status",
+      "enum": ["COMPLIANT", "OVERDUE", "BREACH", "WAIVED", "EXEMPTED", "SUSPENDED"]
+    },
+    "complianceHistory": {
+      "type": "array",
+      "description": "Historical compliance status",
+      "items": {
+        "type": "object",
+        "properties": {
+          "reportingPeriod": {
+            "$ref": "common/DateRange.json"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "submissionDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["ON_TIME", "LATE", "MISSED", "WAIVED", "EXEMPTED"]
+          },
+          "reportId": {
+            "type": "string",
+            "description": "Reference to the submitted report"
+          },
+          "lateDays": {
+            "type": "integer",
+            "description": "Number of days late if applicable"
+          }
+        },
+        "required": ["reportingPeriod", "dueDate", "status"]
+      }
+    },
+    "escalationProcedures": {
+      "type": "object",
+      "description": "Escalation procedures for missed deadlines",
+      "properties": {
+        "escalationEnabled": {
+          "type": "boolean",
+          "description": "Whether escalation is enabled"
+        },
+        "escalationLevels": {
+          "type": "array",
+          "description": "Escalation levels and timing",
+          "items": {
+            "type": "object",
+            "properties": {
+              "level": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "triggerDaysOverdue": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "escalationActions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["EMAIL_ALERT", "SMS_ALERT", "DASHBOARD_ALERT", "MANAGEMENT_NOTIFICATION", "REGULATORY_NOTIFICATION"]
+                }
+              },
+              "recipients": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": ["level", "triggerDaysOverdue", "escalationActions"]
+          }
+        }
+      },
+      "required": ["escalationEnabled"]
+    },
+    "exemptions": {
+      "type": "array",
+      "description": "Exemptions from this reporting obligation",
+      "items": {
+        "type": "object",
+        "properties": {
+          "exemptionType": {
+            "type": "string",
+            "enum": ["TEMPORARY", "PERMANENT", "CONDITIONAL", "THRESHOLD_BASED"]
+          },
+          "exemptionReason": {
+            "type": "string",
+            "description": "Reason for the exemption"
+          },
+          "exemptionReference": {
+            "type": "string",
+            "description": "Reference to exemption documentation"
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "expiryDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "conditions": {
+            "type": "array",
+            "description": "Conditions for the exemption",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["exemptionType", "exemptionReason", "effectiveDate"]
+      }
+    },
+    "delegationArrangements": {
+      "type": "object",
+      "description": "Delegation arrangements for reporting",
+      "properties": {
+        "delegationEnabled": {
+          "type": "boolean",
+          "description": "Whether reporting is delegated"
+        },
+        "delegatedTo": {
+          "type": "string",
+          "description": "LEI of the entity to which reporting is delegated",
+          "pattern": "^[A-Z0-9]{18}[0-9]{2}$"
+        },
+        "delegationAgreement": {
+          "type": "string",
+          "description": "Reference to delegation agreement"
+        },
+        "delegationEffectiveDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "delegationExpiryDate": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "required": ["delegationEnabled"]
+    },
+    "effectiveDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when this obligation becomes effective"
+    },
+    "expiryDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when this obligation expires"
+    },
+    "status": {
+      "type": "string",
+      "description": "Current status of the obligation",
+      "enum": ["ACTIVE", "SUSPENDED", "EXPIRED", "SUPERSEDED", "CANCELLED"]
+    }
+  },
+  "required": [
+    "metadata",
+    "obligationId",
+    "entityId",
+    "entityLei",
+    "obligationType",
+    "regulatoryRegime",
+    "regulatoryAuthority",
+    "reportingFrequency",
+    "reportingDeadlines",
+    "complianceStatus",
+    "escalationProcedures",
+    "effectiveDate",
+    "status"
+  ],
+  "additionalProperties": false
+}

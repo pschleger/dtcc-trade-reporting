@@ -1,0 +1,277 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/TradeConfirmation.json",
+  "title": "TradeConfirmation",
+  "description": "Raw FpML trade confirmation messages received from external systems",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "$ref": "common/BusinessEntityMetadata.json",
+      "description": "Entity metadata including workflow state"
+    },
+    "messageId": {
+      "type": "string",
+      "description": "Unique message identifier",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "messageType": {
+      "type": "string",
+      "description": "Type of FpML message",
+      "enum": [
+        "TRADE_CONFIRMATION",
+        "TRADE_AMENDMENT",
+        "TRADE_CANCELLATION",
+        "TRADE_NOVATION",
+        "TRADE_COMPRESSION",
+        "POSITION_REPORT"
+      ]
+    },
+    "fpmlVersion": {
+      "type": "string",
+      "description": "FpML version used in the message",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "examples": ["5.12", "5.11", "5.10"]
+    },
+    "senderId": {
+      "type": "string",
+      "description": "Identifier of the message sender",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "senderLei": {
+      "type": "string",
+      "description": "LEI of the message sender",
+      "pattern": "^[A-Z0-9]{18}[0-9]{2}$"
+    },
+    "receiverId": {
+      "type": "string",
+      "description": "Identifier of the message receiver",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "receiverLei": {
+      "type": "string",
+      "description": "LEI of the message receiver",
+      "pattern": "^[A-Z0-9]{18}[0-9]{2}$"
+    },
+    "receivedTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the message was received"
+    },
+    "messageTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp from the original message"
+    },
+    "fpmlContent": {
+      "type": "string",
+      "description": "Raw FpML message content",
+      "contentEncoding": "base64",
+      "contentMediaType": "application/xml"
+    },
+    "messageSize": {
+      "type": "integer",
+      "description": "Size of the message in bytes",
+      "minimum": 0
+    },
+    "messageHash": {
+      "type": "string",
+      "description": "SHA-256 hash of the message content for integrity verification",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "validationStatus": {
+      "type": "string",
+      "description": "Validation status of the message",
+      "enum": ["PENDING", "VALID", "INVALID", "WARNING", "SCHEMA_ERROR", "BUSINESS_ERROR"]
+    },
+    "validationResults": {
+      "type": "array",
+      "description": "Detailed validation results",
+      "items": {
+        "type": "object",
+        "properties": {
+          "validationType": {
+            "type": "string",
+            "enum": ["SCHEMA", "BUSINESS_RULE", "REFERENCE_DATA", "DUPLICATE_CHECK"]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["ERROR", "WARNING", "INFO"]
+          },
+          "errorCode": {
+            "type": "string",
+            "description": "Standardized error code"
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "Human-readable error message"
+          },
+          "fieldPath": {
+            "type": "string",
+            "description": "XPath to the field causing the error"
+          },
+          "expectedValue": {
+            "type": "string",
+            "description": "Expected value if applicable"
+          },
+          "actualValue": {
+            "type": "string",
+            "description": "Actual value found"
+          }
+        },
+        "required": ["validationType", "severity", "errorCode", "errorMessage"]
+      }
+    },
+    "processingStatus": {
+      "type": "string",
+      "description": "Processing status of the message",
+      "enum": ["PENDING", "PROCESSING", "PROCESSED", "FAILED", "REJECTED", "DUPLICATE"]
+    },
+    "processingResults": {
+      "type": "object",
+      "description": "Results of message processing",
+      "properties": {
+        "extractedTradeId": {
+          "type": "string",
+          "description": "Trade ID extracted from the message"
+        },
+        "extractedUti": {
+          "type": "string",
+          "description": "UTI extracted from the message"
+        },
+        "extractedUsi": {
+          "type": "string",
+          "description": "USI extracted from the message"
+        },
+        "createdTradeEntityId": {
+          "type": "string",
+          "description": "ID of the Trade entity created from this confirmation"
+        },
+        "processingErrors": {
+          "type": "array",
+          "description": "Errors encountered during processing",
+          "items": {
+            "type": "object",
+            "properties": {
+              "errorCode": {
+                "type": "string"
+              },
+              "errorMessage": {
+                "type": "string"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": ["errorCode", "errorMessage", "timestamp"]
+          }
+        }
+      }
+    },
+    "correlationId": {
+      "type": "string",
+      "description": "Correlation ID for tracking related messages",
+      "maxLength": 100
+    },
+    "parentMessageId": {
+      "type": "string",
+      "description": "ID of the parent message if this is an amendment or cancellation"
+    },
+    "relatedMessageIds": {
+      "type": "array",
+      "description": "IDs of related messages",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "duplicateCheckResults": {
+      "type": "object",
+      "description": "Results of duplicate message detection",
+      "properties": {
+        "isDuplicate": {
+          "type": "boolean",
+          "description": "Whether this message is a duplicate"
+        },
+        "originalMessageId": {
+          "type": "string",
+          "description": "ID of the original message if this is a duplicate"
+        },
+        "duplicateCheckTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the duplicate check was performed"
+        },
+        "duplicateCheckCriteria": {
+          "type": "array",
+          "description": "Criteria used for duplicate detection",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["isDuplicate", "duplicateCheckTimestamp"]
+    },
+    "retryInformation": {
+      "type": "object",
+      "description": "Retry information for failed processing",
+      "properties": {
+        "retryCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of retry attempts"
+        },
+        "maxRetries": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum number of retries allowed"
+        },
+        "nextRetryTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp for the next retry attempt"
+        },
+        "retryReason": {
+          "type": "string",
+          "description": "Reason for retry"
+        }
+      }
+    },
+    "archivalInformation": {
+      "type": "object",
+      "description": "Information about message archival",
+      "properties": {
+        "archiveLocation": {
+          "type": "string",
+          "description": "Location where the message is archived"
+        },
+        "archiveTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the message was archived"
+        },
+        "retentionPeriod": {
+          "type": "string",
+          "description": "How long the message should be retained",
+          "pattern": "^P(?:\\d+Y)?(?:\\d+M)?(?:\\d+D)?$"
+        }
+      }
+    }
+  },
+  "required": [
+    "metadata",
+    "messageId",
+    "messageType",
+    "fpmlVersion",
+    "senderId",
+    "receivedTimestamp",
+    "fpmlContent",
+    "messageHash",
+    "validationStatus",
+    "processingStatus"
+  ],
+  "additionalProperties": false
+}

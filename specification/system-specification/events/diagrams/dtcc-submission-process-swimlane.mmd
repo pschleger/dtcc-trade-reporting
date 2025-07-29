@@ -1,0 +1,50 @@
+sequenceDiagram
+    participant WF as Workflow Engine
+    participant SS as Submission Service
+    participant AS as Auth Service
+    participant DTCC as DTCC GTR
+    participant MS as Monitoring Service
+    participant AUD as Audit Service
+    participant NS as Notification Service
+
+    Note over WF,NS: SLA: Complete submission within 15 minutes
+
+    WF->>+SS: Start Report Submission
+    Note right of SS: State: validated → submitting
+    
+    SS->>+AS: Authenticate with DTCC
+    Note right of AS: SLA: < 30 seconds authentication
+    AS->>AS: Retrieve Credentials
+    AS->>+DTCC: Authenticate
+    DTCC-->>-AS: Authentication Token
+    AS-->>-SS: Authentication Complete
+    
+    SS->>SS: Format Report for DTCC
+    SS->>SS: Add Submission Headers
+    SS->>SS: Calculate Report Hash
+    
+    SS->>+DTCC: Submit Regulatory Report
+    Note right of DTCC: SLA: < 2 minutes transmission
+    DTCC->>DTCC: Receive Report
+    DTCC->>DTCC: Initial Validation
+    DTCC-->>-SS: Submission Receipt
+    
+    SS->>+WF: Update Submission Status
+    WF->>WF: Transition to submitted state
+    WF-->>-SS: State Updated
+    
+    SS->>+AUD: Log Submission Event
+    AUD->>AUD: Record Submission Details
+    AUD->>AUD: Store DTCC Reference
+    AUD-->>-SS: Audit Complete
+    
+    SS->>+MS: Start Acknowledgment Monitoring
+    Note right of MS: SLA: Monitor for 24 hours
+    MS->>MS: Schedule Acknowledgment Check
+    MS-->>-SS: Monitoring Active
+    
+    SS->>+NS: Send Submission Notification
+    NS->>NS: Notify Regulatory Team
+    NS-->>-SS: Notification Sent
+
+    Note over WF,NS: End-to-End SLA: < 15 minutes submission time

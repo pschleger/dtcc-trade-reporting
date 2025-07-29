@@ -1,0 +1,38 @@
+graph TD
+    A[generating] --> B[generated]
+    A --> C[generation-failed]
+    B --> D[validating]
+    D --> E[validated]
+    D --> F[validation-failed]
+    E --> G[ready-for-submission]
+    G --> H[submitting]
+    H --> I[submitted]
+    H --> J[submission-failed]
+    I --> K[acknowledged]
+    I --> L[rejected-by-dtcc]
+    K --> M[completed]
+    L --> N[correcting]
+    J --> O[retrying]
+    J --> P[manual-review]
+    O --> H
+    C --> P
+    F --> P
+    N --> Q[regenerating]
+    P --> Q
+    Q --> A
+    M --> R[archived]
+    
+    %% Styling
+    classDef initial fill:#e1f5fe
+    classDef terminal fill:#f3e5f5
+    classDef error fill:#ffebee
+    classDef manual fill:#fff3e0
+    classDef processing fill:#f0f4c3
+    classDef dtcc fill:#e3f2fd
+    
+    class A initial
+    class M,R terminal
+    class C,F,J error
+    class N,P manual
+    class D,G,H,O,Q processing
+    class I,K,L dtcc

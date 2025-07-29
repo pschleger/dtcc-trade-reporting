@@ -1,0 +1,381 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/Position.json",
+  "title": "Position",
+  "description": "Aggregated view of trades representing net exposure by counterparty and product",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "$ref": "common/BusinessEntityMetadata.json",
+      "description": "Entity metadata including workflow state"
+    },
+    "positionId": {
+      "type": "string",
+      "description": "Unique position identifier",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "positionType": {
+      "type": "string",
+      "description": "Type of position aggregation",
+      "enum": [
+        "COUNTERPARTY_PRODUCT",
+        "COUNTERPARTY_ASSETCLASS",
+        "PORTFOLIO",
+        "NETTING_SET",
+        "REGULATORY_PORTFOLIO"
+      ]
+    },
+    "aggregationLevel": {
+      "type": "string",
+      "description": "Level of aggregation",
+      "enum": ["TRADE", "PRODUCT", "ASSET_CLASS", "COUNTERPARTY", "PORTFOLIO", "ENTITY"]
+    },
+    "counterpartyId": {
+      "type": "string",
+      "description": "Reference to Counterparty entity"
+    },
+    "counterpartyLei": {
+      "type": "string",
+      "description": "LEI of the counterparty",
+      "pattern": "^[A-Z0-9]{18}[0-9]{2}$"
+    },
+    "productId": {
+      "type": "string",
+      "description": "Reference to Product entity if product-specific"
+    },
+    "assetClass": {
+      "type": "string",
+      "description": "Asset class if aggregated by asset class",
+      "enum": ["INTEREST_RATE", "CREDIT", "EQUITY", "FOREIGN_EXCHANGE", "COMMODITY", "OTHER"]
+    },
+    "portfolioId": {
+      "type": "string",
+      "description": "Portfolio identifier if portfolio-specific"
+    },
+    "nettingSetId": {
+      "type": "string",
+      "description": "Netting set identifier for collateral purposes"
+    },
+    "calculationTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the position was last calculated"
+    },
+    "calculationMethod": {
+      "type": "string",
+      "description": "Method used for position calculation",
+      "enum": ["SIMPLE_SUM", "RISK_WEIGHTED", "NOTIONAL_EQUIVALENT", "DELTA_EQUIVALENT", "REGULATORY"]
+    },
+    "baseCurrency": {
+      "type": "string",
+      "description": "Base currency for position reporting",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "exposureMetrics": {
+      "type": "object",
+      "description": "Position exposure metrics",
+      "properties": {
+        "grossNotional": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Gross notional exposure"
+        },
+        "netNotional": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Net notional exposure"
+        },
+        "marketValue": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Current market value"
+        },
+        "unrealizedPnL": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Unrealized profit and loss"
+        },
+        "realizedPnL": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Realized profit and loss"
+        },
+        "creditExposure": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Current credit exposure"
+        },
+        "potentialFutureExposure": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Potential future exposure"
+        }
+      },
+      "required": ["grossNotional", "netNotional", "marketValue"]
+    },
+    "riskMetrics": {
+      "type": "object",
+      "description": "Risk metrics for the position",
+      "properties": {
+        "pv01": {
+          "type": "number",
+          "description": "Price value of a basis point"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Modified duration"
+        },
+        "convexity": {
+          "type": "number",
+          "description": "Convexity"
+        },
+        "delta": {
+          "type": "number",
+          "description": "Delta sensitivity"
+        },
+        "gamma": {
+          "type": "number",
+          "description": "Gamma sensitivity"
+        },
+        "vega": {
+          "type": "number",
+          "description": "Vega sensitivity"
+        },
+        "theta": {
+          "type": "number",
+          "description": "Theta sensitivity"
+        },
+        "rho": {
+          "type": "number",
+          "description": "Rho sensitivity"
+        },
+        "valueAtRisk": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Value at Risk (VaR)"
+        },
+        "expectedShortfall": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Expected Shortfall (ES)"
+        },
+        "stressTestResults": {
+          "type": "object",
+          "description": "Stress test scenario results",
+          "additionalProperties": {
+            "$ref": "common/MonetaryAmount.json"
+          }
+        }
+      }
+    },
+    "contributingTrades": {
+      "type": "array",
+      "description": "Trades that contribute to this position",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tradeId": {
+            "type": "string",
+            "description": "Reference to Trade entity"
+          },
+          "uti": {
+            "type": "string",
+            "description": "UTI of the contributing trade"
+          },
+          "weight": {
+            "type": "number",
+            "description": "Weight of this trade in the position",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "contributionAmount": {
+            "$ref": "common/MonetaryAmount.json",
+            "description": "Amount this trade contributes to the position"
+          }
+        },
+        "required": ["tradeId", "uti", "weight"]
+      }
+    },
+    "collateralInformation": {
+      "type": "object",
+      "description": "Collateral information for the position",
+      "properties": {
+        "collateralized": {
+          "type": "boolean",
+          "description": "Whether the position is collateralized"
+        },
+        "creditSupportAnnex": {
+          "type": "string",
+          "description": "Reference to the Credit Support Annex"
+        },
+        "initialMarginRequired": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Initial margin requirement"
+        },
+        "initialMarginPosted": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Initial margin posted"
+        },
+        "variationMarginRequired": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Variation margin requirement"
+        },
+        "variationMarginPosted": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Variation margin posted"
+        },
+        "independentAmount": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Independent amount"
+        }
+      },
+      "required": ["collateralized"]
+    },
+    "regulatoryMetrics": {
+      "type": "object",
+      "description": "Regulatory-specific metrics",
+      "properties": {
+        "leverageRatio": {
+          "type": "number",
+          "description": "Leverage ratio exposure"
+        },
+        "riskWeightedAssets": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Risk-weighted assets"
+        },
+        "capitalRequirement": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Capital requirement"
+        },
+        "liquidityRequirement": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Liquidity requirement"
+        },
+        "reportingThresholds": {
+          "type": "object",
+          "description": "Regulatory reporting thresholds",
+          "properties": {
+            "clearingThreshold": {
+              "$ref": "common/MonetaryAmount.json"
+            },
+            "reportingThreshold": {
+              "$ref": "common/MonetaryAmount.json"
+            },
+            "riskMitigationThreshold": {
+              "$ref": "common/MonetaryAmount.json"
+            }
+          }
+        },
+        "thresholdBreaches": {
+          "type": "array",
+          "description": "Current threshold breaches",
+          "items": {
+            "type": "object",
+            "properties": {
+              "thresholdType": {
+                "type": "string",
+                "enum": ["CLEARING", "REPORTING", "RISK_MITIGATION", "CAPITAL", "LIQUIDITY"]
+              },
+              "thresholdValue": {
+                "$ref": "common/MonetaryAmount.json"
+              },
+              "currentValue": {
+                "$ref": "common/MonetaryAmount.json"
+              },
+              "breachDate": {
+                "type": "string",
+                "format": "date"
+              },
+              "regime": {
+                "type": "string",
+                "enum": ["DODD_FRANK", "EMIR", "UK_EMIR", "JFSA", "ASIC", "MAS"]
+              }
+            },
+            "required": ["thresholdType", "thresholdValue", "currentValue", "breachDate", "regime"]
+          }
+        }
+      }
+    },
+    "reportingStatus": {
+      "type": "string",
+      "description": "Current reporting status",
+      "enum": ["CURRENT", "PENDING_CALCULATION", "PENDING_VALIDATION", "PENDING_REPORTING", "REPORTED", "ERROR"]
+    },
+    "reportingObligations": {
+      "type": "array",
+      "description": "Regulatory reporting obligations for this position",
+      "items": {
+        "type": "object",
+        "properties": {
+          "regime": {
+            "type": "string",
+            "enum": ["DODD_FRANK", "EMIR", "UK_EMIR", "JFSA", "ASIC", "MAS"]
+          },
+          "reportType": {
+            "type": "string",
+            "enum": ["POSITION_REPORT", "LARGE_POSITION_REPORT", "CONCENTRATION_REPORT"]
+          },
+          "frequency": {
+            "type": "string",
+            "enum": ["DAILY", "WEEKLY", "MONTHLY", "QUARTERLY", "ON_BREACH"]
+          },
+          "nextDueDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastReportDate": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["regime", "reportType", "frequency", "nextDueDate"]
+      }
+    },
+    "reconciliationStatus": {
+      "type": "object",
+      "description": "Reconciliation status with counterparty",
+      "properties": {
+        "lastReconciliationDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["MATCHED", "UNMATCHED", "DISPUTED", "PENDING", "NOT_REQUIRED"]
+        },
+        "discrepancies": {
+          "type": "array",
+          "description": "Identified discrepancies",
+          "items": {
+            "type": "object",
+            "properties": {
+              "field": {
+                "type": "string",
+                "description": "Field with discrepancy"
+              },
+              "ourValue": {
+                "type": "string",
+                "description": "Our value"
+              },
+              "counterpartyValue": {
+                "type": "string",
+                "description": "Counterparty value"
+              },
+              "tolerance": {
+                "type": "number",
+                "description": "Tolerance threshold"
+              }
+            },
+            "required": ["field", "ourValue", "counterpartyValue"]
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "metadata",
+    "positionId",
+    "positionType",
+    "aggregationLevel",
+    "counterpartyId",
+    "counterpartyLei",
+    "calculationTimestamp",
+    "calculationMethod",
+    "baseCurrency",
+    "exposureMetrics",
+    "reportingStatus"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,52 @@
+sequenceDiagram
+    participant PS as Position Service
+    participant TE as Threshold Engine
+    participant RG as Report Generator
+    participant VS as Validation Service
+    participant WF as Workflow Engine
+    participant AS as Audit Service
+    participant NS as Notification Service
+
+    Note over PS,NS: SLA: Complete generation within 1 hour of threshold breach
+
+    PS->>+TE: Position Update Event
+    Note right of TE: SLA: < 15 minutes evaluation
+    TE->>TE: Evaluate Reporting Thresholds
+    TE->>TE: Check Regulatory Obligations
+    
+    alt Threshold Breached
+        TE->>+RG: Trigger Report Generation
+        Note right of RG: SLA: < 30 minutes generation
+        RG->>RG: Gather Position Data
+        RG->>RG: Apply Reporting Rules
+        RG->>RG: Generate Report Content
+        RG->>+VS: Validate Report Schema
+        Note right of VS: SLA: < 15 minutes validation
+        VS->>VS: Schema Validation
+        VS->>VS: Business Rule Check
+        VS-->>-RG: Validation Results
+        
+        alt Validation Success
+            RG->>+WF: Create RegulatoryReport Entity
+            WF->>WF: Initialize Workflow (generating → generated)
+            RG->>+AS: Log Generation Event
+            AS->>AS: Create Audit Trail
+            AS-->>-RG: Audit Complete
+            RG-->>-TE: Report Generated Successfully
+            TE->>+NS: Send Generation Notification
+            NS-->>-TE: Notification Sent
+        else Validation Failed
+            RG->>+AS: Log Validation Failure
+            AS-->>-RG: Audit Complete
+            RG->>+NS: Alert Generation Failure
+            NS-->>-RG: Alert Sent
+            RG-->>-TE: Report Generation Failed
+        end
+    else No Threshold Breach
+        TE->>+AS: Log Threshold Check
+        AS-->>-TE: Audit Complete
+    end
+    
+    TE-->>-PS: Threshold Processing Complete
+
+    Note over PS,NS: End-to-End SLA: < 1 hour total processing time

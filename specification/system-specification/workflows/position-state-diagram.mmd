@@ -1,0 +1,36 @@
+graph TD
+    A[calculating] --> B[calculated]
+    A --> C[calculation-failed]
+    B --> D[validating]
+    D --> E[validated]
+    D --> F[validation-failed]
+    E --> G[reporting-ready]
+    E --> H[reconciling]
+    E --> I[current]
+    G --> J[reporting]
+    J --> K[reported]
+    J --> L[reporting-failed]
+    H --> M[reconciled]
+    H --> N[reconciliation-failed]
+    I --> O[recalculating]
+    K --> I
+    M --> I
+    C --> P[manual-review]
+    F --> P
+    L --> P
+    N --> P
+    P --> O
+    O --> A
+    
+    %% Styling
+    classDef initial fill:#e1f5fe
+    classDef error fill:#ffebee
+    classDef manual fill:#fff3e0
+    classDef active fill:#e8f5e8
+    classDef processing fill:#f0f4c3
+    
+    class A initial
+    class C,F,L,N error
+    class P manual
+    class I active
+    class D,G,H,J,O processing

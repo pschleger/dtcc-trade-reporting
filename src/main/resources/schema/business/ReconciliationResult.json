@@ -1,0 +1,467 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/ReconciliationResult.json",
+  "title": "ReconciliationResult",
+  "description": "Results of reconciliation processes between internal and external data",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "$ref": "common/BusinessEntityMetadata.json",
+      "description": "Entity metadata including workflow state"
+    },
+    "reconciliationId": {
+      "type": "string",
+      "description": "Unique reconciliation result identifier",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "reconciliationType": {
+      "type": "string",
+      "description": "Type of reconciliation performed",
+      "enum": [
+        "POSITION_RECONCILIATION",
+        "TRADE_RECONCILIATION",
+        "MARKET_DATA_RECONCILIATION",
+        "CASH_RECONCILIATION",
+        "COLLATERAL_RECONCILIATION",
+        "REGULATORY_REPORT_RECONCILIATION",
+        "COUNTERPARTY_RECONCILIATION"
+      ]
+    },
+    "reconciliationScope": {
+      "type": "string",
+      "description": "Scope of the reconciliation",
+      "enum": ["ENTITY_LEVEL", "PORTFOLIO_LEVEL", "COUNTERPARTY_LEVEL", "PRODUCT_LEVEL", "SYSTEM_LEVEL"]
+    },
+    "reconciliationDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Business date for the reconciliation"
+    },
+    "reconciliationTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the reconciliation was performed"
+    },
+    "sourceSystem": {
+      "type": "object",
+      "description": "Source system information",
+      "properties": {
+        "systemName": {
+          "type": "string",
+          "description": "Name of the source system"
+        },
+        "systemVersion": {
+          "type": "string",
+          "description": "Version of the source system"
+        },
+        "dataAsOfTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "As-of timestamp for source data"
+        },
+        "recordCount": {
+          "type": "integer",
+          "description": "Number of records from source system",
+          "minimum": 0
+        }
+      },
+      "required": ["systemName", "dataAsOfTimestamp", "recordCount"]
+    },
+    "targetSystem": {
+      "type": "object",
+      "description": "Target system information",
+      "properties": {
+        "systemName": {
+          "type": "string",
+          "description": "Name of the target system"
+        },
+        "systemVersion": {
+          "type": "string",
+          "description": "Version of the target system"
+        },
+        "dataAsOfTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "As-of timestamp for target data"
+        },
+        "recordCount": {
+          "type": "integer",
+          "description": "Number of records from target system",
+          "minimum": 0
+        }
+      },
+      "required": ["systemName", "dataAsOfTimestamp", "recordCount"]
+    },
+    "reconciliationCriteria": {
+      "type": "object",
+      "description": "Criteria used for reconciliation",
+      "properties": {
+        "matchingFields": {
+          "type": "array",
+          "description": "Fields used for matching records",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "comparisonFields": {
+          "type": "array",
+          "description": "Fields compared for differences",
+          "items": {
+            "type": "object",
+            "properties": {
+              "fieldName": {
+                "type": "string",
+                "description": "Name of the field"
+              },
+              "fieldType": {
+                "type": "string",
+                "enum": ["STRING", "NUMBER", "DATE", "BOOLEAN", "AMOUNT"]
+              },
+              "tolerance": {
+                "type": "number",
+                "description": "Tolerance for numeric comparisons"
+              },
+              "toleranceType": {
+                "type": "string",
+                "enum": ["ABSOLUTE", "PERCENTAGE"]
+              },
+              "mandatory": {
+                "type": "boolean",
+                "description": "Whether this field must match exactly"
+              }
+            },
+            "required": ["fieldName", "fieldType", "mandatory"]
+          }
+        },
+        "filterCriteria": {
+          "type": "object",
+          "description": "Filters applied before reconciliation",
+          "additionalProperties": true
+        }
+      },
+      "required": ["matchingFields", "comparisonFields"]
+    },
+    "reconciliationResults": {
+      "type": "object",
+      "description": "Summary of reconciliation results",
+      "properties": {
+        "totalRecordsCompared": {
+          "type": "integer",
+          "description": "Total number of records compared",
+          "minimum": 0
+        },
+        "matchedRecords": {
+          "type": "integer",
+          "description": "Number of records that matched exactly",
+          "minimum": 0
+        },
+        "unmatchedSourceRecords": {
+          "type": "integer",
+          "description": "Records in source but not in target",
+          "minimum": 0
+        },
+        "unmatchedTargetRecords": {
+          "type": "integer",
+          "description": "Records in target but not in source",
+          "minimum": 0
+        },
+        "recordsWithDifferences": {
+          "type": "integer",
+          "description": "Records with field differences",
+          "minimum": 0
+        },
+        "recordsWithinTolerance": {
+          "type": "integer",
+          "description": "Records with differences within tolerance",
+          "minimum": 0
+        },
+        "recordsOutsideTolerance": {
+          "type": "integer",
+          "description": "Records with differences outside tolerance",
+          "minimum": 0
+        },
+        "matchRate": {
+          "type": "number",
+          "description": "Percentage of records that matched",
+          "minimum": 0,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "totalRecordsCompared",
+        "matchedRecords",
+        "unmatchedSourceRecords",
+        "unmatchedTargetRecords",
+        "recordsWithDifferences",
+        "matchRate"
+      ]
+    },
+    "discrepancies": {
+      "type": "array",
+      "description": "Detailed discrepancies found",
+      "items": {
+        "type": "object",
+        "properties": {
+          "discrepancyId": {
+            "type": "string",
+            "description": "Unique identifier for the discrepancy"
+          },
+          "discrepancyType": {
+            "type": "string",
+            "enum": [
+              "MISSING_IN_SOURCE",
+              "MISSING_IN_TARGET",
+              "FIELD_DIFFERENCE",
+              "TOLERANCE_BREACH",
+              "FORMAT_DIFFERENCE",
+              "CALCULATION_DIFFERENCE"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+          },
+          "entityId": {
+            "type": "string",
+            "description": "ID of the entity with the discrepancy"
+          },
+          "fieldName": {
+            "type": "string",
+            "description": "Name of the field with the discrepancy"
+          },
+          "sourceValue": {
+            "description": "Value from the source system",
+            "oneOf": [
+              {"type": "string"},
+              {"type": "number"},
+              {"type": "boolean"},
+              {"type": "null"}
+            ]
+          },
+          "targetValue": {
+            "description": "Value from the target system",
+            "oneOf": [
+              {"type": "string"},
+              {"type": "number"},
+              {"type": "boolean"},
+              {"type": "null"}
+            ]
+          },
+          "difference": {
+            "type": "number",
+            "description": "Numeric difference if applicable"
+          },
+          "percentageDifference": {
+            "type": "number",
+            "description": "Percentage difference if applicable"
+          },
+          "tolerance": {
+            "type": "number",
+            "description": "Tolerance threshold for this field"
+          },
+          "withinTolerance": {
+            "type": "boolean",
+            "description": "Whether the difference is within tolerance"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the discrepancy"
+          },
+          "potentialCauses": {
+            "type": "array",
+            "description": "Potential causes of the discrepancy",
+            "items": {
+              "type": "string"
+            }
+          },
+          "recommendedActions": {
+            "type": "array",
+            "description": "Recommended actions to resolve the discrepancy",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "discrepancyId",
+          "discrepancyType",
+          "severity",
+          "entityId",
+          "withinTolerance"
+        ]
+      }
+    },
+    "investigationStatus": {
+      "type": "object",
+      "description": "Status of discrepancy investigation",
+      "properties": {
+        "investigationRequired": {
+          "type": "boolean",
+          "description": "Whether investigation is required"
+        },
+        "investigationStarted": {
+          "type": "boolean",
+          "description": "Whether investigation has started"
+        },
+        "investigationTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When investigation was started"
+        },
+        "investigator": {
+          "type": "string",
+          "description": "ID of the person investigating"
+        },
+        "investigationNotes": {
+          "type": "string",
+          "description": "Notes from the investigation"
+        },
+        "resolutionStatus": {
+          "type": "string",
+          "enum": ["PENDING", "IN_PROGRESS", "RESOLVED", "ESCALATED", "WAIVED"]
+        },
+        "resolutionTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the discrepancy was resolved"
+        },
+        "resolutionDescription": {
+          "type": "string",
+          "description": "Description of how the discrepancy was resolved"
+        }
+      },
+      "required": ["investigationRequired"]
+    },
+    "performanceMetrics": {
+      "type": "object",
+      "description": "Performance metrics for the reconciliation",
+      "properties": {
+        "executionTime": {
+          "type": "integer",
+          "description": "Total execution time in milliseconds"
+        },
+        "dataRetrievalTime": {
+          "type": "integer",
+          "description": "Time to retrieve data in milliseconds"
+        },
+        "comparisonTime": {
+          "type": "integer",
+          "description": "Time to perform comparisons in milliseconds"
+        },
+        "reportGenerationTime": {
+          "type": "integer",
+          "description": "Time to generate report in milliseconds"
+        },
+        "memoryUsage": {
+          "type": "integer",
+          "description": "Peak memory usage in bytes"
+        },
+        "recordsPerSecond": {
+          "type": "number",
+          "description": "Processing rate in records per second"
+        }
+      }
+    },
+    "qualityMetrics": {
+      "type": "object",
+      "description": "Data quality metrics",
+      "properties": {
+        "dataCompletenessScore": {
+          "type": "number",
+          "description": "Data completeness score (0-1)",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "dataAccuracyScore": {
+          "type": "number",
+          "description": "Data accuracy score (0-1)",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "dataConsistencyScore": {
+          "type": "number",
+          "description": "Data consistency score (0-1)",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "overallQualityScore": {
+          "type": "number",
+          "description": "Overall data quality score (0-1)",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "escalationInformation": {
+      "type": "object",
+      "description": "Escalation information for unresolved discrepancies",
+      "properties": {
+        "escalationRequired": {
+          "type": "boolean",
+          "description": "Whether escalation is required"
+        },
+        "escalationCriteria": {
+          "type": "object",
+          "description": "Criteria that triggered escalation",
+          "properties": {
+            "discrepancyCount": {
+              "type": "integer",
+              "description": "Number of discrepancies"
+            },
+            "criticalDiscrepancies": {
+              "type": "integer",
+              "description": "Number of critical discrepancies"
+            },
+            "totalValueAtRisk": {
+              "$ref": "common/MonetaryAmount.json",
+              "description": "Total value at risk from discrepancies"
+            }
+          }
+        },
+        "escalationLevel": {
+          "type": "string",
+          "enum": ["LEVEL_1", "LEVEL_2", "LEVEL_3", "MANAGEMENT"]
+        },
+        "escalationTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "escalatedTo": {
+          "type": "string",
+          "description": "Who the issue was escalated to"
+        }
+      },
+      "required": ["escalationRequired"]
+    },
+    "status": {
+      "type": "string",
+      "description": "Current status of the reconciliation",
+      "enum": [
+        "COMPLETED_CLEAN",
+        "COMPLETED_WITH_DISCREPANCIES",
+        "UNDER_INVESTIGATION",
+        "RESOLVED",
+        "ESCALATED",
+        "FAILED",
+        "CANCELLED"
+      ]
+    }
+  },
+  "required": [
+    "metadata",
+    "reconciliationId",
+    "reconciliationType",
+    "reconciliationScope",
+    "reconciliationDate",
+    "reconciliationTimestamp",
+    "sourceSystem",
+    "targetSystem",
+    "reconciliationCriteria",
+    "reconciliationResults",
+    "investigationStatus",
+    "status"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,347 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/Trade.json",
+  "title": "Trade",
+  "description": "Processed and validated trade records derived from FpML confirmations",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "$ref": "common/BusinessEntityMetadata.json",
+      "description": "Entity metadata including workflow state"
+    },
+    "tradeId": {
+      "type": "string",
+      "description": "Internal unique trade identifier",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "uti": {
+      "type": "string",
+      "description": "Unique Trade Identifier (UTI) for regulatory reporting",
+      "minLength": 1,
+      "maxLength": 52
+    },
+    "usi": {
+      "type": "string",
+      "description": "Unique Swap Identifier (USI) for US reporting",
+      "maxLength": 52
+    },
+    "confirmationId": {
+      "type": "string",
+      "description": "Reference to the TradeConfirmation entity that created this trade"
+    },
+    "tradeDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when the trade was executed"
+    },
+    "effectiveDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when the trade becomes effective"
+    },
+    "maturityDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Maturity date of the trade"
+    },
+    "terminationDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Early termination date if applicable"
+    },
+    "counterparties": {
+      "type": "object",
+      "description": "Counterparty information",
+      "properties": {
+        "partyA": {
+          "type": "object",
+          "properties": {
+            "counterpartyId": {
+              "type": "string",
+              "description": "Reference to Counterparty entity"
+            },
+            "lei": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{18}[0-9]{2}$"
+            },
+            "role": {
+              "type": "string",
+              "enum": ["PAYER", "RECEIVER", "BUYER", "SELLER", "PROTECTION_BUYER", "PROTECTION_SELLER"]
+            },
+            "tradingCapacity": {
+              "type": "string",
+              "enum": ["PRINCIPAL", "AGENT", "RISKLESS_PRINCIPAL"]
+            }
+          },
+          "required": ["counterpartyId", "lei", "role"]
+        },
+        "partyB": {
+          "type": "object",
+          "properties": {
+            "counterpartyId": {
+              "type": "string"
+            },
+            "lei": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{18}[0-9]{2}$"
+            },
+            "role": {
+              "type": "string",
+              "enum": ["PAYER", "RECEIVER", "BUYER", "SELLER", "PROTECTION_BUYER", "PROTECTION_SELLER"]
+            },
+            "tradingCapacity": {
+              "type": "string",
+              "enum": ["PRINCIPAL", "AGENT", "RISKLESS_PRINCIPAL"]
+            }
+          },
+          "required": ["counterpartyId", "lei", "role"]
+        }
+      },
+      "required": ["partyA", "partyB"]
+    },
+    "product": {
+      "type": "object",
+      "description": "Product information",
+      "properties": {
+        "productId": {
+          "type": "string",
+          "description": "Reference to Product entity"
+        },
+        "assetClass": {
+          "type": "string",
+          "enum": ["INTEREST_RATE", "CREDIT", "EQUITY", "FOREIGN_EXCHANGE", "COMMODITY", "OTHER"]
+        },
+        "productType": {
+          "type": "string",
+          "examples": ["SWAP", "OPTION", "FORWARD", "FUTURE", "SWAPTION"]
+        },
+        "subType": {
+          "type": "string",
+          "examples": ["VANILLA", "BARRIER", "ASIAN", "DIGITAL"]
+        }
+      },
+      "required": ["productId", "assetClass", "productType"]
+    },
+    "economicTerms": {
+      "type": "object",
+      "description": "Economic terms of the trade",
+      "properties": {
+        "notionalAmount": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Notional amount of the trade"
+        },
+        "notionalSchedule": {
+          "type": "array",
+          "description": "Notional schedule for amortizing trades",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "notionalAmount": {
+                "$ref": "common/MonetaryAmount.json"
+              }
+            },
+            "required": ["date", "notionalAmount"]
+          }
+        },
+        "fixedRate": {
+          "type": "number",
+          "description": "Fixed rate if applicable"
+        },
+        "floatingRateIndex": {
+          "type": "string",
+          "description": "Floating rate index",
+          "examples": ["USD-LIBOR-3M", "EUR-EURIBOR-6M", "GBP-SONIA"]
+        },
+        "spread": {
+          "type": "number",
+          "description": "Spread over the floating rate index"
+        },
+        "dayCountFraction": {
+          "type": "string",
+          "enum": ["ACT_360", "ACT_365", "ACT_ACT", "30_360", "30E_360", "BUS_252"]
+        },
+        "paymentFrequency": {
+          "type": "string",
+          "enum": ["DAILY", "WEEKLY", "MONTHLY", "QUARTERLY", "SEMI_ANNUALLY", "ANNUALLY", "AT_MATURITY"]
+        },
+        "businessDayConvention": {
+          "type": "string",
+          "enum": ["FOLLOWING", "MODIFIED_FOLLOWING", "PRECEDING", "MODIFIED_PRECEDING", "NONE"]
+        },
+        "businessCenters": {
+          "type": "array",
+          "description": "Business centers for holiday calendar",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z]{4}$"
+          }
+        },
+        "calculationAgent": {
+          "type": "string",
+          "enum": ["PARTY_A", "PARTY_B", "BOTH", "THIRD_PARTY"]
+        }
+      },
+      "required": ["notionalAmount"]
+    },
+    "marketData": {
+      "type": "object",
+      "description": "Market data used for valuation",
+      "properties": {
+        "valuationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date of last valuation"
+        },
+        "marketValue": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Current market value"
+        },
+        "pv01": {
+          "type": "number",
+          "description": "Price value of a basis point"
+        },
+        "delta": {
+          "type": "number",
+          "description": "Delta sensitivity"
+        },
+        "gamma": {
+          "type": "number",
+          "description": "Gamma sensitivity"
+        },
+        "vega": {
+          "type": "number",
+          "description": "Vega sensitivity"
+        },
+        "theta": {
+          "type": "number",
+          "description": "Theta sensitivity"
+        }
+      }
+    },
+    "collateral": {
+      "type": "object",
+      "description": "Collateral information",
+      "properties": {
+        "collateralized": {
+          "type": "boolean",
+          "description": "Whether the trade is collateralized"
+        },
+        "creditSupportAnnex": {
+          "type": "string",
+          "description": "Reference to the Credit Support Annex"
+        },
+        "initialMargin": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Initial margin requirement"
+        },
+        "variationMargin": {
+          "$ref": "common/MonetaryAmount.json",
+          "description": "Variation margin requirement"
+        }
+      },
+      "required": ["collateralized"]
+    },
+    "clearing": {
+      "type": "object",
+      "description": "Clearing information",
+      "properties": {
+        "cleared": {
+          "type": "boolean",
+          "description": "Whether the trade is centrally cleared"
+        },
+        "clearingHouse": {
+          "type": "string",
+          "description": "Central counterparty if cleared"
+        },
+        "clearingMember": {
+          "type": "string",
+          "description": "Clearing member"
+        },
+        "clearingDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date when the trade was cleared"
+        }
+      },
+      "required": ["cleared"]
+    },
+    "regulatoryReporting": {
+      "type": "object",
+      "description": "Regulatory reporting information",
+      "properties": {
+        "reportingCounterparty": {
+          "type": "string",
+          "description": "LEI of the reporting counterparty",
+          "pattern": "^[A-Z0-9]{18}[0-9]{2}$"
+        },
+        "reportingRegimes": {
+          "type": "array",
+          "description": "Applicable reporting regimes",
+          "items": {
+            "type": "string",
+            "enum": ["DODD_FRANK", "EMIR", "UK_EMIR", "JFSA", "ASIC", "MAS"]
+          },
+          "uniqueItems": true
+        },
+        "reportingDeadlines": {
+          "type": "object",
+          "description": "Reporting deadlines by regime",
+          "additionalProperties": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "required": ["reportingCounterparty", "reportingRegimes"]
+    },
+    "tradeStatus": {
+      "type": "string",
+      "description": "Current status of the trade",
+      "enum": ["NEW", "CONFIRMED", "AMENDED", "CANCELLED", "MATURED", "TERMINATED", "ERROR"]
+    },
+    "lifecycleEvents": {
+      "type": "array",
+      "description": "Trade lifecycle events",
+      "items": {
+        "type": "object",
+        "properties": {
+          "eventType": {
+            "type": "string",
+            "enum": ["AMENDMENT", "CANCELLATION", "NOVATION", "COMPRESSION", "EXERCISE", "SETTLEMENT"]
+          },
+          "eventDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "eventId": {
+            "type": "string",
+            "description": "Reference to the lifecycle event entity"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": ["eventType", "eventDate", "eventId"]
+      }
+    }
+  },
+  "required": [
+    "metadata",
+    "tradeId",
+    "uti",
+    "tradeDate",
+    "effectiveDate",
+    "counterparties",
+    "product",
+    "economicTerms",
+    "clearing",
+    "regulatoryReporting",
+    "tradeStatus"
+  ],
+  "additionalProperties": false
+}

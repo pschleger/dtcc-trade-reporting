@@ -1,0 +1,255 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/ReferenceData.json",
+  "title": "ReferenceData",
+  "description": "Market reference data supporting trade valuation and processing",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "$ref": "common/BusinessEntityMetadata.json",
+      "description": "Entity metadata including workflow state"
+    },
+    "dataId": {
+      "type": "string",
+      "description": "Unique identifier for the reference data item",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "dataType": {
+      "type": "string",
+      "description": "Type of reference data",
+      "enum": [
+        "CURRENCY",
+        "HOLIDAY_CALENDAR",
+        "INTEREST_RATE_CURVE",
+        "VOLATILITY_SURFACE",
+        "CREDIT_CURVE",
+        "FX_RATE",
+        "COMMODITY_PRICE",
+        "EQUITY_PRICE",
+        "INDEX_LEVEL",
+        "BENCHMARK_RATE",
+        "REGULATORY_THRESHOLD",
+        "COUNTERPARTY_RATING",
+        "PRODUCT_SPECIFICATION"
+      ]
+    },
+    "dataCategory": {
+      "type": "string",
+      "description": "Category for grouping related data",
+      "examples": ["MARKET_DATA", "REGULATORY", "STATIC", "DYNAMIC"]
+    },
+    "dataValue": {
+      "description": "The actual reference data value (type varies by dataType)",
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "String value for text-based data"
+        },
+        {
+          "type": "number",
+          "description": "Numeric value for rates, prices, etc."
+        },
+        {
+          "type": "object",
+          "description": "Complex object for structured data"
+        },
+        {
+          "type": "array",
+          "description": "Array for multi-value data"
+        }
+      ]
+    },
+    "effectiveDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when this data becomes effective"
+    },
+    "expiryDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when this data expires"
+    },
+    "sourceSystem": {
+      "type": "string",
+      "description": "Source system that provided the data",
+      "examples": ["BLOOMBERG", "REUTERS", "MARKIT", "ICE", "CME", "INTERNAL"]
+    },
+    "sourceIdentifier": {
+      "type": "string",
+      "description": "Identifier in the source system",
+      "maxLength": 200
+    },
+    "validationStatus": {
+      "type": "string",
+      "description": "Validation status of the data",
+      "enum": ["PENDING", "VALIDATED", "FAILED", "OVERRIDDEN", "STALE"]
+    },
+    "validationRules": {
+      "type": "array",
+      "description": "Validation rules applied to this data",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ruleName": {
+            "type": "string",
+            "description": "Name of the validation rule"
+          },
+          "ruleType": {
+            "type": "string",
+            "enum": ["RANGE_CHECK", "FORMAT_CHECK", "CROSS_CHECK", "BUSINESS_RULE"]
+          },
+          "parameters": {
+            "type": "object",
+            "description": "Rule parameters"
+          },
+          "lastValidation": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last validation timestamp"
+          },
+          "validationResult": {
+            "type": "string",
+            "enum": ["PASS", "FAIL", "WARNING"]
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "Error message if validation failed"
+          }
+        },
+        "required": ["ruleName", "ruleType", "validationResult"]
+      }
+    },
+    "qualityMetrics": {
+      "type": "object",
+      "description": "Data quality metrics",
+      "properties": {
+        "completeness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Completeness score (0-1)"
+        },
+        "accuracy": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Accuracy score (0-1)"
+        },
+        "timeliness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Timeliness score (0-1)"
+        },
+        "consistency": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Consistency score (0-1)"
+        }
+      }
+    },
+    "updateFrequency": {
+      "type": "string",
+      "description": "Expected update frequency",
+      "enum": [
+        "REAL_TIME",
+        "INTRADAY",
+        "DAILY",
+        "WEEKLY",
+        "MONTHLY",
+        "QUARTERLY",
+        "ANNUALLY",
+        "ON_DEMAND",
+        "STATIC"
+      ]
+    },
+    "lastRefresh": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of last data refresh"
+    },
+    "nextRefresh": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Expected timestamp of next refresh"
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "Other reference data items this depends on",
+      "items": {
+        "type": "string",
+        "description": "Reference to another dataId"
+      },
+      "uniqueItems": true
+    },
+    "subscribers": {
+      "type": "array",
+      "description": "Systems or processes that depend on this data",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "historicalVersions": {
+      "type": "array",
+      "description": "References to historical versions",
+      "items": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "expiryDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "changeReason": {
+            "type": "string"
+          }
+        },
+        "required": ["version", "effectiveDate"]
+      }
+    },
+    "approvalWorkflow": {
+      "type": "object",
+      "description": "Approval workflow information",
+      "properties": {
+        "requiresApproval": {
+          "type": "boolean",
+          "description": "Whether changes require approval"
+        },
+        "approver": {
+          "type": "string",
+          "description": "ID of the approver"
+        },
+        "approvalDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Date of approval"
+        },
+        "approvalComments": {
+          "type": "string",
+          "description": "Approval comments"
+        }
+      }
+    }
+  },
+  "required": [
+    "metadata",
+    "dataId",
+    "dataType",
+    "dataValue",
+    "effectiveDate",
+    "sourceSystem",
+    "validationStatus",
+    "updateFrequency"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,453 @@
+{
+  "version": "1.0",
+  "name": "CancellationWorkflow",
+  "desc": "Process trade cancellations with authorization and impact reversal",
+  "initialState": "requested",
+  "active": true,
+  "processParams": {
+    "01932b4e-7890-7123-8456-823456789abc": {
+      "name": "authorizeCancellation",
+      "description": "Authorizes cancellation request",
+      "type": "authorization"
+    },
+    "01932b4e-7890-7123-8456-823456789abd": {
+      "name": "assessCancellationImpact",
+      "description": "Assesses impact of cancellation on positions and reporting",
+      "type": "impact-assessment"
+    },
+    "01932b4e-7890-7123-8456-823456789abe": {
+      "name": "executeCancellation",
+      "description": "Executes trade cancellation",
+      "type": "execution"
+    },
+    "01932b4e-7890-7123-8456-823456789abf": {
+      "name": "generateCancellationReport",
+      "description": "Generates regulatory report for cancellation",
+      "type": "reporting"
+    },
+    "01932b4e-7890-7123-8456-823456789ac0": {
+      "name": "archiveCancellation",
+      "description": "Archives completed cancellation",
+      "type": "archival"
+    },
+    "01932b4e-7890-7123-8456-823456789ac1": {
+      "name": "notifyFailure",
+      "description": "Notifies relevant teams of processing failures",
+      "type": "notification"
+    }
+  },
+  "states": {
+    "requested": {
+      "transitions": [
+        {
+          "name": "startAuthorization",
+          "next": "authorizing",
+          "manual": false
+        }
+      ]
+    },
+    "authorizing": {
+      "transitions": [
+        {
+          "name": "authorizationSuccess",
+          "next": "authorized",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isAuthorizationSuccessful",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "authorization",
+                "responseTimeoutMs": 15000,
+                "context": "cancellation-authorization"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "authorizeCancellation",
+              "executionMode": "SYNC",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "authorization",
+                "responseTimeoutMs": 15000,
+                "processParamId": "01932b4e-7890-7123-8456-823456789abc"
+              }
+            }
+          ]
+        },
+        {
+          "name": "authorizationFailure",
+          "next": "authorization-failed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "hasAuthorizationErrors",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "authorization",
+                "responseTimeoutMs": 5000,
+                "context": "authorization-error-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "notifyFailure",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "notification",
+                "responseTimeoutMs": 10000,
+                "processParamId": "01932b4e-7890-7123-8456-823456789ac1"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "authorized": {
+      "transitions": [
+        {
+          "name": "startImpactAssessment",
+          "next": "impact-assessing",
+          "manual": false
+        }
+      ]
+    },
+    "impact-assessing": {
+      "transitions": [
+        {
+          "name": "impactAssessmentSuccess",
+          "next": "impact-assessed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isImpactAssessmentSuccessful",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "impact-assessment",
+                "responseTimeoutMs": 30000,
+                "context": "cancellation-impact-assessment"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "assessCancellationImpact",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "impact-assessment",
+                "responseTimeoutMs": 60000,
+                "processParamId": "01932b4e-7890-7123-8456-823456789abd"
+              }
+            }
+          ]
+        },
+        {
+          "name": "impactAssessmentFailure",
+          "next": "impact-assessment-failed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "hasImpactAssessmentErrors",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "impact-assessment",
+                "responseTimeoutMs": 5000,
+                "context": "impact-assessment-error-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "notifyFailure",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "notification",
+                "responseTimeoutMs": 10000,
+                "processParamId": "01932b4e-7890-7123-8456-823456789ac1"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "impact-assessed": {
+      "transitions": [
+        {
+          "name": "startExecution",
+          "next": "executing",
+          "manual": false
+        }
+      ]
+    },
+    "executing": {
+      "transitions": [
+        {
+          "name": "executionSuccess",
+          "next": "executed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isExecutionSuccessful",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "execution",
+                "responseTimeoutMs": 25000,
+                "context": "cancellation-execution"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "executeCancellation",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "execution",
+                "responseTimeoutMs": 45000,
+                "processParamId": "01932b4e-7890-7123-8456-823456789abe"
+              }
+            }
+          ]
+        },
+        {
+          "name": "executionFailure",
+          "next": "execution-failed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "hasExecutionErrors",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "execution",
+                "responseTimeoutMs": 5000,
+                "context": "execution-error-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "notifyFailure",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "notification",
+                "responseTimeoutMs": 10000,
+                "processParamId": "01932b4e-7890-7123-8456-823456789ac1"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "executed": {
+      "transitions": [
+        {
+          "name": "requiresReporting",
+          "next": "reporting",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isReportingRequired",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "reporting",
+                "responseTimeoutMs": 5000,
+                "context": "cancellation-reporting-check"
+              }
+            }
+          }
+        },
+        {
+          "name": "noReportingRequired",
+          "next": "completed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isReportingNotRequired",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "reporting",
+                "responseTimeoutMs": 5000,
+                "context": "cancellation-no-reporting-check"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "reporting": {
+      "transitions": [
+        {
+          "name": "reportingSuccess",
+          "next": "reported",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isReportingSuccessful",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "reporting",
+                "responseTimeoutMs": 30000,
+                "context": "cancellation-reporting"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "generateCancellationReport",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "reporting",
+                "responseTimeoutMs": 60000,
+                "processParamId": "01932b4e-7890-7123-8456-823456789abf"
+              }
+            }
+          ]
+        },
+        {
+          "name": "reportingFailure",
+          "next": "reporting-failed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "hasReportingErrors",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "reporting",
+                "responseTimeoutMs": 5000,
+                "context": "reporting-error-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "notifyFailure",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "notification",
+                "responseTimeoutMs": 10000,
+                "processParamId": "01932b4e-7890-7123-8456-823456789ac1"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "reported": {
+      "transitions": [
+        {
+          "name": "completeCancellation",
+          "next": "completed",
+          "manual": false
+        }
+      ]
+    },
+    "authorization-failed": {
+      "transitions": [
+        {
+          "name": "requestManualReview",
+          "next": "manual-review",
+          "manual": true
+        }
+      ]
+    },
+    "impact-assessment-failed": {
+      "transitions": [
+        {
+          "name": "requestManualReview",
+          "next": "manual-review",
+          "manual": true
+        }
+      ]
+    },
+    "execution-failed": {
+      "transitions": [
+        {
+          "name": "requestManualReview",
+          "next": "manual-review",
+          "manual": true
+        }
+      ]
+    },
+    "reporting-failed": {
+      "transitions": [
+        {
+          "name": "requestManualReview",
+          "next": "manual-review",
+          "manual": true
+        }
+      ]
+    },
+    "manual-review": {
+      "transitions": [
+        {
+          "name": "approveReprocessing",
+          "next": "reprocessing",
+          "manual": true
+        }
+      ]
+    },
+    "reprocessing": {
+      "transitions": [
+        {
+          "name": "restartAuthorization",
+          "next": "authorizing",
+          "manual": false
+        }
+      ]
+    },
+    "completed": {
+      "transitions": [
+        {
+          "name": "scheduleArchival",
+          "next": "archived",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isRetentionPeriodMet",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "archival",
+                "responseTimeoutMs": 5000,
+                "context": "retention-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "archiveCancellation",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "archival",
+                "responseTimeoutMs": 15000,
+                "processParamId": "01932b4e-7890-7123-8456-823456789ac0"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "archived": {
+      "transitions": []
+    }
+  }
+}

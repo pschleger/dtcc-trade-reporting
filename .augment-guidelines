@@ -1,3 +1,8 @@
-This is a gradle project.
+Before taking any action, you must look up the set of rules in .augment/rules directory
+and apply any rules that are pertinent to your action.
 
-When catching exceptions, you either log and handle the exception or throw it without logging. Never do both.
+Examples of actions would be:
+- Analysing a request
+- Communicating with the human
+- Writing code
+- Launching tests

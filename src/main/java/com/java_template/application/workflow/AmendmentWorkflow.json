@@ -1,0 +1,453 @@
+{
+  "version": "1.0",
+  "name": "AmendmentWorkflow",
+  "desc": "Process trade amendments with validation and impact assessment",
+  "initialState": "pending",
+  "active": true,
+  "processParams": {
+    "01932b4e-7890-7123-8456-723456789abc": {
+      "name": "validateAmendment",
+      "description": "Validates amendment request data and business rules",
+      "type": "validation"
+    },
+    "01932b4e-7890-7123-8456-723456789abd": {
+      "name": "assessImpact",
+      "description": "Assesses impact of amendment on positions and reporting",
+      "type": "impact-assessment"
+    },
+    "01932b4e-7890-7123-8456-723456789abe": {
+      "name": "applyAmendment",
+      "description": "Applies amendment to trade entity",
+      "type": "application"
+    },
+    "01932b4e-7890-7123-8456-723456789abf": {
+      "name": "generateAmendmentReport",
+      "description": "Generates regulatory report for amendment",
+      "type": "reporting"
+    },
+    "01932b4e-7890-7123-8456-723456789ac0": {
+      "name": "archiveAmendment",
+      "description": "Archives completed amendment",
+      "type": "archival"
+    },
+    "01932b4e-7890-7123-8456-723456789ac1": {
+      "name": "notifyFailure",
+      "description": "Notifies relevant teams of processing failures",
+      "type": "notification"
+    }
+  },
+  "states": {
+    "pending": {
+      "transitions": [
+        {
+          "name": "startValidation",
+          "next": "validating",
+          "manual": false
+        }
+      ]
+    },
+    "validating": {
+      "transitions": [
+        {
+          "name": "validationSuccess",
+          "next": "validated",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isValidationSuccessful",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "validation",
+                "responseTimeoutMs": 20000,
+                "context": "amendment-validation"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "validateAmendment",
+              "executionMode": "SYNC",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "validation",
+                "responseTimeoutMs": 20000,
+                "processParamId": "01932b4e-7890-7123-8456-723456789abc"
+              }
+            }
+          ]
+        },
+        {
+          "name": "validationFailure",
+          "next": "validation-failed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "hasValidationErrors",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "validation",
+                "responseTimeoutMs": 5000,
+                "context": "validation-error-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "notifyFailure",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "notification",
+                "responseTimeoutMs": 10000,
+                "processParamId": "01932b4e-7890-7123-8456-723456789ac1"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "validated": {
+      "transitions": [
+        {
+          "name": "startImpactAssessment",
+          "next": "impact-assessing",
+          "manual": false
+        }
+      ]
+    },
+    "impact-assessing": {
+      "transitions": [
+        {
+          "name": "impactAssessmentSuccess",
+          "next": "impact-assessed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isImpactAssessmentSuccessful",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "impact-assessment",
+                "responseTimeoutMs": 30000,
+                "context": "amendment-impact-assessment"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "assessImpact",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "impact-assessment",
+                "responseTimeoutMs": 60000,
+                "processParamId": "01932b4e-7890-7123-8456-723456789abd"
+              }
+            }
+          ]
+        },
+        {
+          "name": "impactAssessmentFailure",
+          "next": "impact-assessment-failed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "hasImpactAssessmentErrors",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "impact-assessment",
+                "responseTimeoutMs": 5000,
+                "context": "impact-assessment-error-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "notifyFailure",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "notification",
+                "responseTimeoutMs": 10000,
+                "processParamId": "01932b4e-7890-7123-8456-723456789ac1"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "impact-assessed": {
+      "transitions": [
+        {
+          "name": "startApplication",
+          "next": "applying",
+          "manual": false
+        }
+      ]
+    },
+    "applying": {
+      "transitions": [
+        {
+          "name": "applicationSuccess",
+          "next": "applied",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isApplicationSuccessful",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "application",
+                "responseTimeoutMs": 25000,
+                "context": "amendment-application"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "applyAmendment",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "application",
+                "responseTimeoutMs": 45000,
+                "processParamId": "01932b4e-7890-7123-8456-723456789abe"
+              }
+            }
+          ]
+        },
+        {
+          "name": "applicationFailure",
+          "next": "application-failed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "hasApplicationErrors",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "application",
+                "responseTimeoutMs": 5000,
+                "context": "application-error-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "notifyFailure",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "notification",
+                "responseTimeoutMs": 10000,
+                "processParamId": "01932b4e-7890-7123-8456-723456789ac1"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "applied": {
+      "transitions": [
+        {
+          "name": "requiresReporting",
+          "next": "reporting",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isReportingRequired",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "reporting",
+                "responseTimeoutMs": 5000,
+                "context": "amendment-reporting-check"
+              }
+            }
+          }
+        },
+        {
+          "name": "noReportingRequired",
+          "next": "completed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isReportingNotRequired",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "reporting",
+                "responseTimeoutMs": 5000,
+                "context": "amendment-no-reporting-check"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "reporting": {
+      "transitions": [
+        {
+          "name": "reportingSuccess",
+          "next": "reported",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isReportingSuccessful",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "reporting",
+                "responseTimeoutMs": 30000,
+                "context": "amendment-reporting"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "generateAmendmentReport",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "reporting",
+                "responseTimeoutMs": 60000,
+                "processParamId": "01932b4e-7890-7123-8456-723456789abf"
+              }
+            }
+          ]
+        },
+        {
+          "name": "reportingFailure",
+          "next": "reporting-failed",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "hasReportingErrors",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "reporting",
+                "responseTimeoutMs": 5000,
+                "context": "reporting-error-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "notifyFailure",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "notification",
+                "responseTimeoutMs": 10000,
+                "processParamId": "01932b4e-7890-7123-8456-723456789ac1"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "reported": {
+      "transitions": [
+        {
+          "name": "completeAmendment",
+          "next": "completed",
+          "manual": false
+        }
+      ]
+    },
+    "validation-failed": {
+      "transitions": [
+        {
+          "name": "requestManualReview",
+          "next": "manual-review",
+          "manual": true
+        }
+      ]
+    },
+    "impact-assessment-failed": {
+      "transitions": [
+        {
+          "name": "requestManualReview",
+          "next": "manual-review",
+          "manual": true
+        }
+      ]
+    },
+    "application-failed": {
+      "transitions": [
+        {
+          "name": "requestManualReview",
+          "next": "manual-review",
+          "manual": true
+        }
+      ]
+    },
+    "reporting-failed": {
+      "transitions": [
+        {
+          "name": "requestManualReview",
+          "next": "manual-review",
+          "manual": true
+        }
+      ]
+    },
+    "manual-review": {
+      "transitions": [
+        {
+          "name": "approveReprocessing",
+          "next": "reprocessing",
+          "manual": true
+        }
+      ]
+    },
+    "reprocessing": {
+      "transitions": [
+        {
+          "name": "restartValidation",
+          "next": "validating",
+          "manual": false
+        }
+      ]
+    },
+    "completed": {
+      "transitions": [
+        {
+          "name": "scheduleArchival",
+          "next": "archived",
+          "manual": false,
+          "criterion": {
+            "type": "function",
+            "function": {
+              "name": "isRetentionPeriodMet",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "archival",
+                "responseTimeoutMs": 5000,
+                "context": "retention-check"
+              }
+            }
+          },
+          "processors": [
+            {
+              "name": "archiveAmendment",
+              "executionMode": "ASYNC_NEW_TX",
+              "config": {
+                "attachEntity": true,
+                "calculationNodesTags": "archival",
+                "responseTimeoutMs": 15000,
+                "processParamId": "01932b4e-7890-7123-8456-723456789ac0"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "archived": {
+      "transitions": []
+    }
+  }
+}

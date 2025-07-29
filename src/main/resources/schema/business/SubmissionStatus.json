@@ -1,0 +1,373 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyoda.com/cloud/event/business/SubmissionStatus.json",
+  "title": "SubmissionStatus",
+  "description": "Detailed tracking of report submission attempts and outcomes",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "$ref": "common/BusinessEntityMetadata.json",
+      "description": "Entity metadata including workflow state"
+    },
+    "submissionId": {
+      "type": "string",
+      "description": "Unique submission identifier",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "reportId": {
+      "type": "string",
+      "description": "Reference to the RegulatoryReport being submitted"
+    },
+    "attemptNumber": {
+      "type": "integer",
+      "description": "Submission attempt number",
+      "minimum": 1
+    },
+    "submissionTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the submission was initiated"
+    },
+    "submissionMethod": {
+      "type": "string",
+      "description": "Method used for submission",
+      "enum": ["API", "SFTP", "WEB_PORTAL", "EMAIL", "FILE_UPLOAD", "BATCH_PROCESSING"]
+    },
+    "submissionEndpoint": {
+      "type": "object",
+      "description": "Details of the submission endpoint",
+      "properties": {
+        "endpointType": {
+          "type": "string",
+          "enum": ["REST_API", "SOAP_API", "SFTP_SERVER", "WEB_FORM", "EMAIL_ADDRESS"]
+        },
+        "endpointUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL or address of the endpoint"
+        },
+        "endpointVersion": {
+          "type": "string",
+          "description": "Version of the endpoint API"
+        },
+        "authenticationMethod": {
+          "type": "string",
+          "enum": ["API_KEY", "OAUTH", "CERTIFICATE", "USERNAME_PASSWORD", "TOKEN"]
+        }
+      },
+      "required": ["endpointType", "endpointUrl"]
+    },
+    "submissionPayload": {
+      "type": "object",
+      "description": "Details of the submitted payload",
+      "properties": {
+        "payloadSize": {
+          "type": "integer",
+          "description": "Size of the payload in bytes",
+          "minimum": 0
+        },
+        "payloadFormat": {
+          "type": "string",
+          "enum": ["XML", "JSON", "CSV", "FIX", "SWIFT", "BINARY"]
+        },
+        "compressionUsed": {
+          "type": "boolean",
+          "description": "Whether compression was used"
+        },
+        "compressionType": {
+          "type": "string",
+          "enum": ["GZIP", "ZIP", "BZIP2"],
+          "description": "Type of compression if used"
+        },
+        "encryptionUsed": {
+          "type": "boolean",
+          "description": "Whether encryption was used"
+        },
+        "encryptionType": {
+          "type": "string",
+          "enum": ["AES", "RSA", "PGP"],
+          "description": "Type of encryption if used"
+        },
+        "checksumType": {
+          "type": "string",
+          "enum": ["MD5", "SHA1", "SHA256", "SHA512"]
+        },
+        "checksumValue": {
+          "type": "string",
+          "description": "Checksum value for integrity verification"
+        }
+      },
+      "required": ["payloadSize", "payloadFormat"]
+    },
+    "responseCode": {
+      "type": "string",
+      "description": "Response code from the regulatory system",
+      "maxLength": 50
+    },
+    "responseMessage": {
+      "type": "string",
+      "description": "Response message from the regulatory system",
+      "maxLength": 2000
+    },
+    "responseTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the response was received"
+    },
+    "responseHeaders": {
+      "type": "object",
+      "description": "HTTP headers or metadata from the response",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "acknowledgmentId": {
+      "type": "string",
+      "description": "Acknowledgment ID from the regulatory system",
+      "maxLength": 100
+    },
+    "status": {
+      "type": "string",
+      "description": "Status of this submission attempt",
+      "enum": [
+        "PENDING",
+        "IN_PROGRESS",
+        "SUCCESSFUL",
+        "FAILED",
+        "TIMEOUT",
+        "REJECTED",
+        "ACKNOWLEDGED",
+        "PARTIALLY_SUCCESSFUL"
+      ]
+    },
+    "errorDetails": {
+      "type": "array",
+      "description": "Detailed error information if submission failed",
+      "items": {
+        "type": "object",
+        "properties": {
+          "errorCode": {
+            "type": "string",
+            "description": "Error code from the regulatory system"
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "errorSeverity": {
+            "type": "string",
+            "enum": ["FATAL", "ERROR", "WARNING", "INFO"]
+          },
+          "errorCategory": {
+            "type": "string",
+            "enum": [
+              "AUTHENTICATION",
+              "AUTHORIZATION",
+              "VALIDATION",
+              "BUSINESS_RULE",
+              "TECHNICAL",
+              "TIMEOUT",
+              "NETWORK",
+              "FORMAT"
+            ]
+          },
+          "fieldPath": {
+            "type": "string",
+            "description": "Path to the field causing the error"
+          },
+          "recordNumber": {
+            "type": "integer",
+            "description": "Record number where the error occurred"
+          },
+          "suggestedAction": {
+            "type": "string",
+            "description": "Suggested action to resolve the error"
+          }
+        },
+        "required": ["errorCode", "errorMessage", "errorSeverity", "errorCategory"]
+      }
+    },
+    "performanceMetrics": {
+      "type": "object",
+      "description": "Performance metrics for the submission",
+      "properties": {
+        "requestPreparationTime": {
+          "type": "integer",
+          "description": "Time to prepare the request in milliseconds"
+        },
+        "networkLatency": {
+          "type": "integer",
+          "description": "Network latency in milliseconds"
+        },
+        "serverProcessingTime": {
+          "type": "integer",
+          "description": "Server processing time in milliseconds"
+        },
+        "totalResponseTime": {
+          "type": "integer",
+          "description": "Total response time in milliseconds"
+        },
+        "throughput": {
+          "type": "number",
+          "description": "Throughput in bytes per second"
+        },
+        "retryCount": {
+          "type": "integer",
+          "description": "Number of retries within this attempt",
+          "minimum": 0
+        }
+      }
+    },
+    "retryInformation": {
+      "type": "object",
+      "description": "Retry configuration and status",
+      "properties": {
+        "retryEnabled": {
+          "type": "boolean",
+          "description": "Whether retry is enabled for this submission"
+        },
+        "maxRetries": {
+          "type": "integer",
+          "description": "Maximum number of retry attempts",
+          "minimum": 0
+        },
+        "retryInterval": {
+          "type": "integer",
+          "description": "Retry interval in seconds",
+          "minimum": 0
+        },
+        "backoffStrategy": {
+          "type": "string",
+          "enum": ["FIXED", "LINEAR", "EXPONENTIAL", "CUSTOM"]
+        },
+        "nextRetryTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp for the next retry attempt"
+        },
+        "retryReason": {
+          "type": "string",
+          "description": "Reason for retry"
+        }
+      },
+      "required": ["retryEnabled"]
+    },
+    "regulatoryFeedback": {
+      "type": "object",
+      "description": "Feedback from the regulatory authority",
+      "properties": {
+        "feedbackReceived": {
+          "type": "boolean",
+          "description": "Whether feedback was received"
+        },
+        "feedbackTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "feedbackType": {
+          "type": "string",
+          "enum": ["ACCEPTANCE", "REJECTION", "QUERY", "CLARIFICATION_REQUEST", "WARNING"]
+        },
+        "feedbackMessage": {
+          "type": "string",
+          "description": "Feedback message from the regulator"
+        },
+        "actionRequired": {
+          "type": "boolean",
+          "description": "Whether action is required from the submitter"
+        },
+        "responseDeadline": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Deadline for response if action is required"
+        }
+      },
+      "required": ["feedbackReceived"]
+    },
+    "complianceValidation": {
+      "type": "object",
+      "description": "Compliance validation results",
+      "properties": {
+        "validationPerformed": {
+          "type": "boolean",
+          "description": "Whether compliance validation was performed"
+        },
+        "validationTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "validationResults": {
+          "type": "array",
+          "description": "Compliance validation results",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ruleId": {
+                "type": "string"
+              },
+              "ruleDescription": {
+                "type": "string"
+              },
+              "validationStatus": {
+                "type": "string",
+                "enum": ["PASS", "FAIL", "WARNING", "NOT_APPLICABLE"]
+              },
+              "validationMessage": {
+                "type": "string"
+              }
+            },
+            "required": ["ruleId", "validationStatus"]
+          }
+        }
+      },
+      "required": ["validationPerformed"]
+    },
+    "auditTrail": {
+      "type": "array",
+      "description": "Audit trail for this submission",
+      "items": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "SUBMISSION_INITIATED",
+              "SUBMISSION_SENT",
+              "RESPONSE_RECEIVED",
+              "ERROR_OCCURRED",
+              "RETRY_SCHEDULED",
+              "SUBMISSION_COMPLETED",
+              "SUBMISSION_FAILED"
+            ]
+          },
+          "actor": {
+            "type": "string",
+            "description": "System or user that performed the action"
+          },
+          "details": {
+            "type": "string",
+            "description": "Additional details about the action"
+          }
+        },
+        "required": ["timestamp", "action", "actor"]
+      }
+    }
+  },
+  "required": [
+    "metadata",
+    "submissionId",
+    "reportId",
+    "attemptNumber",
+    "submissionTimestamp",
+    "submissionMethod",
+    "submissionEndpoint",
+    "submissionPayload",
+    "status"
+  ],
+  "additionalProperties": false
+}

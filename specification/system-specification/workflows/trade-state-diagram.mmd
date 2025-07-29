@@ -1,0 +1,36 @@
+graph TD
+    A[new] --> B[validating]
+    B --> C[validated]
+    B --> D[validation-failed]
+    C --> E[confirmed]
+    E --> F[active]
+    F --> G[amending]
+    F --> H[cancelling]
+    F --> I[maturing]
+    G --> F
+    G --> J[amendment-failed]
+    H --> K[cancelled]
+    H --> L[cancellation-failed]
+    I --> M[matured]
+    D --> N[manual-review]
+    J --> N
+    L --> N
+    N --> O[revalidating]
+    N --> P[rejected]
+    O --> B
+    K --> Q[archived]
+    M --> Q
+    P --> Q
+    
+    %% Styling
+    classDef initial fill:#e1f5fe
+    classDef terminal fill:#f3e5f5
+    classDef error fill:#ffebee
+    classDef manual fill:#fff3e0
+    classDef active fill:#e8f5e8
+    
+    class A initial
+    class K,M,P,Q terminal
+    class D,J,L error
+    class N manual
+    class F active
