@@ -20,24 +20,14 @@
 
     <nav class="main-nav">
         <div class="nav-container">
-            {% set topLevelFolders = collections.docs | getTopLevelFolders %}
+            {% set navigationConfig = collections.docs | getNavigationConfig(navigation) %}
             {% set currentSection = page.inputPath | replace('./content/', '') | split('/') | first %}
-            {% for folder in topLevelFolders %}
-                <button class="nav-tab{% if folder == currentSection %} active{% endif %}" data-section="{{ folder }}">
-                    {% if folder == "specification" %}
-                        <i class="fas fa-file-text"></i>
-                    {% elif folder == "schema" %}
-                        <i class="fas fa-code"></i>
-                    {% elif folder == "interfaces" %}
-                        <i class="fas fa-plug"></i>
-                    {% elif folder == "api" %}
-                        <i class="fas fa-cogs"></i>
-                    {% elif folder == "guides" %}
-                        <i class="fas fa-book"></i>
-                    {% else %}
-                        <i class="fas fa-folder"></i>
-                    {% endif %}
-                    {{ folder | replace('-', ' ') | title }}
+            {% for navItem in navigationConfig %}
+                <button class="nav-tab{% if navItem.id == currentSection %} active{% endif %}"
+                        data-section="{{ navItem.id }}"
+                        title="{{ navItem.description }}">
+                    <i class="{{ navItem.icon }}"></i>
+                    {{ navItem.title }}
                 </button>
             {% endfor %}
         </div>
@@ -52,16 +42,16 @@
                 <nav class="sidebar-nav">
                     {% import "navigation.njk" as nav %}
                     {% set navTree = collections.docs | buildNavTree %}
-                    {% set topLevelFolders = collections.docs | getTopLevelFolders %}
+                    {% set navigationConfig = collections.docs | getNavigationConfig(navigation) %}
 
-                    {% for folder in topLevelFolders %}
-                        <div class="nav-section" data-section="{{ folder }}"{% if folder != currentSection %} style="display: none;"{% endif %}>
-                            {% if navTree[folder] and navTree[folder].children %}
-                                {{ nav.renderNavTree(navTree[folder].children, 0, page.url) }}
+                    {% for navItem in navigationConfig %}
+                        <div class="nav-section" data-section="{{ navItem.id }}"{% if navItem.id != currentSection %} style="display: none;"{% endif %}>
+                            {% if navTree[navItem.id] and navTree[navItem.id].children %}
+                                {{ nav.renderNavTree(navTree[navItem.id].children, 0, page.url) }}
                             {% else %}
                                 <div class="nav-placeholder">
-                                    <p>{{ folder | replace('-', ' ') | title }} documentation will be displayed here.</p>
-                                    <p>Currently showing files from the {{ folder }} directory.</p>
+                                    <p>{{ navItem.title }} documentation will be displayed here.</p>
+                                    <p>Currently showing files from the {{ navItem.id }} directory.</p>
                                 </div>
                             {% endif %}
                         </div>

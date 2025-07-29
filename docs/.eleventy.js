@@ -91,6 +91,55 @@ module.exports = function(eleventyConfig) {
     return Array.from(folders).sort();
   });
 
+  // Add a filter to get navigation configuration with fallback to automatic detection
+  eleventyConfig.addFilter("getNavigationConfig", function(collection, navigationData) {
+    // If navigation configuration exists, use it
+    if (navigationData && navigationData.topMenu && navigationData.topMenu.length > 0) {
+      // Validate that configured folders actually exist in content
+      const existingFolders = new Set();
+      collection.forEach(item => {
+        const pathParts = item.inputPath.replace('./content/', '').split('/');
+        if (pathParts.length > 1) {
+          existingFolders.add(pathParts[0]);
+        }
+      });
+
+      // Filter out configured items that don't have corresponding content folders
+      return navigationData.topMenu.filter(item => existingFolders.has(item.id));
+    }
+
+    // Fallback to automatic detection
+    const folders = new Set();
+    collection.forEach(item => {
+      const pathParts = item.inputPath.replace('./content/', '').split('/');
+      if (pathParts.length > 1) {
+        folders.add(pathParts[0]);
+      }
+    });
+
+    // Convert to navigation format with default icons
+    return Array.from(folders).sort().map(folder => ({
+      id: folder,
+      title: folder.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      icon: getDefaultIcon(folder),
+      description: `${folder.replace('-', ' ')} documentation`
+    }));
+  });
+
+  // Helper function to get default icons for folders
+  function getDefaultIcon(folder) {
+    const iconMap = {
+      'specification': 'fas fa-file-text',
+      'schema': 'fas fa-code',
+      'interfaces': 'fas fa-plug',
+      'api': 'fas fa-cogs',
+      'guides': 'fas fa-book',
+      'background': 'fas fa-info-circle',
+      'system-specification': 'fas fa-file-text'
+    };
+    return iconMap[folder.toLowerCase()] || 'fas fa-folder';
+  }
+
   // Add a function to build navigation tree
   eleventyConfig.addFilter("buildNavTree", function(collection) {
     const tree = {};
