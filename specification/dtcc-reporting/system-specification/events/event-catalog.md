@@ -114,6 +114,17 @@ Business event specifications and requirements:
 - **[External Interface Events](./external-events.md)** - Detailed specifications and data structures for external events
 - **[Business Event Processing](./event-driven-architecture.md)** - Business requirements for event processing and compliance
 
+### Event Correlation and Validation Documentation
+Comprehensive event correlation, validation, and operational support:
+
+- **[Event Correlation Matrix](./event-correlation-matrix.md)** - Complete correlation patterns and relationships between all event types
+- **[Event Causality Chains](./event-causality-chains.md)** - Detailed causality relationships showing how events trigger subsequent events
+- **[Event Timing Dependencies](./event-timing-dependencies.md)** - Critical path analysis and timing constraints for regulatory compliance
+- **[Event Traceability and Audit](./event-traceability-audit.md)** - End-to-end traceability for regulatory audit and compliance purposes
+- **[Event Coverage Validation](./event-coverage-validation.md)** - Comprehensive validation against all business requirements and use cases
+- **[Event Troubleshooting Guide](./event-troubleshooting-guide.md)** - Operational support guide for diagnosing and resolving event issues
+- **[Event Architecture Patterns](./event-architecture-patterns.md)** - Event-driven architecture patterns and best practices
+
 ---
 
 ## Event Catalog Validation
