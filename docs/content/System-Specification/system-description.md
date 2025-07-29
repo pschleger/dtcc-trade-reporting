@@ -37,5 +37,5 @@ The system shall be built using the Cyoda EDBMS entity-driven architecture where
 
 This system specification shall be based on the following foundational documents:
 
-- **[Cyoda Design Principles](../cyoda-design-principles.md)** - Core architectural patterns and entity-driven design principles for the Cyoda platform
-- **[Workflow Configuration Guide](../workflow-config-guide.md)** - Technical specification for defining entity workflows and state machines using Cyoda JSON schema
+- **[Cyoda Design Principles](/content/Background/cyoda-design-principles/)** - Core architectural patterns and entity-driven design principles for the Cyoda platform
+- **[Workflow Configuration Guide](/content/Background/workflow-config-guide/)** - Technical specification for defining entity workflows and state machines using Cyoda JSON schema
