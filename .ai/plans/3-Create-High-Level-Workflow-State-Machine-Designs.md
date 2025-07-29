@@ -17,7 +17,7 @@
 10. Document manual vs automated transition patterns
 11. Define terminal states and completion criteria for each workflow
 12. Create a workflow interaction diagram showing how different state machines coordinate
-13. Ensure designs align with Cyoda [WorkflowConfiguration.json](../.ai/tasks/dtcc-reporting/schema/common/statemachine/conf/WorkflowConfiguration.json) schema requirements
+13. Ensure designs align with Cyoda [WorkflowConfiguration.json](../../specification/dtcc-reporting/schema/common/statemachine/conf/WorkflowConfiguration.json) schema requirements
 14. Validate that state names follow schema requirements (start with letter, alphanumeric/underscore/hyphen only)
 
 **Success Criteria:**
@@ -27,6 +27,6 @@
 - [ ] Cross-workflow dependencies documented
 - [ ] Terminal states and completion criteria defined
 - [ ] Workflow interaction diagram created
-- [ ] Designs comply with Cyoda [WorkflowConfiguration.json](../.ai/tasks/dtcc-reporting/schema/common/statemachine/conf/WorkflowConfiguration.json) schema structure
+- [ ] Designs comply with Cyoda [WorkflowConfiguration.json](../../specification/dtcc-reporting/schema/common/statemachine/conf/WorkflowConfiguration.json) schema structure
 - [ ] State naming conventions follow schema requirements
 - [ ] Validation that all use cases from Task 2 are supported by the workflows

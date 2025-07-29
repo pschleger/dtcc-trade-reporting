@@ -1,6 +1,6 @@
 # Task: Create High-Level System Architecture and Entity Overview
 
-**Problem:** Establish the foundational understanding of the DTCC regulatory reporting system by defining the core business entities, their relationships, and the overall system architecture before diving into detailed specifications. The system architecture must be based on the Cyoda EDBMS platform and comply with the attached [Cyoda Design Principles](../.ai/tasks/dtcc-reporting/cyoda-design-principles.md).
+**Problem:** Establish the foundational understanding of the DTCC regulatory reporting system by defining the core business entities, their relationships, and the overall system architecture before diving into detailed specifications. The system architecture must be based on the Cyoda EDBMS platform and comply with the attached [Cyoda Design Principles](../../specification/dtcc-reporting/cyoda-design-principles.md).
 
 In such an event-based architecture, there are no special Engines that process events. Instead, events are processed by the Cyoda platform based on the defined workflows and state machines.
 

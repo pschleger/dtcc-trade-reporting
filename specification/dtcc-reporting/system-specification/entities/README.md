@@ -4,6 +4,9 @@
 
 This directory contains comprehensive JSON Schema definitions for all business entities in the DTCC Regulatory Reporting System. These schemas support the complete lifecycle of OTC derivatives trade processing, position management, and regulatory reporting.
 
+Entity Schema JSON files are located in the `src/main/resources/schema/business/` directory of the codebase.
+DO NOT PUT ANY entity schema artefacts in this directory.
+
 ## Schema Organization
 
 ### Master Data Entities

@@ -28,5 +28,5 @@
 - [ ] Error handling scenarios specified
 - [ ] Performance requirements established
 - [ ] Component interaction diagrams created
-- [ ] Specifications align with Cyoda [WorkflowConfiguration.json](../.ai/tasks/dtcc-reporting/schema/common/statemachine/conf/WorkflowConfiguration.json) schema requirements
+- [ ] Specifications align with Cyoda [WorkflowConfiguration.json](../../specification/dtcc-reporting/schema/common/statemachine/conf/WorkflowConfiguration.json) schema requirements
 - [ ] Specifications validated against business requirements

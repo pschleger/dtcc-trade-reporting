@@ -4,6 +4,9 @@
 
 This directory contains the high-level workflow state machine designs for the DTCC Regulatory Reporting System. These designs establish the foundation for detailed Cyoda workflow configurations and ensure comprehensive coverage of all business scenarios.
 
+The actual workflow configurations are located in the `src/main/resources/workflows/` directory of the codebase.
+DO NOT PUT ANY workflow configuration artefacts in this directory.
+
 ## Directory Structure
 
 ```
