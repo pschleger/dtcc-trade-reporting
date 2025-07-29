@@ -32,6 +32,42 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addFilter("relativePath", function(str) {
     return str.replace(/^docs\//, '');
   });
+
+  // Add a split filter
+  eleventyConfig.addFilter("split", function(str, delimiter) {
+    return str.split(delimiter);
+  });
+
+  // Add a first filter to get the first element of an array
+  eleventyConfig.addFilter("first", function(array) {
+    return Array.isArray(array) ? array[0] : array;
+  });
+
+  // Add a filter to check if a folder contains the current page (recursively)
+  eleventyConfig.addFilter("containsCurrentPage", function(node, currentUrl) {
+    if (!currentUrl || !node) return false;
+
+    // Helper function to check if a node or its children contain the current page
+    function nodeContainsCurrentPage(node, currentUrl) {
+      // If this is a file node, check if it matches the current URL
+      if (node.item && node.item.url === currentUrl) {
+        return true;
+      }
+
+      // If this is a folder, check all children recursively
+      if (node.children) {
+        for (const childKey in node.children) {
+          if (nodeContainsCurrentPage(node.children[childKey], currentUrl)) {
+            return true;
+          }
+        }
+      }
+
+      return false;
+    }
+
+    return nodeContainsCurrentPage(node, currentUrl);
+  });
   
   // Add collection for all documentation pages
   eleventyConfig.addCollection("docs", function(collectionApi) {

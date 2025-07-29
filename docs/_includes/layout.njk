@@ -21,8 +21,9 @@
     <nav class="main-nav">
         <div class="nav-container">
             {% set topLevelFolders = collections.docs | getTopLevelFolders %}
+            {% set currentSection = page.inputPath | replace('./content/', '') | split('/') | first %}
             {% for folder in topLevelFolders %}
-                <button class="nav-tab{% if loop.first %} active{% endif %}" data-section="{{ folder }}">
+                <button class="nav-tab{% if folder == currentSection %} active{% endif %}" data-section="{{ folder }}">
                     {% if folder == "specification" %}
                         <i class="fas fa-file-text"></i>
                     {% elif folder == "schema" %}
@@ -46,7 +47,7 @@
         <aside class="sidebar">
             <div class="sidebar-content">
                 <h6 class="sidebar-heading">
-                    <span>Documentation</span>
+                    <span>{% if currentSection %}{{ currentSection | replace('-', ' ') | title }}{% else %}Documentation{% endif %}</span>
                 </h6>
                 <nav class="sidebar-nav">
                     {% import "navigation.njk" as nav %}
@@ -54,7 +55,7 @@
                     {% set topLevelFolders = collections.docs | getTopLevelFolders %}
 
                     {% for folder in topLevelFolders %}
-                        <div class="nav-section" data-section="{{ folder }}"{% if not loop.first %} style="display: none;"{% endif %}>
+                        <div class="nav-section" data-section="{{ folder }}"{% if folder != currentSection %} style="display: none;"{% endif %}>
                             {% if navTree[folder] and navTree[folder].children %}
                                 {{ nav.renderNavTree(navTree[folder].children, 0, page.url) }}
                             {% else %}
@@ -107,6 +108,7 @@
             const navTabs = document.querySelectorAll('.nav-tab');
             const navSections = document.querySelectorAll('.nav-section');
 
+            // Set up tab click handlers
             navTabs.forEach(tab => {
                 tab.addEventListener('click', function() {
                     const targetSection = this.getAttribute('data-section');
@@ -133,16 +135,16 @@
                 });
             });
 
-            // Auto-expand folders containing the current page
-            const activeLink = document.querySelector('.sidebar-link.active');
-            if (activeLink) {
-                let parent = activeLink.parentElement;
-                while (parent && parent.classList.contains('nav-folder-content')) {
-                    const folder = parent.parentElement;
-                    if (folder && folder.classList.contains('nav-folder')) {
-                        folder.classList.add('expanded');
-                    }
-                    parent = folder ? folder.parentElement : null;
+            // Folder expansion is now handled in the template, no JavaScript needed
+
+            // Ensure the correct navigation state is maintained on page load
+            // If no tab is active (e.g., on home page), activate the first tab
+            const activeTab = document.querySelector('.nav-tab.active');
+            if (!activeTab && navTabs.length > 0) {
+                navTabs[0].classList.add('active');
+                const firstSection = navSections[0];
+                if (firstSection) {
+                    firstSection.style.display = 'block';
                 }
             }
 
