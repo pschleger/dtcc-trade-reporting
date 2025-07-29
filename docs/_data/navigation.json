@@ -1,16 +1,16 @@
 {
   "topMenu": [
     {
-      "id": "Background",
-      "title": "Background",
-      "icon": "fas fa-info-circle",
-      "description": "Background information and context for the DTCC Trade Reporting system"
-    },
-    {
       "id": "System-Specification",
       "title": "System Specification",
       "icon": "fas fa-cogs",
       "description": "System specification -> What to implement"
+    },
+    {
+      "id": "Background",
+      "title": "Background",
+      "icon": "fas fa-info-circle",
+      "description": "Background information and context for the DTCC Trade Reporting system"
     }
   ]
 }
