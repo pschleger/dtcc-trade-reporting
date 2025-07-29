@@ -8,13 +8,13 @@ This glossary provides definitions for terms, acronyms, and concepts used throug
 
 ## A
 
-**Amendment**  
-A modification to an existing trade that changes one or more trade attributes such as notional amount, maturity date, or terms. Amendments must be reported to regulatory authorities within specified timeframes.  
-*See also: [Amendment Processing](workflows/workflow-state-machines.md#amendment-processing), [Trade Lifecycle](business/business-use-cases.md#trade-lifecycle)*
+**Amendment**
+A modification to an existing trade that changes one or more trade attributes such as notional amount, maturity date, or terms. Amendments must be reported to regulatory authorities within specified timeframes.
+*See also: [Amendment Processing](workflows/workflow-state-machines.md#7-amendment-workflow), [Trade Processing](business/business-use-cases.md#1-trade-processing-use-cases)*
 
-**API Gateway**  
-The entry point for all external API requests, providing authentication, authorization, rate limiting, and request routing to internal services.  
-*See also: [System Architecture](architecture/system-architecture.md), [External Interfaces](../external-interfaces/external-interface-specifications.md)*
+**API Gateway**
+The entry point for all external API requests, providing authentication, authorization, rate limiting, and request routing to internal services.
+*See also: [System Architecture](architecture/system-architecture.md), [External Interfaces](external-interfaces/external-interface-specifications.md)*
 
 **Audit Trail**  
 A complete chronological record of all system activities, entity changes, and business transactions maintained for regulatory compliance and operational monitoring.  
@@ -24,9 +24,9 @@ A complete chronological record of all system activities, entity changes, and bu
 
 ## B
 
-**Batch Processing**  
-Processing mode where multiple entities or transactions are processed together in groups, typically used for high-volume operations and end-of-day processing.  
-*See also: [Batch Processing Workflow](workflows/workflow-state-machines.md#batch-processing), [Performance Requirements](requirements/performance-requirements.md)*
+**Batch Processing**
+Processing mode where multiple entities or transactions are processed together in groups, typically used for high-volume operations and end-of-day processing.
+*See also: [Batch Processing Workflow](workflows/workflow-state-machines.md#10-processingbatch-workflow), [Performance Requirements](requirements/performance-requirements.md)*
 
 **Business Event**  
 An occurrence in the business domain that triggers system processing, such as trade confirmation receipt or position threshold breach.  
@@ -40,17 +40,17 @@ A statement that defines or constrains business operations, implemented as crite
 
 ## C
 
-**Cancellation**  
-The complete reversal of a previously confirmed trade, removing all associated obligations and positions.  
-*See also: [Cancellation Processing](workflows/workflow-state-machines.md#cancellation-processing), [Trade Lifecycle](business/business-use-cases.md)*
+**Cancellation**
+The complete reversal of a previously confirmed trade, removing all associated obligations and positions.
+*See also: [Cancellation Processing](workflows/workflow-state-machines.md#8-cancellation-workflow), [Trade Processing](business/business-use-cases.md#1-trade-processing-use-cases)*
 
-**Counterparty**  
-The other party in a financial transaction or trade, identified by Legal Entity Identifier (LEI) and subject to eligibility and credit checks.  
-*See also: [Counterparty Management](functional-specifications/processors/counterparty-management/), [LEI Validation](../external-interfaces/external-interface-specifications.md#lei-registry)*
+**Counterparty**
+The other party in a financial transaction or trade, identified by Legal Entity Identifier (LEI) and subject to eligibility and credit checks.
+*See also: [Counterparty Management](functional-specifications/processors/counterparty-management/), [LEI Validation](external-interfaces/external-interface-specifications.md#lei-registry)*
 
-**Criteria Component**  
-A functional component that evaluates business logic, data quality, or processing conditions to determine workflow paths and decisions.  
-*See also: [Functional Specifications](functional-specifications/README.md), [Criteria Categories](indexes/functional-specifications-index.md#criteria-components-catalog)*
+**Criteria Component**
+A functional component that evaluates business logic, data quality, or processing conditions to determine workflow paths and decisions.
+*See also: [Functional Specifications](functional-specifications/README.md), [Criteria Categories](functional-specifications/criteria/)*
 
 **Cyoda EDBMS**  
 Entity Database Management System - the underlying platform providing entity-driven architecture, workflow processing, and data management capabilities.  
@@ -60,13 +60,13 @@ Entity Database Management System - the underlying platform providing entity-dri
 
 ## D
 
-**Data Quality**  
-The measure of data accuracy, completeness, consistency, and timeliness, monitored and maintained through automated validation and quality scoring.  
-*See also: [Data Quality Validation](workflows/workflow-state-machines.md#data-quality), [Validation Criteria](functional-specifications/criteria/data-quality-criteria/)*
+**Data Quality**
+The measure of data accuracy, completeness, consistency, and timeliness, monitored and maintained through automated validation and quality scoring.
+*See also: [Data Quality Validation](functional-specifications/criteria/data-quality-criteria/), [Validation Criteria](functional-specifications/criteria/validation-criteria/)*
 
-**DTCC GTR**  
-Depository Trust & Clearing Corporation Global Trade Repository - the regulatory repository for OTC derivatives trade reporting.  
-*See also: [DTCC Integration](../external-interfaces/external-interface-specifications.md#dtcc-gtr), [Regulatory Reporting](workflows/workflow-state-machines.md#regulatory-reporting)*
+**DTCC GTR**
+Depository Trust & Clearing Corporation Global Trade Repository - the regulatory repository for OTC derivatives trade reporting.
+*See also: [DTCC Integration](external-interfaces/external-interface-specifications.md#dtcc-gtr), [Regulatory Reporting](functional-specifications/processors/regulatory-reporting/)*
 
 ---
 
@@ -92,9 +92,9 @@ An architectural pattern where system components communicate through events, ena
 
 ## F
 
-**FpML**  
-Financial products Markup Language - an XML-based standard for representing financial derivatives and structured products.  
-*See also: [Trade Processing](workflows/workflow-state-machines.md#trade-processing), [External Interfaces](../external-interfaces/external-interface-specifications.md)*
+**FpML**
+Financial products Markup Language - an XML-based standard for representing financial derivatives and structured products.
+*See also: [Trade Processing](functional-specifications/processors/trade-management/), [External Interfaces](external-interfaces/external-interface-specifications.md)*
 
 **Functional Component**  
 A reusable software component that implements specific business logic, either as a Criteria (decision-making) or Processor (data transformation) component.  
@@ -104,9 +104,9 @@ A reusable software component that implements specific business logic, either as
 
 ## G
 
-**GLEIF**  
-Global Legal Entity Identifier Foundation - the organization that maintains the global LEI registry for legal entity identification.  
-*See also: [LEI Registry](../external-interfaces/external-interface-specifications.md#lei-registry), [LEI Validation](functional-specifications/processors/reference-data-management/)*
+**GLEIF**
+Global Legal Entity Identifier Foundation - the organization that maintains the global LEI registry for legal entity identification.
+*See also: [LEI Registry](external-interfaces/external-interface-specifications.md#lei-registry), [LEI Validation](functional-specifications/processors/reference-data-management/)*
 
 **GTR**  
 Global Trade Repository - see DTCC GTR.
@@ -115,49 +115,49 @@ Global Trade Repository - see DTCC GTR.
 
 ## L
 
-**LEI**  
-Legal Entity Identifier - a 20-character alphanumeric code that uniquely identifies legal entities participating in financial transactions.  
-*See also: [LEI Validation](../external-interfaces/external-interface-specifications.md#lei-registry), [Counterparty Management](functional-specifications/processors/counterparty-management/)*
+**LEI**
+Legal Entity Identifier - a 20-character alphanumeric code that uniquely identifies legal entities participating in financial transactions.
+*See also: [LEI Validation](external-interfaces/external-interface-specifications.md#lei-registry), [Counterparty Management](functional-specifications/processors/counterparty-management/)*
 
-**Lifecycle Event**  
-A significant change in an entity's state or attributes, such as trade amendment, cancellation, or maturity.  
-*See also: [Trade Lifecycle](business/business-use-cases.md), [Entity Lifecycle](entities/entity-overview.md)*
+**Lifecycle Event**
+A significant change in an entity's state or attributes, such as trade amendment, cancellation, or maturity.
+*See also: [Trade Processing](business/business-use-cases.md#1-trade-processing-use-cases), [Entity Lifecycle](entities/entity-overview.md)*
 
 ---
 
 ## O
 
-**OTC**  
-Over-The-Counter - financial transactions conducted directly between parties without going through a centralized exchange.  
-*See also: [Trade Processing](workflows/workflow-state-machines.md#trade-processing), [Regulatory Reporting](business/business-use-cases.md)*
+**OTC**
+Over-The-Counter - financial transactions conducted directly between parties without going through a centralized exchange.
+*See also: [Trade Processing](functional-specifications/processors/trade-management/), [Regulatory Reporting](business/business-use-cases.md#3-regulatory-reporting-use-cases)*
 
 ---
 
 ## P
 
-**Position**  
-An aggregated view of trades and exposures for a specific product, counterparty, or portfolio, calculated for risk management and regulatory reporting.  
-*See also: [Position Management](workflows/workflow-state-machines.md#position-management), [Position Entity](entities/entity-overview.md)*
+**Position**
+An aggregated view of trades and exposures for a specific product, counterparty, or portfolio, calculated for risk management and regulatory reporting.
+*See also: [Position Management](functional-specifications/processors/position-management/), [Position Entity](entities/entity-overview.md)*
 
-**Processor Component**  
-A functional component that performs data transformation, business process execution, or system integration operations.  
-*See also: [Functional Specifications](functional-specifications/README.md), [Processor Categories](indexes/functional-specifications-index.md#processor-components-catalog)*
+**Processor Component**
+A functional component that performs data transformation, business process execution, or system integration operations.
+*See also: [Functional Specifications](functional-specifications/README.md), [Processor Categories](functional-specifications/processors/)*
 
 ---
 
 ## R
 
-**Reconciliation**  
-The process of comparing and aligning data from different sources to identify and resolve discrepancies.  
-*See also: [Position Reconciliation](workflows/workflow-state-machines.md#reconciliation), [Reconciliation Processing](functional-specifications/processors/reconciliation-processing/)*
+**Reconciliation**
+The process of comparing and aligning data from different sources to identify and resolve discrepancies.
+*See also: [Position Reconciliation](business/business-use-cases.md#2-position-management-use-cases), [Reconciliation Processing](functional-specifications/processors/reconciliation-processing/)*
 
-**Reference Data**  
-Master data that provides context and validation for business transactions, including counterparty information, product specifications, and market data.  
-*See also: [Reference Data Management](workflows/workflow-state-machines.md#reference-data), [Reference Data Entities](entities/entity-overview.md)*
+**Reference Data**
+Master data that provides context and validation for business transactions, including counterparty information, product specifications, and market data.
+*See also: [Reference Data Management](functional-specifications/processors/reference-data-management/), [Reference Data Entities](entities/entity-overview.md)*
 
-**Regulatory Report**  
-A structured report submitted to regulatory authorities containing trade, position, or transaction information as required by regulations.  
-*See also: [Regulatory Reporting](workflows/workflow-state-machines.md#regulatory-reporting), [DTCC GTR](../external-interfaces/external-interface-specifications.md#dtcc-gtr)*
+**Regulatory Report**
+A structured report submitted to regulatory authorities containing trade, position, or transaction information as required by regulations.
+*See also: [Regulatory Reporting](functional-specifications/processors/regulatory-reporting/), [DTCC GTR](external-interfaces/external-interface-specifications.md#dtcc-gtr)*
 
 **Reporting Obligation**  
 A regulatory requirement to report specific transactions or positions to authorities within defined timeframes and formats.  
@@ -175,9 +175,9 @@ Service Level Agreement - a commitment to specific performance metrics such as r
 A model that defines the possible states of an entity and the valid transitions between states, used to control workflow processing.  
 *See also: [Workflow State Machines](workflows/workflow-state-machines.md), [Entity Lifecycle](entities/entity-overview.md)*
 
-**Swimlane Diagram**  
-A visual representation showing the flow of processes across different systems or organizational boundaries.  
-*See also: [Swimlane Diagrams](indexes/events-diagrams-index.md#swimlane-diagrams), [Process Flows](events/event-flows-trade-processing.md)*
+**Swimlane Diagram**
+A visual representation showing the flow of processes across different systems or organizational boundaries.
+*See also: [Swimlane Diagrams](events/), [Process Flows](events/)*
 
 ---
 
@@ -187,21 +187,21 @@ A visual representation showing the flow of processes across different systems o
 Trade date plus one business day - the standard timeframe for regulatory reporting of OTC derivatives transactions.  
 *See also: [Timing Requirements](requirements/timing-requirements-slas.md), [Regulatory Compliance](business/decision-points-business-rules.md)*
 
-**Trade**  
-A financial transaction between counterparties involving the exchange of financial instruments or obligations.  
-*See also: [Trade Entity](entities/entity-overview.md), [Trade Processing](workflows/workflow-state-machines.md#trade-processing)*
+**Trade**
+A financial transaction between counterparties involving the exchange of financial instruments or obligations.
+*See also: [Trade Entity](entities/entity-overview.md), [Trade Processing](functional-specifications/processors/trade-management/)*
 
-**Trade Confirmation**  
-The process of verifying and matching trade details between counterparties to ensure agreement on transaction terms.  
-*See also: [Trade Confirmation](workflows/workflow-state-machines.md#trade-confirmation), [Trade Lifecycle](business/business-use-cases.md)*
+**Trade Confirmation**
+The process of verifying and matching trade details between counterparties to ensure agreement on transaction terms.
+*See also: [Trade Confirmation](functional-specifications/processors/trade-confirmation/), [Trade Processing](business/business-use-cases.md#1-trade-processing-use-cases)*
 
 ---
 
 ## V
 
-**Validation**  
-The process of checking data, business rules, or system states to ensure compliance with requirements and constraints.  
-*See also: [Validation Criteria](functional-specifications/criteria/validation-criteria/), [Data Quality](workflows/workflow-state-machines.md#data-quality)*
+**Validation**
+The process of checking data, business rules, or system states to ensure compliance with requirements and constraints.
+*See also: [Validation Criteria](functional-specifications/criteria/validation-criteria/), [Data Quality](functional-specifications/criteria/data-quality-criteria/)*
 
 ---
 
@@ -262,7 +262,7 @@ The system component responsible for executing workflows, managing state transit
 ### Technical Implementation
 - [Workflow State Machines](workflows/workflow-state-machines.md)
 - [Functional Specifications](functional-specifications/README.md)
-- [External Interfaces](../external-interfaces/external-interface-specifications.md)
+- [External Interfaces](external-interfaces/external-interface-specifications.md)
 
 ### Operations and Monitoring
 - [Performance Requirements](requirements/performance-requirements.md)
@@ -271,8 +271,8 @@ The system component responsible for executing workflows, managing state transit
 
 ### Standards and Guidelines
 - [Naming Conventions](standards/naming-conventions.md)
-- [Cyoda Design Principles](../cyoda-design-principles.md)
-- [Workflow Configuration Guide](../workflow-config-guide.md)
+- [Cyoda Design Principles](../Background/cyoda-design-principles.md)
+- [Workflow Configuration Guide](../Background/workflow-config-guide.md)
 
 ---
 
