@@ -12,43 +12,43 @@ DO NOT PUT ANY entity schema artefacts in this directory.
 ### Master Data Entities
 Core reference data that supports all business operations:
 
-- **[Counterparty.json](./Counterparty.json)** - Legal entities involved in OTC derivatives trading
-- **[Product.json](./Product.json)** - OTC derivative product definitions and specifications  
-- **[ReferenceData.json](./ReferenceData.json)** - Market reference data supporting trade valuation
-- **[LegalEntity.json](./LegalEntity.json)** - Internal and external legal entity registry
+- **Counterparty.json** - Legal entities involved in OTC derivatives trading
+- **Product.json** - OTC derivative product definitions and specifications  
+- **ReferenceData.json** - Market reference data supporting trade valuation
+- **LegalEntity.json** - Internal and external legal entity registry
 
 ### Transactional Data Entities
 Entities representing business transactions and their lifecycle:
 
-- **[TradeConfirmation.json](./TradeConfirmation.json)** - Raw FpML trade confirmation messages
-- **[Trade.json](./Trade.json)** - Processed and validated trade records
-- **[Position.json](./Position.json)** - Aggregated trade positions by counterparty and product
-- **[Amendment.json](./Amendment.json)** - Trade modification records
-- **[Cancellation.json](./Cancellation.json)** - Trade cancellation records
+- **TradeConfirmation.json** - Raw FpML trade confirmation messages
+- **Trade.json** - Processed and validated trade records
+- **Position.json** - Aggregated trade positions by counterparty and product
+- **Amendment.json** - Trade modification records
+- **Cancellation.json** - Trade cancellation records
 
 ### Reporting Data Entities
 Entities supporting regulatory compliance and reporting:
 
-- **[RegulatoryReport.json](./RegulatoryReport.json)** - DTCC GTR submission records
-- **[ReportingObligation.json](./ReportingObligation.json)** - Regulatory reporting requirements tracking
-- **[SubmissionStatus.json](./SubmissionStatus.json)** - Detailed submission attempt tracking
-- **[AuditTrail.json](./AuditTrail.json)** - Immutable audit records for all entity changes
+- **RegulatoryReport.json** - DTCC GTR submission records
+- **ReportingObligation.json** - Regulatory reporting requirements tracking
+- **SubmissionStatus.json** - Detailed submission attempt tracking
+- **AuditTrail.json** - Immutable audit records for all entity changes
 
 ### Processing Control Entities
 Entities coordinating system operations and data quality:
 
-- **[ProcessingBatch.json](./ProcessingBatch.json)** - Batch processing coordination
-- **[ValidationResult.json](./ValidationResult.json)** - Data validation outcomes
-- **[ReconciliationResult.json](./ReconciliationResult.json)** - Reconciliation process results
+- **ProcessingBatch.json** - Batch processing coordination
+- **ValidationResult.json** - Data validation outcomes
+- **ReconciliationResult.json** - Reconciliation process results
 
 ## Common Schema Components
 
 ### Shared Components (in ./common/)
-- **[BusinessEntityMetadata.json](./common/BusinessEntityMetadata.json)** - Extended metadata with workflow state
-- **[WorkflowState.json](./common/WorkflowState.json)** - Workflow state management fields
-- **[MonetaryAmount.json](./common/MonetaryAmount.json)** - Standardized monetary values
-- **[DateRange.json](./common/DateRange.json)** - Date range representation
-- **[RegulatoryClassification.json](./common/RegulatoryClassification.json)** - Regulatory classification types
+- **BusinessEntityMetadata.json** - Extended metadata with workflow state
+- **WorkflowState.json** - Workflow state management fields
+- **MonetaryAmount.json** - Standardized monetary values
+- **DateRange.json** - Date range representation
+- **RegulatoryClassification.json** - Regulatory classification types
 
 ## Key Features
 
