@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if title %}{{ title }} - {% endif %}DTCC Trade Reporting Documentation</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <a href="/" style="color: white; text-decoration: none;">DTCC Trade Reporting</a>
+        </div>
+        <a href="https://github.com/pschleger/dtcc-trade-reporting" class="github-link" target="_blank">
+            <i class="fab fa-github"></i>
+        </a>
+    </header>
+
+    <nav class="main-nav">
+        <div class="nav-container">
+            {% set topLevelFolders = collections.docs | getTopLevelFolders %}
+            {% for folder in topLevelFolders %}
+                <button class="nav-tab{% if loop.first %} active{% endif %}" data-section="{{ folder }}">
+                    {% if folder == "specification" %}
+                        <i class="fas fa-file-text"></i>
+                    {% elif folder == "schema" %}
+                        <i class="fas fa-code"></i>
+                    {% elif folder == "interfaces" %}
+                        <i class="fas fa-plug"></i>
+                    {% elif folder == "api" %}
+                        <i class="fas fa-cogs"></i>
+                    {% elif folder == "guides" %}
+                        <i class="fas fa-book"></i>
+                    {% else %}
+                        <i class="fas fa-folder"></i>
+                    {% endif %}
+                    {{ folder | replace('-', ' ') | title }}
+                </button>
+            {% endfor %}
+        </div>
+    </nav>
+
+    <div class="layout-container">
+        <aside class="sidebar">
+            <div class="sidebar-content">
+                <h6 class="sidebar-heading">
+                    <span>Documentation</span>
+                </h6>
+                <nav class="sidebar-nav">
+                    {% import "navigation.njk" as nav %}
+                    {% set navTree = collections.docs | buildNavTree %}
+                    {% set topLevelFolders = collections.docs | getTopLevelFolders %}
+
+                    {% for folder in topLevelFolders %}
+                        <div class="nav-section" data-section="{{ folder }}"{% if not loop.first %} style="display: none;"{% endif %}>
+                            {% if navTree[folder] and navTree[folder].children %}
+                                {{ nav.renderNavTree(navTree[folder].children, 0, page.url) }}
+                            {% else %}
+                                <div class="nav-placeholder">
+                                    <p>{{ folder | replace('-', ' ') | title }} documentation will be displayed here.</p>
+                                    <p>Currently showing files from the {{ folder }} directory.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </nav>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="content-header">
+                <h1>{{ title or (page.fileSlug | navTitle) }}</h1>
+                {% if page.url != "/" %}
+                    <div class="content-actions">
+                        <a href="https://github.com/pschleger/dtcc-trade-reporting/blob/main/docs{{ page.inputPath | replace('./', '') }}"
+                           class="edit-link" target="_blank">
+                            <i class="fab fa-github"></i>
+                            Edit on GitHub
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="markdown-content">
+                {{ content | safe }}
+            </div>
+        </main>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-github">
+                Generated with <a href="https://www.11ty.dev/" target="_blank">Eleventy</a> •
+                <a href="https://github.com/pschleger/dtcc-trade-reporting" target="_blank">View on GitHub</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <script>
+        // Navigation functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const navTabs = document.querySelectorAll('.nav-tab');
+            const navSections = document.querySelectorAll('.nav-section');
+
+            navTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const targetSection = this.getAttribute('data-section');
+
+                    // Update active tab
+                    navTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Update visible navigation section
+                    navSections.forEach(section => {
+                        if (section.getAttribute('data-section') === targetSection) {
+                            section.style.display = 'block';
+                        } else {
+                            section.style.display = 'none';
+                        }
+                    });
+
+                    // Update sidebar heading
+                    const sidebarHeading = document.querySelector('.sidebar-heading span');
+                    if (sidebarHeading) {
+                        const formattedName = targetSection.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        sidebarHeading.textContent = formattedName;
+                    }
+                });
+            });
+
+            // Auto-expand folders containing the current page
+            const activeLink = document.querySelector('.sidebar-link.active');
+            if (activeLink) {
+                let parent = activeLink.parentElement;
+                while (parent && parent.classList.contains('nav-folder-content')) {
+                    const folder = parent.parentElement;
+                    if (folder && folder.classList.contains('nav-folder')) {
+                        folder.classList.add('expanded');
+                    }
+                    parent = folder ? folder.parentElement : null;
+                }
+            }
+
+            // Initialize Mermaid
+            if (typeof mermaid !== 'undefined') {
+                mermaid.initialize({
+                    startOnLoad: false,
+                    theme: 'default',
+                    themeVariables: {
+                        primaryColor: '#4FB8B0',
+                        primaryTextColor: '#2c3e50',
+                        primaryBorderColor: '#4FB8B0',
+                        lineColor: '#6c757d',
+                        secondaryColor: '#f8f9fa',
+                        tertiaryColor: '#e9ecef'
+                    },
+                    flowchart: {
+                        useMaxWidth: true,
+                        htmlLabels: true
+                    },
+                    sequence: {
+                        useMaxWidth: true,
+                        wrap: true
+                    },
+                    gantt: {
+                        useMaxWidth: true
+                    }
+                });
+
+                // Convert code blocks to mermaid divs and render
+                const codeBlocks = document.querySelectorAll('pre code.language-mermaid');
+                codeBlocks.forEach((block, index) => {
+                    const mermaidDiv = document.createElement('div');
+                    mermaidDiv.className = 'mermaid';
+                    mermaidDiv.textContent = block.textContent;
+                    mermaidDiv.id = `mermaid-${index}`;
+
+                    // Replace the code block with the mermaid div
+                    block.parentElement.parentElement.replaceChild(mermaidDiv, block.parentElement);
+                });
+
+                // Also handle existing mermaid divs
+                const mermaidDivs = document.querySelectorAll('.mermaid');
+                if (mermaidDivs.length > 0) {
+                    mermaid.run();
+                }
+            }
+        });
+
+        // Toggle folder function
+        function toggleFolder(header) {
+            const folder = header.parentElement;
+            folder.classList.toggle('expanded');
+        }
+    </script>
+</body>
+</html>

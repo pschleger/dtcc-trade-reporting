@@ -1,0 +1,25 @@
+{% macro renderNavTree(tree, level = 0, currentUrl = '') %}
+  {% for key, node in tree %}
+    {% if node.isFolder %}
+      <div class="nav-folder" data-level="{{ level }}">
+        <div class="nav-folder-header" onclick="toggleFolder(this)">
+          <i class="fas fa-chevron-right nav-folder-icon"></i>
+          <i class="fas fa-folder nav-icon"></i>
+          <span class="nav-folder-name">{{ node.name | replace('-', ' ') | title }}</span>
+        </div>
+        <div class="nav-folder-content">
+          {{ renderNavTree(node.children, level + 1, currentUrl) }}
+        </div>
+      </div>
+    {% else %}
+      {% if node.item %}
+        <a class="sidebar-link{% if node.item.url == currentUrl %} active{% endif %}" 
+           href="{{ node.item.url }}" 
+           data-level="{{ level }}">
+          <i class="fas fa-file-alt nav-icon"></i>
+          <span class="nav-item-name">{{ node.item.data.title or (node.name | replace('-', ' ') | title) }}</span>
+        </a>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+{% endmacro %}

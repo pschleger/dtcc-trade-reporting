@@ -22,3 +22,8 @@ gradle-app.setting
 .classpath
 
 /.idea/**
+
+# Documentation build artifacts (in docs folder)
+/docs/_site/
+/docs/node_modules/
+/docs/package-lock.json

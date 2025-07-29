@@ -1,0 +1,26 @@
+{
+  "name": "dtcc-trade-reporting-docs",
+  "version": "1.0.0",
+  "description": "Documentation site for DTCC Trade Reporting system",
+  "main": "index.js",
+  "scripts": {
+    "build": "eleventy",
+    "serve": "eleventy --serve",
+    "start": "eleventy --serve",
+    "clean": "rm -rf _site"
+  },
+  "keywords": [
+    "documentation",
+    "eleventy",
+    "dtcc",
+    "trade-reporting"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@11ty/eleventy": "^3.1.2"
+  },
+  "dependencies": {
+    "markdown-it": "^14.1.0"
+  }
+}
