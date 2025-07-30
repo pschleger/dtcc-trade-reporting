@@ -63,7 +63,7 @@
         <main class="main-content">
             <div class="content-header">
                 <h1>{{ title or (page.fileSlug | navTitle) }}</h1>
-                {% if page.url != "/" %}
+                {% if page.url != ("/" | url) %}
                     <div class="content-actions">
                         <a href="https://github.com/pschleger/dtcc-trade-reporting/blob/main/docs{{ page.inputPath | replace('./', '') }}"
                            class="edit-link" target="_blank">

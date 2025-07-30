@@ -15,7 +15,7 @@
     {% else %}
       {% if node.item %}
         <a class="sidebar-link{% if node.item.url == currentUrl %} active{% endif %}"
-           href="{{ node.item.url }}"
+           href="{{ node.item.url | url }}"
            data-level="{{ level }}">
           <i class="fas fa-file-alt nav-icon"></i>
           <span class="nav-item-name">{{ node.item.data.title or (node.name | replace('-', ' ') | title) }}</span>
