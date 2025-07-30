@@ -1,9 +1,9 @@
 package com.java_template.common.workflow.ops;
 
+import com.java_template.common.config.Config;
 import com.java_template.common.serializer.CriterionSerializer;
 import com.java_template.common.serializer.EvaluationOutcome;
 import com.java_template.common.serializer.SerializerFactory;
-import com.java_template.common.config.Config;
 import com.java_template.common.workflow.CyodaCriterion;
 import com.java_template.common.workflow.CyodaEventContext;
 import com.java_template.common.workflow.OperationSpecification;

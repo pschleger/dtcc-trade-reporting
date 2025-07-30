@@ -3,8 +3,8 @@ package com.java_template.common.util;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 @Component
 public class HttpUtils {
-    private final HttpClient client = SslUtils.createHttpClient();
+    private final HttpClient client = HttpClient.newHttpClient();
     private final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
     private final ObjectMapper om;
     private final JsonUtils jsonUtils;

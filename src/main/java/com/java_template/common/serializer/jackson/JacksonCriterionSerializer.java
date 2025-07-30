@@ -2,9 +2,9 @@ package com.java_template.common.serializer.jackson;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.java_template.common.serializer.SerializerEnum;
-import com.java_template.common.serializer.ResponseBuilder;
 import com.java_template.common.serializer.CriterionSerializer;
+import com.java_template.common.serializer.ResponseBuilder;
+import com.java_template.common.serializer.SerializerEnum;
 import com.java_template.common.workflow.CyodaEntity;
 import org.cyoda.cloud.api.event.processing.EntityCriteriaCalculationRequest;
 import org.jetbrains.annotations.NotNull;

@@ -1,7 +1,7 @@
 package com.java_template.common.config;
 
 import io.github.cdimascio.dotenv.Dotenv;
-import java.util.Base64;
+
 import java.util.Arrays;
 import java.util.List;
 
