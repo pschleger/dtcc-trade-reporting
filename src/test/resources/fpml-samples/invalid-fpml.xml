@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<InvalidRoot xmlns="http://www.example.com/invalid">
+  <header>
+    <messageId>INVALID-MSG-001</messageId>
+  </header>
+  <invalidTrade>
+    <missingRequiredFields/>
+  </invalidTrade>
+</InvalidRoot>

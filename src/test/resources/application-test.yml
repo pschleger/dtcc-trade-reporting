@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: dtcc-trade-reporting-test
+  
+  # Disable security for integration tests
+  security:
+    enabled: false
+  
+  # Test logging configuration
+  logging:
+    level:
+      com.java_template: DEBUG
+      org.springframework.web: DEBUG
+      org.springframework.security: DEBUG
+    pattern:
+      console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# Test-specific configuration
+test:
+  fpml:
+    validation:
+      strict: true
+    processing:
+      timeout: 30000
+  
+# Disable actuator endpoints for tests
+management:
+  endpoints:
+    enabled-by-default: false

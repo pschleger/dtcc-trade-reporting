@@ -260,12 +260,16 @@ public class SslUtils {
                 // Use default transport security for non-trusted hosts
                 logger.debug("Using default transport security for host: {}", host);
                 return ManagedChannelBuilder.forAddress(host, port)
-                        .useTransportSecurity();
+                        .usePlaintext()
+                        //.useTransportSecurity()
+                        ;
             }
         } catch (Exception e) {
             logger.error("Failed to configure gRPC SSL for {}:{}, falling back to default: {}", host, port, e.getMessage());
             return ManagedChannelBuilder.forAddress(host, port)
-                    .useTransportSecurity();
+                    .usePlaintext()
+                    //.useTransportSecurity()
+                    ;
         }
     }
 

@@ -35,7 +35,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web:3.5.3'
     implementation 'org.springframework.boot:spring-boot-starter' // Version managed by Spring Boot
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client' // Version managed by Spring Boot
-
+    implementation 'org.springframework.boot:spring-boot-starter-security' // Version managed by Spring Boot
+    implementation 'org.springframework.boot:spring-boot-starter-validation' // Version managed by Spring Boot
 
     implementation 'com.google.protobuf:protobuf-java:4.31.1'
     implementation 'io.grpc:grpc-protobuf:1.73.0'
@@ -52,6 +53,16 @@ dependencies {
 
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.19.1'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.19.1'
+
+    // XML Processing and Validation
+    implementation 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.2'
+    implementation 'org.glassfish.jaxb:jaxb-runtime:4.0.5'
+    implementation 'org.apache.commons:commons-lang3:3.17.0'
+
+    // Rate Limiting - using Caffeine cache for simple rate limiting
+    // implementation 'io.github.bucket4j:bucket4j-core:8.10.1'
+    // implementation 'io.github.bucket4j:bucket4j-caffeine:8.10.1'
 
     implementation 'io.github.cdimascio:java-dotenv:5.2.2'
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.5'
@@ -63,6 +74,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation platform('org.junit:junit-bom:5.13.1')
     testImplementation 'org.junit.jupiter:junit-jupiter:5.13.1'
+    testImplementation 'org.springframework.security:spring-security-test'
 }
 
 test {
