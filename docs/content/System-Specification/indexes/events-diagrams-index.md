@@ -58,8 +58,8 @@ Detailed event sequences for trade processing workflows.
 
 | Diagram | Description | Events Covered | Related Workflows |
 |---------|-------------|----------------|-------------------|
-| **[Trade Processing Event Flows](../events/event-flows-trade-processing.md)** | Complete trade processing event sequences | TradeConfirmationReceived, TradeValidated, TradeProcessed | Trade Processing, Trade Confirmation |
-| **[Amendment Processing Flow](../events/event-flows-trade-processing.md#amendment-processing)** | Trade amendment event sequences | TradeAmendmentRequested, AmendmentValidated, AmendmentApplied | Amendment Processing |
+| **[Trade Processing Event Flows](/content/System-Specification/events/event-flows-trade-processing/)** | Complete trade processing event sequences | TradeConfirmationReceived, TradeValidated, TradeProcessed | Trade Processing, Trade Confirmation |
+| **[Amendment Processing Flow](/content/System-Specification/events/event-flows-trade-processing/#amendment-processing)** | Trade amendment event sequences | TradeAmendmentRequested, AmendmentValidated, AmendmentApplied | Amendment Processing |
 | **[Cancellation Processing Flow](../events/event-flows-trade-processing.md#cancellation-processing)** | Trade cancellation event sequences | TradeCancellationRequested, CancellationValidated, CancellationProcessed | Cancellation Processing |
 
 ### Position Management Event Flows
@@ -67,8 +67,8 @@ Event sequences for position calculation and reporting.
 
 | Diagram | Description | Events Covered | Related Workflows |
 |---------|-------------|----------------|-------------------|
-| **[Position Reporting Event Flows](../events/event-flows-position-reporting.md)** | Position calculation and reporting sequences | PositionCalculated, PositionThresholdExceeded, PositionReported | Position Management, Position Reporting |
-| **[Position Reconciliation Flow](../events/event-flows-position-reporting.md#reconciliation)** | Position reconciliation event sequences | ReconciliationRequired, ReconciliationCompleted | Position Reconciliation |
+| **[Position Reporting Event Flows](/content/System-Specification/events/event-flows-position-reporting/)** | Position calculation and reporting sequences | PositionCalculated, PositionThresholdExceeded, PositionReported | Position Management, Position Reporting |
+| **[Position Reconciliation Flow](/content/System-Specification/events/event-flows-position-reporting/#reconciliation)** | Position reconciliation event sequences | ReconciliationRequired, ReconciliationCompleted | Position Reconciliation |
 
 ---
 
@@ -79,8 +79,8 @@ Cross-system interaction diagrams for trade processing.
 
 | Diagram | Description | Systems Involved | Process Coverage |
 |---------|-------------|------------------|------------------|
-| **[Trade Processing Swimlanes](../events/trade-processing-swimlane-diagrams.md)** | Trade confirmation to reporting flow | Trading System, DTCC System, LEI Registry, DTCC GTR | End-to-end trade processing |
-| **[Trade Amendment Swimlanes](../events/trade-processing-swimlane-diagrams.md#amendment-processing)** | Trade amendment processing flow | Trading System, DTCC System, DTCC GTR | Trade amendment lifecycle |
+| **[Trade Processing Swimlanes](/content/System-Specification/events/trade-processing-swimlane-diagrams/)** | Trade confirmation to reporting flow | Trading System, DTCC System, LEI Registry, DTCC GTR | End-to-end trade processing |
+| **[Trade Amendment Swimlanes](/content/System-Specification/events/trade-processing-swimlane-diagrams/#amendment-processing)** | Trade amendment processing flow | Trading System, DTCC System, DTCC GTR | Trade amendment lifecycle |
 | **[Trade Cancellation Swimlanes](../events/trade-processing-swimlane-diagrams.md#cancellation-processing)** | Trade cancellation processing flow | Trading System, DTCC System, DTCC GTR | Trade cancellation lifecycle |
 
 ### Position Management Swimlanes
@@ -88,24 +88,24 @@ Cross-system interactions for position management and reconciliation.
 
 | Diagram | Description | Systems Involved | Process Coverage |
 |---------|-------------|------------------|------------------|
-| **[Position Management Swimlanes](../events/position-management-reconciliation-swimlane-diagrams.md)** | Position calculation and reporting | DTCC System, Market Data Service, DTCC GTR | Position lifecycle management |
-| **[Position Reconciliation Swimlanes](../events/position-management-reconciliation-swimlane-diagrams.md#reconciliation)** | Position reconciliation process | DTCC System, External Position Sources, DTCC GTR | Position reconciliation workflow |
+| **[Position Management Swimlanes](/content/System-Specification/events/position-management-reconciliation-swimlane-diagrams/)** | Position calculation and reporting | DTCC System, Market Data Service, DTCC GTR | Position lifecycle management |
+| **[Position Reconciliation Swimlanes](/content/System-Specification/events/position-management-reconciliation-swimlane-diagrams/#reconciliation)** | Position reconciliation process | DTCC System, External Position Sources, DTCC GTR | Position reconciliation workflow |
 
 ### Regulatory Reporting Swimlanes
 Cross-system interactions for regulatory reporting and compliance.
 
 | Diagram | Description | Systems Involved | Process Coverage |
 |---------|-------------|------------------|------------------|
-| **[Regulatory Reporting Swimlanes](../events/regulatory-reporting-swimlane-diagrams.md)** | Report generation and submission | DTCC System, DTCC GTR, Monitoring System | Regulatory reporting lifecycle |
-| **[Report Error Handling Swimlanes](../events/regulatory-reporting-swimlane-diagrams.md#error-handling)** | Report error processing | DTCC System, DTCC GTR, Alert System | Error handling and resubmission |
+| **[Regulatory Reporting Swimlanes](/content/System-Specification/events/regulatory-reporting-swimlane-diagrams/)** | Report generation and submission | DTCC System, DTCC GTR, Monitoring System | Regulatory reporting lifecycle |
+| **[Report Error Handling Swimlanes](/content/System-Specification/events/regulatory-reporting-swimlane-diagrams/#error-handling)** | Report error processing | DTCC System, DTCC GTR, Alert System | Error handling and resubmission |
 
 ### Data Management and Error Handling Swimlanes
 Cross-system interactions for data management and error processing.
 
 | Diagram | Description | Systems Involved | Process Coverage |
 |---------|-------------|------------------|------------------|
-| **[Data Management Swimlanes](../events/data-management-error-handling-swimlane-diagrams.md)** | Reference data management | DTCC System, LEI Registry, Market Data Service | Data synchronization and validation |
-| **[Error Handling Swimlanes](../events/data-management-error-handling-swimlane-diagrams.md#error-handling)** | Error detection and resolution | DTCC System, Monitoring System, Alert System | Error management lifecycle |
+| **[Data Management Swimlanes](/content/System-Specification/events/data-management-error-handling-swimlane-diagrams/)** | Reference data management | DTCC System, LEI Registry, Market Data Service | Data synchronization and validation |
+| **[Error Handling Swimlanes](/content/System-Specification/events/data-management-error-handling-swimlane-diagrams/#error-handling)** | Error detection and resolution | DTCC System, Monitoring System, Alert System | Error management lifecycle |
 
 ---
 
@@ -130,8 +130,8 @@ RegulatoryReportGenerated → DTCCSubmissionInitiated → DTCCSubmissionAcknowle
 ```
 
 ### Event Dependencies
-- **[Event Causality Chains](../events/event-causality-chains.md)** - Detailed event dependency analysis
-- **[Event Timing Dependencies](../events/event-timing-dependencies.md)** - Time-based event relationships
+- **[Event Causality Chains](/content/System-Specification/events/event-causality-chains/)** - Detailed event dependency analysis
+- **[Event Timing Dependencies](/content/System-Specification/events/event-timing-dependencies/)** - Time-based event relationships
 
 ---
 
@@ -142,17 +142,17 @@ Comprehensive catalog of all business events in the system.
 
 | Document | Description | Event Coverage | Cross-References |
 |----------|-------------|----------------|------------------|
-| **[Event Catalog](../events/event-catalog.md)** | Complete business event catalog | All business events | Workflows, Entities |
-| **[Business Events](../events/business-events.md)** | Business-triggered event specifications | Business process events | Use Cases, Workflows |
-| **[External Events](../events/external-events.md)** | External system integration events | External interface events | External Interfaces |
+| **[Event Catalog](/content/System-Specification/events/event-catalog/)** | Complete business event catalog | All business events | Workflows, Entities |
+| **[Business Events](/content/System-Specification/events/business-events/)** | Business-triggered event specifications | Business process events | Use Cases, Workflows |
+| **[External Events](/content/System-Specification/events/external-events/)** | External system integration events | External interface events | External Interfaces |
 
 ### Event Architecture
 Event-driven architecture patterns and principles.
 
 | Document | Description | Architecture Coverage | Design Patterns |
 |----------|-------------|----------------------|-----------------|
-| **[Event-Driven Architecture](../events/event-driven-architecture.md)** | Event processing principles and patterns | Complete event architecture | Event Sourcing, CQRS, Saga |
-| **[Event Architecture Patterns](../events/event-architecture-patterns.md)** | Event processing design patterns | Event handling patterns | Publisher-Subscriber, Event Streaming |
+| **[Event-Driven Architecture](/content/System-Specification/events/event-driven-architecture/)** | Event processing principles and patterns | Complete event architecture | Event Sourcing, CQRS, Saga |
+| **[Event Architecture Patterns](/content/System-Specification/events/event-architecture-patterns/)** | Event processing design patterns | Event handling patterns | Publisher-Subscriber, Event Streaming |
 
 ---
 
@@ -181,8 +181,8 @@ Event-driven architecture patterns and principles.
 - **WorkflowExecutionCompleted** → Workflow Management
 
 ### Workflow Cross-References
-- **[Workflow Index](workflow-index.md)** - Complete workflow catalog
-- **[Event-Driven Architecture](../events/event-driven-architecture.md)** - Event-workflow integration patterns
+- **[Workflow Index](/content/System-Specification/indexes/workflow-index/)** - Complete workflow catalog
+- **[Event-Driven Architecture](/content/System-Specification/events/event-driven-architecture/)** - Event-workflow integration patterns
 
 ---
 
@@ -213,8 +213,8 @@ Event-driven architecture patterns and principles.
 - `EventComplianceCriterion` - Ensure event compliance requirements
 
 ### Component Cross-References
-- **[Functional Specifications Index](functional-specifications-index.md)** - Complete component catalog
-- **[Event Architecture Patterns](../events/event-architecture-patterns.md)** - Event processing patterns
+- **[Functional Specifications Index](/content/System-Specification/indexes/functional-specifications-index/)** - Complete component catalog
+- **[Event Architecture Patterns](/content/System-Specification/events/event-architecture-patterns/)** - Event processing patterns
 
 ---
 
@@ -235,8 +235,8 @@ Event-driven architecture patterns and principles.
 - **Compliance Rate**: Percentage of compliant events
 
 ### Event Monitoring Tools
-- **[Event Traceability and Audit](../events/event-traceability-audit.md)** - Event tracking and audit capabilities
-- **[Event Troubleshooting Guide](../events/event-troubleshooting-guide.md)** - Event debugging and resolution procedures
+- **[Event Traceability and Audit](/content/System-Specification/events/event-traceability-audit/)** - Event tracking and audit capabilities
+- **[Event Troubleshooting Guide](/content/System-Specification/events/event-troubleshooting-guide/)** - Event debugging and resolution procedures
 
 ---
 
@@ -264,16 +264,16 @@ events/
 - **Event Categories**: Title Case (e.g., Trade Processing, Regulatory Reporting)
 
 ### Discovery Tools
-- **[Event Catalog](../events/event-catalog.md)** - Searchable event catalog
-- **[Event Correlation Matrix](../events/event-correlation-matrix.md)** - Event relationship matrix
+- **[Event Catalog](/content/System-Specification/events/event-catalog/)** - Searchable event catalog
+- **[Event Correlation Matrix](/content/System-Specification/events/event-correlation-matrix/)** - Event relationship matrix
 
 ---
 
 ## 📋 Event Validation and Quality Assurance
 
 ### Event Validation
-- **[Event Coverage Validation](../events/event-coverage-validation.md)** - Event coverage analysis
-- **[Event Correlation Validation Summary](../events/event-correlation-validation-summary.md)** - Event correlation validation
+- **[Event Coverage Validation](/content/System-Specification/events/event-coverage-validation/)** - Event coverage analysis
+- **[Event Correlation Validation Summary](/content/System-Specification/events/event-correlation-validation-summary/)** - Event correlation validation
 
 ### Event Testing
 - **Event Simulation**: Synthetic event generation for testing
@@ -306,8 +306,8 @@ events/
 - **Event Compliance**: Event compliance monitoring and reporting
 
 ### Maintenance Cross-References
-- **[Event Architecture Patterns](../events/event-architecture-patterns.md)** - Event evolution patterns
-- **[Event Troubleshooting Guide](../events/event-troubleshooting-guide.md)** - Event maintenance procedures
+- **[Event Architecture Patterns](/content/System-Specification/events/event-architecture-patterns/)** - Event evolution patterns
+- **[Event Troubleshooting Guide](/content/System-Specification/events/event-troubleshooting-guide/)** - Event maintenance procedures
 
 ---
 

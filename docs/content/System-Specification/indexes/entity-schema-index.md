@@ -78,14 +78,14 @@ All Entities → AuditTrail → ComplianceCheck → ReportingObligation
 ## 📋 Schema Documentation Cross-References
 
 ### Detailed Entity Documentation
-- **[Entity Overview](../entities/entity-overview.md)** - Complete entity landscape and categorization
+- **[Entity Overview](/content/System-Specification/entities/entity-overview/)** - Complete entity landscape and categorization
 - **[Entity Relationship Diagram](../entities/entity-relationship-diagram.mmd)** - Visual entity relationships
-- **[Schema Documentation](../entities/schema-documentation.md)** - Detailed schema specifications
-- **[Schema Versioning Strategy](../entities/schema-versioning-strategy.md)** - Entity evolution and versioning
+- **[Schema Documentation](/content/System-Specification/entities/schema-documentation/)** - Detailed schema specifications
+- **[Schema Versioning Strategy](/content/System-Specification/entities/schema-versioning-strategy/)** - Entity evolution and versioning
 
 ### Schema Validation
-- **[Entity Validation Summary](../entities/VALIDATION_SUMMARY.md)** - Current schema validation status
-- **[Schema Compliance Validation](../workflows/schema-compliance-validation.md)** - Schema compliance procedures
+- **[Entity Validation Summary](/content/System-Specification/entities/VALIDATION_SUMMARY/)** - Current schema validation status
+- **[Schema Compliance Validation](/content/System-Specification/workflows/schema-compliance-validation/)** - Schema compliance procedures
 
 ---
 
@@ -110,9 +110,9 @@ All Entities → AuditTrail → ComplianceCheck → ReportingObligation
 - **Error Handling** - Report error processing and resubmission
 
 ### Workflow Cross-References
-- **[Workflow State Machines](../workflows/workflow-state-machines.md)** - Complete workflow definitions
-- **[Use Case to Workflow Mapping](../workflows/use-case-workflow-mapping.md)** - Business use case traceability
-- **[Workflow Dependencies](../workflows/workflow-dependencies.md)** - Inter-workflow relationships
+- **[Workflow State Machines](/content/System-Specification/workflows/workflow-state-machines/)** - Complete workflow definitions
+- **[Use Case to Workflow Mapping](/content/System-Specification/workflows/use-case-workflow-mapping/)** - Business use case traceability
+- **[Workflow Dependencies](/content/System-Specification/workflows/workflow-dependencies/)** - Inter-workflow relationships
 
 ---
 
@@ -145,8 +145,8 @@ Processor components that transform and manage entities:
 - **PositionReconciliationProcessor** - Position reconciliation processing
 
 ### Functional Specifications Cross-References
-- **[Functional Specifications Index](functional-specifications-index.md)** - Complete component catalog
-- **[Component Interaction Diagrams](../functional-specifications/component-interaction-diagrams.md)** - Component interaction patterns
+- **[Functional Specifications Index](/content/System-Specification/indexes/functional-specifications-index/)** - Complete component catalog
+- **[Component Interaction Diagrams](/content/System-Specification/functional-specifications/component-interaction-diagrams/)** - Component interaction patterns
 
 ---
 
@@ -165,8 +165,8 @@ Processor components that transform and manage entities:
 - **Holiday Calendar** - Business date calculation for all entities
 
 ### External Interface Cross-References
-- **[External Interfaces Index](external-interfaces-index.md)** - Complete interface catalog
-- **[External Interface Specifications](../../external-interfaces/external-interface-specifications.md)** - Detailed interface specifications
+- **[External Interfaces Index](/content/System-Specification/indexes/external-interfaces-index/)** - Complete interface catalog
+- **[External Interface Specifications](/content/System-Specification/external-interfaces/external-interface-specifications/)** - Detailed interface specifications
 
 ---
 
@@ -185,8 +185,8 @@ Processor components that transform and manage entities:
 - **Report Generation**: < 30 seconds per report
 
 ### Requirements Cross-References
-- **[Performance Requirements](../requirements/performance-requirements.md)** - Detailed performance specifications
-- **[Timing Requirements and SLAs](../requirements/timing-requirements-slas.md)** - Regulatory timing requirements
+- **[Performance Requirements](/content/System-Specification/requirements/performance-requirements/)** - Detailed performance specifications
+- **[Timing Requirements and SLAs](/content/System-Specification/requirements/timing-requirements-slas/)** - Regulatory timing requirements
 
 ---
 
@@ -205,7 +205,7 @@ Processor components that transform and manage entities:
 - **UPPER_CASE** for enumeration values (e.g., TRADE_STATUS_CONFIRMED)
 
 ### Schema Discovery Tools
-- **[Naming Conventions](../standards/naming-conventions.md)** - Entity naming standards
+- **[Naming Conventions](/content/System-Specification/standards/naming-conventions/)** - Entity naming standards
 - **[Schema Directory](../../schema/)** - Complete schema repository
 
 ---
@@ -224,8 +224,8 @@ Processor components that transform and manage entities:
 - **Migration Guidance** - Provide migration paths for breaking changes
 
 ### Maintenance Cross-References
-- **[Schema Versioning Strategy](../entities/schema-versioning-strategy.md)** - Entity evolution guidelines
-- **[Workflow Validation Report](../workflows/VALIDATION_REPORT.md)** - Current validation status
+- **[Schema Versioning Strategy](/content/System-Specification/entities/schema-versioning-strategy/)** - Entity evolution guidelines
+- **[Workflow Validation Report](/content/System-Specification/workflows/VALIDATION_REPORT/)** - Current validation status
 
 ---
 

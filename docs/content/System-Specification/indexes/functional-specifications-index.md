@@ -169,8 +169,8 @@ Components that handle errors and exceptions.
 **Processors:** ErrorClassificationProcessor, ErrorNotificationProcessor, ErrorRecoveryProcessor
 
 ### Workflow Cross-References
-- **[Workflow Index](workflow-index.md)** - Complete workflow catalog
-- **[Workflow State Machines](../workflows/workflow-state-machines.md)** - Workflow definitions and state transitions
+- **[Workflow Index](/content/System-Specification/indexes/workflow-index/)** - Complete workflow catalog
+- **[Workflow State Machines](/content/System-Specification/workflows/workflow-state-machines/)** - Workflow definitions and state transitions
 
 ---
 
@@ -195,8 +195,8 @@ Components that handle errors and exceptions.
 **Processors:** ReportGenerationProcessor, DTCCSubmissionProcessor, ReportValidationProcessor
 
 ### Entity Cross-References
-- **[Entity Schema Index](entity-schema-index.md)** - Complete entity catalog
-- **[Entity Overview](../entities/entity-overview.md)** - Entity landscape and relationships
+- **[Entity Schema Index](/content/System-Specification/indexes/entity-schema-index/)** - Complete entity catalog
+- **[Entity Overview](/content/System-Specification/entities/entity-overview/)** - Entity landscape and relationships
 
 ---
 
@@ -221,8 +221,8 @@ Components that handle errors and exceptions.
 **Criteria:** EscalationCriterion
 
 ### External Interface Cross-References
-- **[External Interfaces Index](external-interfaces-index.md)** - Complete interface catalog
-- **[Component Interaction Diagrams](../functional-specifications/component-interaction-diagrams.md)** - Component interaction patterns
+- **[External Interfaces Index](/content/System-Specification/indexes/external-interfaces-index/)** - Complete interface catalog
+- **[Component Interaction Diagrams](/content/System-Specification/functional-specifications/component-interaction-diagrams/)** - Component interaction patterns
 
 ---
 
@@ -243,8 +243,8 @@ Components that handle errors and exceptions.
 - **Real-time Processors**: 100 entities per second
 
 ### Performance Cross-References
-- **[Performance Requirements](../requirements/performance-requirements.md)** - Detailed performance specifications
-- **[Component Interaction Diagrams](../functional-specifications/component-interaction-diagrams.md)** - Performance interaction patterns
+- **[Performance Requirements](/content/System-Specification/requirements/performance-requirements/)** - Detailed performance specifications
+- **[Component Interaction Diagrams](/content/System-Specification/functional-specifications/component-interaction-diagrams/)** - Performance interaction patterns
 
 ---
 
@@ -263,8 +263,8 @@ functional-specifications/processors/{category}/{component-name}/
 - **Configuration Keys**: camelCase for component parameters
 
 ### Discovery Tools
-- **[Component Interaction Diagrams](../functional-specifications/component-interaction-diagrams.md)** - Visual component relationships
-- **[Naming Conventions](../standards/naming-conventions.md)** - Component naming standards
+- **[Component Interaction Diagrams](/content/System-Specification/functional-specifications/component-interaction-diagrams/)** - Visual component relationships
+- **[Naming Conventions](/content/System-Specification/standards/naming-conventions/)** - Component naming standards
 
 ---
 
@@ -281,8 +281,8 @@ Each component follows a standardized specification format:
 - **Testing** - Test scenarios and validation criteria
 
 ### Documentation Cross-References
-- **[Specification Template](../functional-specifications/specification-template.md)** - Component specification template
-- **[Component Interaction Diagrams](../functional-specifications/component-interaction-diagrams.md)** - Component interaction documentation
+- **[Specification Template](/content/System-Specification/functional-specifications/specification-template/)** - Component specification template
+- **[Component Interaction Diagrams](/content/System-Specification/functional-specifications/component-interaction-diagrams/)** - Component interaction documentation
 
 ---
 
@@ -301,8 +301,8 @@ Each component follows a standardized specification format:
 - **Integration Validation**: 100% of component interactions validated
 
 ### Validation Cross-References
-- **[Functional Specifications README](../functional-specifications/README.md)** - Component validation procedures
-- **[Component Interaction Diagrams](../functional-specifications/component-interaction-diagrams.md)** - Integration validation patterns
+- **[Functional Specifications README](/content/System-Specification/functional-specifications/)** - Component validation procedures
+- **[Component Interaction Diagrams](/content/System-Specification/functional-specifications/component-interaction-diagrams/)** - Integration validation patterns
 
 ---
 

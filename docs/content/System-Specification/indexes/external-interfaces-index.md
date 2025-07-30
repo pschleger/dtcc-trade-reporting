@@ -77,8 +77,8 @@ System ↔ Authentication Provider ↔ External System
 ```
 
 ### Integration Architecture
-- **[Interface Interaction Diagrams](../../external-interfaces/interface-interaction-diagrams.md)** - Visual interface interaction patterns
-- **[External Interface Specifications](../../external-interfaces/external-interface-specifications.md)** - Detailed technical specifications
+- **[Interface Interaction Diagrams](/content/System-Specification/external-interfaces/interface-interaction-diagrams/)** - Visual interface interaction patterns
+- **[External Interface Specifications](/content/System-Specification/external-interfaces/external-interface-specifications/)** - Detailed technical specifications
 
 ---
 
@@ -176,8 +176,8 @@ GET /api/v1/lei-records?filter[entity.status]    # Query by status
 - **Audit Log Export** → Audit Management Workflow
 
 ### Workflow Cross-References
-- **[Workflow Index](workflow-index.md)** - Complete workflow catalog
-- **[Workflow State Machines](../workflows/workflow-state-machines.md)** - Workflow definitions
+- **[Workflow Index](/content/System-Specification/indexes/workflow-index/)** - Complete workflow catalog
+- **[Workflow State Machines](/content/System-Specification/workflows/workflow-state-machines/)** - Workflow definitions
 
 ---
 
@@ -215,8 +215,8 @@ GET /api/v1/lei-records?filter[entity.status]    # Query by status
 - `DataFreshnessCriterion` - Data freshness validation
 
 ### Component Cross-References
-- **[Functional Specifications Index](functional-specifications-index.md)** - Complete component catalog
-- **[Component Interaction Diagrams](../functional-specifications/component-interaction-diagrams.md)** - Component interactions
+- **[Functional Specifications Index](/content/System-Specification/indexes/functional-specifications-index/)** - Complete component catalog
+- **[Component Interaction Diagrams](/content/System-Specification/functional-specifications/component-interaction-diagrams/)** - Component interactions
 
 ---
 
@@ -256,8 +256,8 @@ GET /api/v1/lei-records?filter[entity.status]    # Query by status
 - **Manual Override**: Allow manual intervention for critical processes
 
 ### Performance Cross-References
-- **[Performance Requirements](../requirements/performance-requirements.md)** - Detailed performance specifications
-- **[Timing Requirements and SLAs](../requirements/timing-requirements-slas.md)** - Regulatory timing requirements
+- **[Performance Requirements](/content/System-Specification/requirements/performance-requirements/)** - Detailed performance specifications
+- **[Timing Requirements and SLAs](/content/System-Specification/requirements/timing-requirements-slas/)** - Regulatory timing requirements
 
 ---
 
@@ -284,7 +284,7 @@ GET /api/v1/lei-records?filter[entity.status]    # Query by status
 - **Industry Standards**: ISO 27001, SOC 2 Type II
 
 ### Security Cross-References
-- **[Security and Compliance Requirements](../../external-interfaces/security-and-compliance-requirements.md)** - Detailed security specifications
+- **[Security and Compliance Requirements](/content/System-Specification/external-interfaces/security-and-compliance-requirements/)** - Detailed security specifications
 
 ---
 
@@ -311,7 +311,7 @@ GET /api/v1/lei-records?filter[entity.status]    # Query by status
 - **Regression Testing**: Automated regression test suites
 
 ### Testing Cross-References
-- **[Integration Testing Guide](../../external-interfaces/integration-testing-guide.md)** - Comprehensive testing strategies
+- **[Integration Testing Guide](/content/System-Specification/external-interfaces/integration-testing-guide/)** - Comprehensive testing strategies
 
 ---
 
@@ -333,8 +333,8 @@ external-interfaces/
 - **Error Codes**: Comprehensive error code documentation
 
 ### Discovery Tools
-- **[Interface Interaction Diagrams](../../external-interfaces/interface-interaction-diagrams.md)** - Visual interface relationships
-- **[External Interface Specifications](../../external-interfaces/external-interface-specifications.md)** - Complete technical documentation
+- **[Interface Interaction Diagrams](/content/System-Specification/external-interfaces/interface-interaction-diagrams/)** - Visual interface relationships
+- **[External Interface Specifications](/content/System-Specification/external-interfaces/external-interface-specifications/)** - Complete technical documentation
 
 ---
 
@@ -361,8 +361,8 @@ external-interfaces/
 - **Documentation Updates**: Regular documentation review and updates
 
 ### Operations Cross-References
-- **[Performance Requirements](../requirements/performance-requirements.md)** - Operational performance targets
-- **[Integration Testing Guide](../../external-interfaces/integration-testing-guide.md)** - Operational testing procedures
+- **[Performance Requirements](/content/System-Specification/requirements/performance-requirements/)** - Operational performance targets
+- **[Integration Testing Guide](/content/System-Specification/external-interfaces/integration-testing-guide/)** - Operational testing procedures
 
 ---
 
