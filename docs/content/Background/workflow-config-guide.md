@@ -206,7 +206,7 @@ If the processor requires access to the entity data, set `attachEntity` to `true
 
 ### Calculation Nodes Tags
 
-As described in the [Architecture](cyoda-cloud-architecture.md) section, the execution of processors and criteria is delegated to client compute nodes, i.e. your own infrastructure running your business logic. These nodes can be organized into groups and tagged based on their roles or capabilities. By optionally setting the `calculationNodesTags` property in a processor or criterion definition, you can direct execution to specific groups, giving you fine-grained control over workload distribution across your compute environment.
+As described in the Architecture section, the execution of processors and criteria is delegated to client compute nodes, i.e. your own infrastructure running your business logic. These nodes can be organized into groups and tagged based on their roles or capabilities. By optionally setting the `calculationNodesTags` property in a processor or criterion definition, you can direct execution to specific groups, giving you fine-grained control over workload distribution across your compute environment.
 
 ## Example: Payment Request Workflow
 

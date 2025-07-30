@@ -67,7 +67,7 @@ dtcc-reporting-system/
 ### Entity Schema Development
 
 #### Schema Definition Process
-1. **Review Entity Specifications** - Study [Entity Overview](entities/entity-overview.md)
+1. **Review Entity Specifications** - Study [Entity Overview](/content/System-Specification/entities/entity-overview/)
 2. **Define JSON Schemas** - Create schemas in `src/main/resources/schema/entity/`
 3. **Implement Entity Classes** - Generate or create Java entity classes
 4. **Add Validation Rules** - Implement business rule validation
@@ -150,7 +150,7 @@ public class TradeEnrichmentService {
 ### Workflow Configuration
 
 #### Configuration File Structure
-Follow the [Workflow Configuration Guide](../workflow-config-guide.md) for detailed specifications:
+Follow the [Workflow Configuration Guide](/content/Background/workflow-config-guide/) for detailed specifications:
 
 ```json
 {
@@ -654,11 +654,11 @@ public class DTCCHealthIndicator implements HealthIndicator {
 ## 📚 Additional Resources
 
 ### Documentation References
-- **[Master Specification](master-specification.md)** - Complete system overview
-- **[Entity Schema Index](indexes/entity-schema-index.md)** - Entity implementation guide
-- **[Workflow Index](indexes/workflow-index.md)** - Workflow implementation guide
-- **[Functional Specifications Index](indexes/functional-specifications-index.md)** - Component implementation guide
-- **[External Interfaces Index](indexes/external-interfaces-index.md)** - Integration implementation guide
+- **[Master Specification](/content/System-Specification/master-specification/)** - Complete system overview
+- **[Entity Schema Index](/content/System-Specification/indexes/entity-schema-index/)** - Entity implementation guide
+- **[Workflow Index](/content/System-Specification/indexes/workflow-index/)** - Workflow implementation guide
+- **[Functional Specifications Index](/content/System-Specification/indexes/functional-specifications-index/)** - Component implementation guide
+- **[External Interfaces Index](/content/System-Specification/indexes/external-interfaces-index/)** - Integration implementation guide
 
 ### Development Tools
 - **Cyoda Developer Portal** - Platform documentation and tools

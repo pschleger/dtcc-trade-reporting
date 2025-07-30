@@ -295,8 +295,8 @@ assert.equal(trade.metadata.workflowState.state, 'validated');
 
 ## Documentation
 
-- **[schema-documentation.md](./schema-documentation.md)** - Comprehensive field documentation and business rules
-- **[schema-versioning-strategy.md](./schema-versioning-strategy.md)** - Schema evolution and migration strategy
+- **[schema-documentation.md](/content/System-Specification/entities/schema-documentation/)** - Comprehensive field documentation and business rules
+- **[schema-versioning-strategy.md](/content/System-Specification/entities/schema-versioning-strategy/)** - Schema evolution and migration strategy
 
 ## Support
 

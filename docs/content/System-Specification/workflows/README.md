@@ -171,10 +171,10 @@ All 11 business use cases identified in Task 2 are fully supported:
 
 ## Related Documentation
 
-- [Business Use Cases](../business/business-use-cases.md) - Detailed business requirements
-- [Entity Overview](../entities/entity-overview.md) - Entity definitions and relationships
-- [System Architecture](../architecture/) - Overall system design
-- [Cyoda Design Principles](../../cyoda-design-principles.md) - Platform-specific guidelines
+- [Business Use Cases](/content/System-Specification/business/business-use-cases/) - Detailed business requirements
+- [Entity Overview](/content/System-Specification/entities/entity-overview/) - Entity definitions and relationships
+- [System Architecture](/content/System-Specification/architecture/) - Overall system design
+- [Cyoda Design Principles](/content/Background/cyoda-design-principles/) - Platform-specific guidelines
 
 Paul Muadib, I have successfully completed the high-level workflow state machine designs for the DTCC reporting system. The deliverables include:
 

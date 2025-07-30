@@ -83,8 +83,8 @@ Reference Data Management
 3. **Data Quality Validation** → **All Business Workflows**
 
 ### Dependency Documentation
-- **[Workflow Dependencies](../workflows/workflow-dependencies.md)** - Detailed inter-workflow relationships
-- **[Use Case to Workflow Mapping](../workflows/use-case-workflow-mapping.md)** - Business use case traceability
+- **[Workflow Dependencies](/content/System-Specification/workflows/workflow-dependencies/)** - Detailed inter-workflow relationships
+- **[Use Case to Workflow Mapping](/content/System-Specification/workflows/use-case-workflow-mapping/)** - Business use case traceability
 
 ---
 
@@ -120,8 +120,8 @@ Reference Data Management
 - **Versioning**: Semantic versioning (major.minor.patch)
 
 ### Configuration Documentation
-- **[Workflow Configuration Guide](../../workflow-config-guide.md)** - Complete configuration specification
-- **[Workflow Configurations README](../workflows/workflow-configurations-readme.md)** - Configuration file organization
+- **[Workflow Configuration Guide](/content/Background/workflow-config-guide/)** - Complete configuration specification
+- **[Workflow Configurations README](/content/System-Specification/workflows/workflow-configurations-readme/)** - Configuration file organization
 
 ---
 
@@ -163,8 +163,8 @@ Reference Data Management
 - `AcknowledgmentProcessor` - Process DTCC acknowledgments
 
 ### Component Cross-References
-- **[Functional Specifications Index](functional-specifications-index.md)** - Complete component catalog
-- **[Component Interaction Diagrams](../functional-specifications/component-interaction-diagrams.md)** - Component interaction patterns
+- **[Functional Specifications Index](/content/System-Specification/indexes/functional-specifications-index/)** - Complete component catalog
+- **[Component Interaction Diagrams](/content/System-Specification/functional-specifications/component-interaction-diagrams/)** - Component interaction patterns
 
 ---
 
@@ -185,8 +185,8 @@ Each workflow manages specific entity states:
 - **Regulatory Reporting**: `GENERATED` → `VALIDATED` → `SUBMITTED` → `ACKNOWLEDGED`
 
 ### Entity Cross-References
-- **[Entity Schema Index](entity-schema-index.md)** - Complete entity catalog
-- **[Entity Overview](../entities/entity-overview.md)** - Entity landscape and categorization
+- **[Entity Schema Index](/content/System-Specification/indexes/entity-schema-index/)** - Complete entity catalog
+- **[Entity Overview](/content/System-Specification/entities/entity-overview/)** - Entity landscape and categorization
 
 ---
 
@@ -210,8 +210,8 @@ Each workflow manages specific entity states:
 - **Audit Trail Creation** - Maintain compliance audit trails
 
 ### External Interface Cross-References
-- **[External Interfaces Index](external-interfaces-index.md)** - Complete interface catalog
-- **[External Interface Specifications](../../external-interfaces/external-interface-specifications.md)** - Detailed interface specifications
+- **[External Interfaces Index](/content/System-Specification/indexes/external-interfaces-index/)** - Complete interface catalog
+- **[External Interface Specifications](/content/System-Specification/external-interfaces/external-interface-specifications/)** - Detailed interface specifications
 
 ---
 
@@ -237,8 +237,8 @@ Each workflow manages specific entity states:
 - **Error Handling**: 99.99% availability (always available)
 
 ### Performance Cross-References
-- **[Performance Requirements](../requirements/performance-requirements.md)** - Detailed performance specifications
-- **[Timing Requirements and SLAs](../requirements/timing-requirements-slas.md)** - Regulatory timing requirements
+- **[Performance Requirements](/content/System-Specification/requirements/performance-requirements/)** - Detailed performance specifications
+- **[Timing Requirements and SLAs](/content/System-Specification/requirements/timing-requirements-slas/)** - Regulatory timing requirements
 
 ---
 
@@ -258,16 +258,16 @@ Each workflow manages specific entity states:
 - **State Names**: UPPER_CASE (e.g., TRADE_VALIDATED)
 
 ### Discovery Tools
-- **[Workflow State Machines](../workflows/workflow-state-machines.md)** - Complete workflow definitions
-- **[Naming Conventions](../standards/naming-conventions.md)** - Workflow naming standards
+- **[Workflow State Machines](/content/System-Specification/workflows/workflow-state-machines/)** - Complete workflow definitions
+- **[Naming Conventions](/content/System-Specification/standards/naming-conventions/)** - Workflow naming standards
 
 ---
 
 ## 📝 Validation and Quality Assurance
 
 ### Workflow Validation
-- **[Workflow Validation Report](../workflows/VALIDATION_REPORT.md)** - Current workflow validation status
-- **[Schema Compliance Validation](../workflows/schema-compliance-validation.md)** - Schema compliance procedures
+- **[Workflow Validation Report](/content/System-Specification/workflows/VALIDATION_REPORT/)** - Current workflow validation status
+- **[Schema Compliance Validation](/content/System-Specification/workflows/schema-compliance-validation/)** - Schema compliance procedures
 
 ### Configuration Testing
 - **Unit Testing**: Individual workflow component testing
@@ -298,8 +298,8 @@ Each workflow manages specific entity states:
 - **Migration Guidance** - Provide migration paths for breaking changes
 
 ### Maintenance Cross-References
-- **[Workflow Configuration Guide](../../workflow-config-guide.md)** - Configuration management guidelines
-- **[Schema Versioning Strategy](../entities/schema-versioning-strategy.md)** - Related entity evolution guidelines
+- **[Workflow Configuration Guide](/content/Background/workflow-config-guide/)** - Configuration management guidelines
+- **[Schema Versioning Strategy](/content/System-Specification/entities/schema-versioning-strategy/)** - Related entity evolution guidelines
 
 ---
 

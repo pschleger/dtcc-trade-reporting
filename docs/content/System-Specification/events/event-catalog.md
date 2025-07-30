@@ -109,21 +109,21 @@ Business events must be accessible to authorized business users for analysis and
 ### Business Event Documentation
 Business event specifications and requirements:
 
-- **[Event Template](./event-template.md)** - Standardized template for business event specifications
-- **[External Business Events](./business-events.md)** - Complete catalog of externally-triggered business events
-- **[External Interface Events](./external-events.md)** - Detailed specifications and data structures for external events
-- **[Business Event Processing](./event-driven-architecture.md)** - Business requirements for event processing and compliance
+- **[Event Template](/content/System-Specification/events/event-template/)** - Standardized template for business event specifications
+- **[External Business Events](/content/System-Specification/events/business-events/)** - Complete catalog of externally-triggered business events
+- **[External Interface Events](/content/System-Specification/events/external-events/)** - Detailed specifications and data structures for external events
+- **[Business Event Processing](/content/System-Specification/events/event-driven-architecture/)** - Business requirements for event processing and compliance
 
 ### Event Correlation and Validation Documentation
 Comprehensive event correlation, validation, and operational support:
 
-- **[Event Correlation Matrix](./event-correlation-matrix.md)** - Complete correlation patterns and relationships between all event types
-- **[Event Causality Chains](./event-causality-chains.md)** - Detailed causality relationships showing how events trigger subsequent events
-- **[Event Timing Dependencies](./event-timing-dependencies.md)** - Critical path analysis and timing constraints for regulatory compliance
-- **[Event Traceability and Audit](./event-traceability-audit.md)** - End-to-end traceability for regulatory audit and compliance purposes
-- **[Event Coverage Validation](./event-coverage-validation.md)** - Comprehensive validation against all business requirements and use cases
-- **[Event Troubleshooting Guide](./event-troubleshooting-guide.md)** - Operational support guide for diagnosing and resolving event issues
-- **[Event Architecture Patterns](./event-architecture-patterns.md)** - Event-driven architecture patterns and best practices
+- **[Event Correlation Matrix](/content/System-Specification/events/event-correlation-matrix/)** - Complete correlation patterns and relationships between all event types
+- **[Event Causality Chains](/content/System-Specification/events/event-causality-chains/)** - Detailed causality relationships showing how events trigger subsequent events
+- **[Event Timing Dependencies](/content/System-Specification/events/event-timing-dependencies/)** - Critical path analysis and timing constraints for regulatory compliance
+- **[Event Traceability and Audit](/content/System-Specification/events/event-traceability-audit/)** - End-to-end traceability for regulatory audit and compliance purposes
+- **[Event Coverage Validation](/content/System-Specification/events/event-coverage-validation/)** - Comprehensive validation against all business requirements and use cases
+- **[Event Troubleshooting Guide](/content/System-Specification/events/event-troubleshooting-guide/)** - Operational support guide for diagnosing and resolving event issues
+- **[Event Architecture Patterns](/content/System-Specification/events/event-architecture-patterns/)** - Event-driven architecture patterns and best practices
 
 ---
 
@@ -175,8 +175,8 @@ Comprehensive event correlation, validation, and operational support:
 ## Business Usage Guidelines
 
 ### For Business Process Owners
-1. **Process Definition**: Use [External Business Events](./business-events.md) to understand business triggers
-2. **Process Requirements**: Reference [Business Event Processing](./event-driven-architecture.md) for processing requirements
+1. **Process Definition**: Use [External Business Events](/content/System-Specification/events/business-events/) to understand business triggers
+2. **Process Requirements**: Reference [Business Event Processing](/content/System-Specification/events/event-driven-architecture/) for processing requirements
 3. **Data Requirements**: Ensure business events contain complete regulatory data elements
 4. **Timeline Requirements**: Understand processing timeframes for regulatory compliance
 

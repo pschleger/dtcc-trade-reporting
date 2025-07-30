@@ -24,56 +24,56 @@ The DTCC Regulatory Reporting System is a comprehensive, event-driven platform b
 ### Core System Documents
 | Document | Purpose | Audience |
 |----------|---------|----------|
-| [System Description](system-description.md) | High-level system overview and business context | All stakeholders |
-| [Architecture Overview](architecture/system-architecture.md) | Comprehensive system architecture and design | Architects, Developers |
-| [Entity-Driven Architecture](architecture/entity-driven-architecture.md) | Cyoda EDBMS architectural principles | Architects, Developers |
+| [System Description](/content/System-Specification/system-description/) | High-level system overview and business context | All stakeholders |
+| [Architecture Overview](/content/System-Specification/architecture/system-architecture/) | Comprehensive system architecture and design | Architects, Developers |
+| [Entity-Driven Architecture](/content/System-Specification/architecture/entity-driven-architecture/) | Cyoda EDBMS architectural principles | Architects, Developers |
 
 ### Quick Start Navigation
-- **New to the System?** → Start with [System Description](system-description.md)
-- **System Architect?** → Review [Architecture Overview](architecture/system-architecture.md)
-- **Business Analyst?** → Begin with [Business Use Cases](business/business-use-cases.md)
-- **Developer?** → Check [Standards and Conventions](standards/naming-conventions.md)
-- **Operations Team?** → Review [Performance Requirements](requirements/performance-requirements.md)
+- **New to the System?** → Start with [System Description](/content/System-Specification/system-description/)
+- **System Architect?** → Review [Architecture Overview](/content/System-Specification/architecture/system-architecture/)
+- **Business Analyst?** → Begin with [Business Use Cases](/content/System-Specification/business/business-use-cases/)
+- **Developer?** → Check [Standards and Conventions](/content/System-Specification/standards/naming-conventions/)
+- **Operations Team?** → Review [Performance Requirements](/content/System-Specification/requirements/performance-requirements/)
 
 ---
 
 ## 🏗️ Architecture and Design
 
 ### Architecture Documentation
-- **[System Architecture](architecture/system-architecture.md)** - Complete system design and component interactions
-- **[Entity-Driven Architecture](architecture/entity-driven-architecture.md)** - Cyoda EDBMS principles and patterns
+- **[System Architecture](/content/System-Specification/architecture/system-architecture/)** - Complete system design and component interactions
+- **[Entity-Driven Architecture](/content/System-Specification/architecture/entity-driven-architecture/)** - Cyoda EDBMS principles and patterns
 - **[System Architecture Diagram](architecture/system-architecture-diagram.mmd)** - Visual system overview
 
 ### Design Principles
-- **[General Rules](architecture/general-rules.md)** - System-wide design constraints and principles
-- **[Naming Conventions](standards/naming-conventions.md)** - Entity and component naming standards
+- **[General Rules](/content/System-Specification/architecture/general-rules/)** - System-wide design constraints and principles
+- **[Naming Conventions](/content/System-Specification/standards/naming-conventions/)** - Entity and component naming standards
 
 ---
 
 ## 🏢 Business Domain and Entities
 
 ### Business Context
-- **[Business Use Cases](business/business-use-cases.md)** - Complete business scenarios and requirements
-- **[Decision Points and Business Rules](business/decision-points-business-rules.md)** - Business logic and decision criteria
-- **[Use Case Relationships](business/use-case-relationship-hierarchy.md)** - Hierarchical use case organization
+- **[Business Use Cases](/content/System-Specification/business/business-use-cases/)** - Complete business scenarios and requirements
+- **[Decision Points and Business Rules](/content/System-Specification/business/decision-points-business-rules/)** - Business logic and decision criteria
+- **[Use Case Relationships](/content/System-Specification/business/use-case-relationship-hierarchy/)** - Hierarchical use case organization
 
 ### Entity Specifications
-- **[Entity Overview](entities/entity-overview.md)** - Complete entity landscape and categorization
+- **[Entity Overview](/content/System-Specification/entities/entity-overview/)** - Complete entity landscape and categorization
 - **[Entity Relationship Diagram](entities/entity-relationship-diagram.mmd)** - Visual entity relationships
-- **[Schema Documentation](entities/schema-documentation.md)** - Detailed entity schema specifications
-- **[Schema Versioning Strategy](entities/schema-versioning-strategy.md)** - Entity evolution and versioning
+- **[Schema Documentation](/content/System-Specification/entities/schema-documentation/)** - Detailed entity schema specifications
+- **[Schema Versioning Strategy](/content/System-Specification/entities/schema-versioning-strategy/)** - Entity evolution and versioning
 
 ### Entity Index
-📖 **[Complete Entity Schema Index](indexes/entity-schema-index.md)** - Comprehensive catalog of all entity schemas with descriptions and cross-references
+📖 **[Complete Entity Schema Index](/content/System-Specification/indexes/entity-schema-index/)** - Comprehensive catalog of all entity schemas with descriptions and cross-references
 
 ---
 
 ## ⚙️ Workflows and Processing
 
 ### Workflow Architecture
-- **[Workflow State Machines](workflows/workflow-state-machines.md)** - Complete workflow definitions and state transitions
-- **[Workflow Dependencies](workflows/workflow-dependencies.md)** - Inter-workflow relationships and dependencies
-- **[Use Case to Workflow Mapping](workflows/use-case-workflow-mapping.md)** - Business use case to workflow traceability
+- **[Workflow State Machines](/content/System-Specification/workflows/workflow-state-machines/)** - Complete workflow definitions and state transitions
+- **[Workflow Dependencies](/content/System-Specification/workflows/workflow-dependencies/)** - Inter-workflow relationships and dependencies
+- **[Use Case to Workflow Mapping](/content/System-Specification/workflows/use-case-workflow-mapping/)** - Business use case to workflow traceability
 
 ### State Machine Diagrams
 - **[Trade State Diagram](workflows/trade-state-diagram.mmd)** - Trade entity lifecycle
@@ -83,94 +83,94 @@ The DTCC Regulatory Reporting System is a comprehensive, event-driven platform b
 - **[Workflow Interaction Diagram](workflows/workflow-interaction-diagram.mmd)** - Cross-workflow interactions
 
 ### Workflow Index
-📖 **[Complete Workflow Configuration Index](indexes/workflow-index.md)** - Comprehensive catalog of all workflow configurations with descriptions and cross-references
+📖 **[Complete Workflow Configuration Index](/content/System-Specification/indexes/workflow-index/)** - Comprehensive catalog of all workflow configurations with descriptions and cross-references
 
 ---
 
 ## 🔧 Functional Specifications
 
 ### Component Architecture
-- **[Component Interaction Diagrams](functional-specifications/component-interaction-diagrams.md)** - System component interactions and data flows
+- **[Component Interaction Diagrams](/content/System-Specification/functional-specifications/component-interaction-diagrams/)** - System component interactions and data flows
 
 ### Processing Components
 - **Criteria Components** - Business logic evaluation and decision points
 - **Processor Components** - Data transformation and business process execution
 
 ### Functional Index
-📖 **[Complete Functional Specifications Index](indexes/functional-specifications-index.md)** - Comprehensive catalog of all criteria and processors with cross-references to workflows
+📖 **[Complete Functional Specifications Index](/content/System-Specification/indexes/functional-specifications-index/)** - Comprehensive catalog of all criteria and processors with cross-references to workflows
 
 ---
 
 ## ⚡ Events and Integration
 
 ### Event-Driven Architecture
-- **[Event-Driven Architecture](events/event-driven-architecture.md)** - Event processing principles and patterns
-- **[Event Catalog](events/event-catalog.md)** - Complete catalog of business events
-- **[Business Events](events/business-events.md)** - Business-triggered event specifications
-- **[External Events](events/external-events.md)** - External system integration events
+- **[Event-Driven Architecture](/content/System-Specification/events/event-driven-architecture/)** - Event processing principles and patterns
+- **[Event Catalog](/content/System-Specification/events/event-catalog/)** - Complete catalog of business events
+- **[Business Events](/content/System-Specification/events/business-events/)** - Business-triggered event specifications
+- **[External Events](/content/System-Specification/events/external-events/)** - External system integration events
 
 ### Event Processing Flows
-- **[Trade Processing Event Flows](events/event-flows-trade-processing.md)** - Trade processing event sequences
-- **[Position Reporting Event Flows](events/event-flows-position-reporting.md)** - Position reporting event sequences
+- **[Trade Processing Event Flows](/content/System-Specification/events/event-flows-trade-processing/)** - Trade processing event sequences
+- **[Position Reporting Event Flows](/content/System-Specification/events/event-flows-position-reporting/)** - Position reporting event sequences
 
 ### Swimlane Diagrams
-- **[Trade Processing Swimlanes](events/trade-processing-swimlane-diagrams.md)** - Trade processing cross-system flows
-- **[Position Management Swimlanes](events/position-management-reconciliation-swimlane-diagrams.md)** - Position management flows
-- **[Regulatory Reporting Swimlanes](events/regulatory-reporting-swimlane-diagrams.md)** - Regulatory reporting flows
-- **[Data Management Swimlanes](events/data-management-error-handling-swimlane-diagrams.md)** - Data management and error handling flows
+- **[Trade Processing Swimlanes](/content/System-Specification/events/trade-processing-swimlane-diagrams/)** - Trade processing cross-system flows
+- **[Position Management Swimlanes](/content/System-Specification/events/position-management-reconciliation-swimlane-diagrams/)** - Position management flows
+- **[Regulatory Reporting Swimlanes](/content/System-Specification/events/regulatory-reporting-swimlane-diagrams/)** - Regulatory reporting flows
+- **[Data Management Swimlanes](/content/System-Specification/events/data-management-error-handling-swimlane-diagrams/)** - Data management and error handling flows
 
 ### Events Index
-📖 **[Complete Events and Diagrams Index](indexes/events-diagrams-index.md)** - Comprehensive catalog of all events and swimlane diagrams with cross-references
+📖 **[Complete Events and Diagrams Index](/content/System-Specification/indexes/events-diagrams-index/)** - Comprehensive catalog of all events and swimlane diagrams with cross-references
 
 ---
 
 ## 🔌 External Interfaces
 
 ### Interface Specifications
-- **[External Interface Specifications](../external-interfaces/external-interface-specifications.md)** - Complete external system integration specifications
-- **[Interface Interaction Diagrams](../external-interfaces/interface-interaction-diagrams.md)** - Visual interface interaction patterns
-- **[Security and Compliance Requirements](../external-interfaces/security-and-compliance-requirements.md)** - Security specifications for external integrations
+- **[External Interface Specifications](/content/System-Specification/external-interfaces/external-interface-specifications/)** - Complete external system integration specifications
+- **[Interface Interaction Diagrams](/content/System-Specification/external-interfaces/interface-interaction-diagrams/)** - Visual interface interaction patterns
+- **[Security and Compliance Requirements](/content/System-Specification/external-interfaces/security-and-compliance-requirements/)** - Security specifications for external integrations
 
 ### Integration Guidance
-- **[Integration Testing Guide](../external-interfaces/integration-testing-guide.md)** - Comprehensive testing strategies for external interfaces
+- **[Integration Testing Guide](/content/System-Specification/external-interfaces/integration-testing-guide/)** - Comprehensive testing strategies for external interfaces
 
 ### External Interfaces Index
-📖 **[Complete External Interfaces Index](indexes/external-interfaces-index.md)** - Comprehensive catalog of all external interfaces with integration guidance
+📖 **[Complete External Interfaces Index](/content/System-Specification/indexes/external-interfaces-index/)** - Comprehensive catalog of all external interfaces with integration guidance
 
 ---
 
 ## 📊 Requirements and Performance
 
 ### System Requirements
-- **[Performance Requirements](requirements/performance-requirements.md)** - Comprehensive performance specifications and SLAs
-- **[Timing Requirements and SLAs](requirements/timing-requirements-slas.md)** - Regulatory timing requirements and service level agreements
+- **[Performance Requirements](/content/System-Specification/requirements/performance-requirements/)** - Comprehensive performance specifications and SLAs
+- **[Timing Requirements and SLAs](/content/System-Specification/requirements/timing-requirements-slas/)** - Regulatory timing requirements and service level agreements
 
 ---
 
 ## 📚 Reference Materials
 
 ### Standards and Guidelines
-- **[Naming Conventions](standards/naming-conventions.md)** - Entity naming and design principles
-- **[Cyoda Design Principles](../cyoda-design-principles.md)** - Platform architectural patterns
-- **[Workflow Configuration Guide](../workflow-config-guide.md)** - Workflow JSON schema specification
+- **[Naming Conventions](/content/System-Specification/standards/naming-conventions/)** - Entity naming and design principles
+- **[Cyoda Design Principles](/content/Background/cyoda-design-principles/)** - Platform architectural patterns
+- **[Workflow Configuration Guide](/content/Background/workflow-config-guide/)** - Workflow JSON schema specification
 
 ### Schema Definitions
 - **[Schema Directory](../schema/)** - JSON schema definitions for entities and workflows
 
 ### Glossary and Reference
-📖 **[System Glossary](glossary.md)** - Complete glossary of terms and acronyms used throughout the specification
+📖 **[System Glossary](/content/System-Specification/glossary/)** - Complete glossary of terms and acronyms used throughout the specification
 
 ---
 
 ## 🛠️ Implementation and Operations
 
 ### Implementation Guidance
-📖 **[Implementation Guide](implementation-guide.md)** - Technical implementation details and guidance
+📖 **[Implementation Guide](/content/System-Specification/implementation-guide/)** - Technical implementation details and guidance
 
 ### Validation and Quality Assurance
-- **[Entity Validation Summary](entities/VALIDATION_SUMMARY.md)** - Entity schema validation results
-- **[Workflow Validation Report](workflows/VALIDATION_REPORT.md)** - Workflow configuration validation results
-- **[Schema Compliance Validation](workflows/schema-compliance-validation.md)** - Schema compliance validation procedures
+- **[Entity Validation Summary](/content/System-Specification/entities/VALIDATION_SUMMARY/)** - Entity schema validation results
+- **[Workflow Validation Report](/content/System-Specification/workflows/VALIDATION_REPORT/)** - Workflow configuration validation results
+- **[Schema Compliance Validation](/content/System-Specification/workflows/schema-compliance-validation/)** - Schema compliance validation procedures
 
 ---
 
