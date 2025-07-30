@@ -5,7 +5,7 @@ title: Home
 
 # DTCC Trade Reporting Documentation
 
-Welcome to the comprehensive documentation for the DTCC Trade Reporting system. This documentation covers the complete specification, architecture, and implementation details for an OTC derivatives trade position keeping and DTCC regulatory reporting system.
+This documentation provides the full specifications, architecture, and implementation details of the system supporting OTC derivatives position keeping and regulatory reporting to the DTCC.
 
 ## Overview
 
@@ -55,7 +55,7 @@ Documentation for system integrations:
 - **Event-Driven Architecture** - Built on a robust event-driven foundation
 - **Regulatory Compliance** - Full DTCC GTR reporting compliance
 - **FpML Support** - Native support for FpML trade confirmation messages
-- **Position Management** - Comprehensive trade position tracking and management
+- **Position Management** - Complete trade position tracking and management
 - **Static Data Management** - Integrated counterparty and reference data management
 
 ## Getting Started

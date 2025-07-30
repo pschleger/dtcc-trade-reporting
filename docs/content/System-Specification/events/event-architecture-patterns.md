@@ -9,7 +9,7 @@ This document defines the event-driven architecture patterns, design principles,
 ### 1. Event Sourcing Pattern
 
 #### Pattern Description
-Event sourcing captures all changes to application state as a sequence of events, providing complete audit trails and enabling temporal queries for regulatory compliance.
+Event sourcing captures all changes to application state as a sequence of events, providing audit trails and enabling temporal queries for regulatory compliance.
 
 #### Implementation in DTCC System
 ```mermaid

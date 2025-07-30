@@ -2,7 +2,7 @@
 
 ## Overview
 
-This index provides a comprehensive catalog of all workflow configurations in the DTCC Regulatory Reporting System, organized by business domain with descriptions, state machines, dependencies, and cross-references to related entities and functional specifications.
+This index provides a complete catalog of all workflow configurations in the DTCC Regulatory Reporting System, organized by business domain with descriptions, state machines, dependencies, and cross-references to related entities and functional specifications.
 
 ---
 
@@ -303,4 +303,4 @@ Each workflow manages specific entity states:
 
 ---
 
-*This workflow configuration index provides comprehensive coverage of all workflows in the DTCC Regulatory Reporting System. For specific workflow details, refer to the individual configuration files or the detailed workflow documentation.*
+*This workflow configuration index provides coverage of all workflows in the DTCC Regulatory Reporting System. For specific workflow details, refer to the individual configuration files or the detailed workflow documentation.*

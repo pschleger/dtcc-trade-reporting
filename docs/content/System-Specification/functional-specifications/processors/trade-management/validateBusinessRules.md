@@ -4,7 +4,7 @@
 **Component Name**: validateBusinessRules
 **Component Type**: CyodaProcessor
 **Business Domain**: Trade Management
-**Purpose**: Validates trade entities against comprehensive business rules, trading limits, and regulatory constraints
+**Purpose**: Validates trade entities against complete business rules, trading limits, and regulatory constraints
 **Workflow Context**: TradeWorkflow (validating state)
 
 ## 2. Input Specifications
@@ -89,7 +89,7 @@
 5. Calculate and assess risk metrics
 6. Check concentration limits and portfolio constraints
 7. Validate regulatory compliance requirements
-8. Generate comprehensive validation report
+8. Generate validation report
 
 **Business Rules**:
 - **Counterparty Limits**: Trade notional must not exceed counterparty credit limit

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This index provides a comprehensive catalog of all entity schemas in the DTCC Regulatory Reporting System, organized by category with descriptions, relationships, and cross-references to related workflows and specifications.
+This index provides a complete catalog of all entity schemas in the DTCC Regulatory Reporting System, organized by category with descriptions, relationships, and cross-references to related workflows and specifications.
 
 ---
 
@@ -229,4 +229,4 @@ Processor components that transform and manage entities:
 
 ---
 
-*This entity schema index provides comprehensive coverage of all entities in the DTCC Regulatory Reporting System. For specific schema details, refer to the individual schema files or the detailed entity documentation.*
+*This entity schema index provides coverage of all entities in the DTCC Regulatory Reporting System. For specific schema details, refer to the individual schema files or the detailed entity documentation.*

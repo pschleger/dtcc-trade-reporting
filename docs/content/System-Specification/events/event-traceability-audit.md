@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document defines the comprehensive event traceability framework and audit requirements for the DTCC Regulatory Reporting System. It establishes end-to-end traceability for regulatory audit purposes, compliance monitoring, and operational transparency.
+This document defines the complete event traceability framework and audit requirements for the DTCC Regulatory Reporting System. It establishes end-to-end traceability for regulatory audit purposes, compliance monitoring, and operational transparency.
 
 ## Audit Traceability Framework
 
@@ -238,7 +238,7 @@ graph TD
 - **Data Consistency**: Verification of audit data consistency
 
 #### Automated Audit Validation
-- **Audit Trail Completeness**: Automated verification of complete audit trails
+- **Audit Trail Completeness**: Automated verification of audit trails
 - **Regulatory Compliance**: Automated compliance checking against regulations
 - **Data Quality Validation**: Automated validation of audit data quality
 - **Performance Monitoring**: Automated monitoring of audit system performance
@@ -247,7 +247,7 @@ graph TD
 
 #### Trade Investigation Process
 1. **Trade Identification**: Identify trade requiring investigation
-2. **Audit Trail Retrieval**: Retrieve complete audit trail for trade
+2. **Audit Trail Retrieval**: Retrieve audit trail for trade
 3. **Event Sequence Analysis**: Analyze sequence and timing of events
 4. **Data Lineage Tracking**: Track data transformations and calculations
 5. **Compliance Verification**: Verify compliance with regulations
@@ -259,14 +259,14 @@ graph TD
 3. **Impact Assessment**: Assess business and regulatory impact
 4. **Recovery Verification**: Verify effectiveness of recovery actions
 5. **Prevention Analysis**: Analyze prevention measures
-6. **Investigation Report**: Generate comprehensive investigation report
+6. **Investigation Report**: Generate complete investigation report
 
 ## Audit Compliance and Reporting
 
 ### 1. Regulatory Audit Compliance
 
 #### DTCC Audit Requirements
-- **Complete Audit Trail**: Maintain complete audit trail for all regulatory events
+- **Complete Audit Trail**: Maintain audit trail for all regulatory events
 - **Audit Data Retention**: Retain audit data for required regulatory periods
 - **Audit Report Generation**: Generate audit reports for regulatory review
 - **Audit Data Access**: Provide audit data access to regulators on request
@@ -280,7 +280,7 @@ graph TD
 ### 2. Audit Reporting and Analytics
 
 #### Executive Audit Dashboards
-- **Audit Coverage Metrics**: Percentage of events with complete audit trails
+- **Audit Coverage Metrics**: Percentage of events with audit trails
 - **Compliance Metrics**: Compliance with audit and regulatory requirements
 - **Quality Metrics**: Audit data quality and integrity metrics
 - **Performance Metrics**: Audit system performance and availability

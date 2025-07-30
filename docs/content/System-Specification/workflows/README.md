@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains the high-level workflow state machine designs for the DTCC Regulatory Reporting System. These designs establish the foundation for detailed Cyoda workflow configurations and ensure comprehensive coverage of all business scenarios.
+This directory contains the high-level workflow state machine designs for the DTCC Regulatory Reporting System. These designs establish the foundation for detailed Cyoda workflow configurations and ensure coverage of all business scenarios.
 
 The actual workflow configurations are located in the `src/main/resources/workflows/` directory of the codebase.
 DO NOT PUT ANY workflow configuration artefacts in this directory.
@@ -127,7 +127,7 @@ All 11 business use cases identified in Task 2 are fully supported:
 1. Implement consistent error recovery patterns across all workflows
 2. Configure appropriate retry mechanisms for transient failures
 3. Set up escalation procedures for manual review states
-4. Maintain complete audit trails for all state transitions
+4. Maintain audit trails for all state transitions
 
 ### Performance Considerations
 1. Design for automated processing to meet SLA requirements

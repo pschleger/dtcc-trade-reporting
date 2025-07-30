@@ -4,7 +4,7 @@
 **Component Name**: executeCancellation
 **Component Type**: CyodaProcessor
 **Business Domain**: Cancellation Processing
-**Purpose**: Executes authorized trade cancellations with complete audit trail, position updates, and downstream system notifications
+**Purpose**: Executes authorized trade cancellations with audit trail, position updates, and downstream system notifications
 **Workflow Context**: CancellationWorkflow (execution state)
 
 ## 2. Input Specifications
@@ -108,7 +108,7 @@
 **Side Effects**:
 - Updates or removes trade entity based on cancellation type
 - Creates backup of original trade data
-- Generates comprehensive audit trail
+- Generates audit trail
 - Triggers position recalculation for affected positions
 - Publishes cancellation events to downstream systems
 
@@ -120,7 +120,7 @@
 4. Validate current trade state against cancellation requirements
 5. Execute cancellation based on type (full, partial, novation)
 6. Update or remove trade entity as appropriate
-7. Create comprehensive audit trail entry
+7. Create audit trail entry
 8. Trigger position recalculation for affected positions
 9. Notify downstream systems of cancellation
 10. Release trade lock and publish completion events
@@ -222,7 +222,7 @@
 
 **Environment-Specific Configuration**:
 - **Development**: Reduced timeouts and simplified validation
-- **Production**: Full timeouts and comprehensive validation
+- **Production**: Full timeouts and validation
 
 ## 10. Integration Points
 **API Contracts**:

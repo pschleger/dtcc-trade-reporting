@@ -76,7 +76,7 @@
 **Processing Steps**:
 1. Validate product approval request completeness and format
 2. Verify product committee authority and member availability
-3. Perform comprehensive risk assessment and regulatory compliance check
+3. Perform complete risk assessment and regulatory compliance check
 4. Execute approval workflow with committee review and voting
 5. Apply approval conditions and restrictions if applicable
 6. Update product master data with approval status and conditions

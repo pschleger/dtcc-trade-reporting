@@ -31,7 +31,7 @@
 **Context Data**:
 - Investigation procedures and methodologies
 - Access to detailed trade and position history
-- External data sources for comprehensive analysis
+- External data sources for complete analysis
 
 ## 3. Output Specifications
 **Success Response**:
@@ -84,7 +84,7 @@
 ## 4. Business Logic
 **Processing Steps**:
 1. Validate investigation parameters and access required data sources
-2. Gather comprehensive evidence from multiple systems and sources
+2. Gather complete evidence from multiple systems and sources
 3. Perform detailed analysis of trade lifecycle and position movements
 4. Cross-reference with external confirmations and counterparty data
 5. Identify root causes and contributing factors
@@ -145,7 +145,7 @@
 
 **Resource Requirements**:
 - **CPU**: High for complex analysis and pattern matching algorithms
-- **Memory**: 2GB per concurrent investigation for comprehensive data analysis
+- **Memory**: 2GB per concurrent investigation for complete data analysis
 - **I/O**: Intensive access to multiple data sources and systems
 
 **Scalability**:
@@ -184,7 +184,7 @@
 
 **Environment-Specific Configuration**:
 - **Development**: Limited data sources with detailed logging
-- **Production**: Full data source access with comprehensive investigation capabilities
+- **Production**: Full data source access with complete investigation capabilities
 
 ## 10. Integration Points
 **API Contracts**:

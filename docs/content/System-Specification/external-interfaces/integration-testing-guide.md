@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document provides comprehensive guidance for testing all external interfaces of the DTCC Regulatory Reporting System. It defines testing strategies, test scenarios, validation criteria, and automation approaches to ensure reliable and compliant integration with external systems.
+This document provides guidance for testing all external interfaces of the DTCC Regulatory Reporting System. It defines testing strategies, test scenarios, validation criteria, and automation approaches to ensure reliable and compliant integration with external systems.
 
 ---
 
@@ -470,7 +470,7 @@ End-to-End Tests (10%): Full workflow testing
 
 ## 10. Conclusion
 
-This integration testing guide provides comprehensive coverage for validating all external interfaces of the DTCC Regulatory Reporting System. Regular execution of these tests ensures:
+This integration testing guide provides coverage for validating all external interfaces of the DTCC Regulatory Reporting System. Regular execution of these tests ensures:
 
 - **Functional Reliability**: All interfaces work as designed
 - **Performance Compliance**: SLA requirements are met

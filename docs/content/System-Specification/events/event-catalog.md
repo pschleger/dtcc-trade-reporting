@@ -160,7 +160,7 @@ Comprehensive event correlation, validation, and operational support:
 ### Audit Trail Philosophy
 **Audit trails are maintained through entity transactions rather than separate audit events:**
 - All entity state changes are captured in immutable AuditTrail entities
-- Entity transaction history provides complete data lineage
+- Entity transaction history provides data lineage
 - Workflow state transitions are automatically audited
 - No separate audit events needed as transactions serve as audit records
 

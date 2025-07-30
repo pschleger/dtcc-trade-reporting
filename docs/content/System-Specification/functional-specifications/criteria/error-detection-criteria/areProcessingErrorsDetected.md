@@ -5,7 +5,7 @@
 **Component Type**: CyodaCriterion
 **Business Domain**: Error Detection
 **Purpose**: Evaluates whether any processing errors detected in batch processing operations that require attention or intervention
-**Workflow Context**: Batch processing workflows requiring comprehensive error detection for proper error handling
+**Workflow Context**: Batch processing workflows requiring complete error detection for proper error handling
 
 ## 2. Input Parameters
 **Entity Type**: Entity

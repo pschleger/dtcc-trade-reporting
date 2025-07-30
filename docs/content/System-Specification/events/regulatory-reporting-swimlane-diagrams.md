@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides comprehensive swimlane diagrams showing the complete regulatory reporting lifecycle from report generation through DTCC GTR submission, acknowledgment processing, and error remediation, including all compliance monitoring and audit requirements.
+This document provides swimlane diagrams showing the complete regulatory reporting lifecycle from report generation through DTCC GTR submission, acknowledgment processing, and error remediation, including all compliance monitoring and audit requirements.
 
 ## 1. Automated Report Generation from Thresholds
 
@@ -600,9 +600,9 @@ sequenceDiagram
 
 ## Summary
 
-The regulatory reporting swimlane diagrams provide comprehensive coverage of:
+The regulatory reporting swimlane diagrams provide coverage of:
 
-1. **Automated Report Generation**: Triggered by threshold breaches with complete validation
+1. **Automated Report Generation**: Triggered by threshold breaches with validation
 2. **Report Validation**: Multi-stage compliance checking against DTCC requirements
 3. **DTCC Submission**: Secure, authenticated submission with monitoring
 4. **Acknowledgment Processing**: Real-time handling of DTCC responses

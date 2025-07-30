@@ -77,7 +77,7 @@ END IF
 **Success Scenarios**:
 - **Standard Rejection**: DTCC rejection with code and reason
 - **Simple Rejection**: DTCC rejection with minimal details
-- **Detailed Rejection**: DTCC rejection with comprehensive error information
+- **Detailed Rejection**: DTCC rejection with complete error information
 - **Timely Rejection**: DTCC rejection received within expected timeframe
 
 ## 5. Failure Conditions

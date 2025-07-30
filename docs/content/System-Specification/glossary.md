@@ -276,4 +276,4 @@ The system component responsible for executing workflows, managing state transit
 
 ---
 
-*This glossary provides comprehensive coverage of terms and concepts used throughout the DTCC Regulatory Reporting System specification. For additional context, refer to the cross-referenced documentation sections.*
+*This glossary provides coverage of terms and concepts used throughout the DTCC Regulatory Reporting System specification. For additional context, refer to the cross-referenced documentation sections.*

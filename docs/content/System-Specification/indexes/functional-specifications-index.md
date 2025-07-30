@@ -2,7 +2,7 @@
 
 ## Overview
 
-This index provides a comprehensive catalog of all functional specifications in the DTCC Regulatory Reporting System, organized by component type (Criteria and Processors) with descriptions, workflow integration, and cross-references to related entities and business requirements.
+This index provides a complete catalog of all functional specifications in the DTCC Regulatory Reporting System, organized by component type (Criteria and Processors) with descriptions, workflow integration, and cross-references to related entities and business requirements.
 
 ---
 
@@ -306,4 +306,4 @@ Each component follows a standardized specification format:
 
 ---
 
-*This functional specifications index provides comprehensive coverage of all criteria and processor components in the DTCC Regulatory Reporting System. For specific component details, refer to the individual component specifications or the detailed functional documentation.*
+*This functional specifications index provides coverage of all criteria and processor components in the DTCC Regulatory Reporting System. For specific component details, refer to the individual component specifications or the detailed functional documentation.*

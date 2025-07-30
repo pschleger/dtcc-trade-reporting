@@ -107,7 +107,7 @@
 - **Recalculation Trigger**: Only specific events can trigger position recalculation
 - **Market Data Currency**: Market data must be current within acceptable tolerance
 - **Impact Threshold**: Significant changes require additional validation
-- **Audit Requirements**: All recalculations must maintain complete audit trail
+- **Audit Requirements**: All recalculations must maintain audit trail
 - **Risk Limits**: Recalculated positions must comply with risk limits
 
 **Algorithms**:

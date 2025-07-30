@@ -19,7 +19,7 @@ The system handles the complexities of OTC derivatives markets including trade a
 
 - Ensure 100% regulatory compliance with DTCC reporting requirements
 - Provide real-time position visibility and risk management capabilities  
-- Maintain complete audit trails for all trade and position changes
+- Maintain audit trails for all trade and position changes
 - Enable straight-through processing from trade confirmation to regulatory submission
 - Support multiple asset classes and jurisdictions within OTC derivatives markets
 
@@ -28,7 +28,7 @@ The system handles the complexities of OTC derivatives markets including trade a
 The system shall be built using the Cyoda EDBMS entity-driven architecture where:
 - All business data is modeled as entities with defined lifecycles and workflows
 - Business logic is encapsulated within entity workflows, not separate processing engines
-- Entity state transitions trigger automated workflows while maintaining complete audit trails
+- Entity state transitions trigger automated workflows while maintaining audit trails
 - External integrations interact directly with entity workflows through well-defined interfaces
 - Scalability is achieved through distributed entity processing across the Cyoda platform
 - There are no special engines that process events - the Cyoda platform processes events based on defined entity workflows and state machines

@@ -4,7 +4,7 @@
 **Component Name**: isImpactAssessmentSuccessful
 **Component Type**: CyodaCriterion
 **Business Domain**: Processing Status Criteria
-**Purpose**: Evaluates whether impact assessment processes have completed successfully with comprehensive analysis and risk evaluation
+**Purpose**: Evaluates whether impact assessment processes have completed successfully with complete analysis and risk evaluation
 **Workflow Context**: Used in amendment and cancellation workflows to determine if impact assessment operations have been successfully completed
 
 ### 2. Input Parameters

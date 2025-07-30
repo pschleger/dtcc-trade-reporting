@@ -2,7 +2,7 @@
 
 ## Overview
 
-This implementation guide provides technical guidance for implementing the DTCC Regulatory Reporting System based on the comprehensive specifications. It covers development approaches, deployment strategies, testing methodologies, and operational considerations.
+This implementation guide provides technical guidance for implementing the DTCC Regulatory Reporting System based on the specifications. It covers development approaches, deployment strategies, testing methodologies, and operational considerations.
 
 ---
 
@@ -150,7 +150,7 @@ public class TradeEnrichmentService {
 ### Workflow Configuration
 
 #### Configuration File Structure
-Follow the [Workflow Configuration Guide](/content/Background/workflow-config-guide/) for detailed specifications:
+Follow the [Workflow Configuration Guide](/content/Background/workflow-config-guide/) for specifications:
 
 ```json
 {
@@ -674,4 +674,4 @@ public class DTCCHealthIndicator implements HealthIndicator {
 
 ---
 
-*This implementation guide provides comprehensive technical guidance for implementing the DTCC Regulatory Reporting System. For specific implementation questions, refer to the detailed specifications or contact the technical support team.*
+*This implementation guide provides technical guidance for implementing the DTCC Regulatory Reporting System. For specific implementation questions, refer to the specifications or contact the technical support team.*

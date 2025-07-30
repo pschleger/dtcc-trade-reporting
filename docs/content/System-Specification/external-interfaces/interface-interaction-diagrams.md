@@ -304,7 +304,7 @@ Each interface requires continuous monitoring with the following metrics:
 
 ## Conclusion
 
-These interaction diagrams provide a comprehensive view of how the DTCC Regulatory Reporting System integrates with external systems. They serve as a reference for:
+These interaction diagrams provide a complete view of how the DTCC Regulatory Reporting System integrates with external systems. They serve as a reference for:
 
 - **Development Teams**: Understanding integration requirements
 - **Operations Teams**: Monitoring and troubleshooting

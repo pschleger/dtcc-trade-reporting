@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides comprehensive diagrams showing entity state transitions and workflow interactions in the DTCC regulatory reporting system. Each diagram illustrates how entity workflows process business events through state machines, with processors and criteria implementing the workflow logic within each entity.
+This document provides diagrams showing entity state transitions and workflow interactions in the DTCC regulatory reporting system. Each diagram illustrates how entity workflows process business events through state machines, with processors and criteria implementing the workflow logic within each entity.
 
 ## TradeConfirmation Entity Workflow
 

@@ -84,7 +84,7 @@
 4. Apply cancellation to trade entity
 5. Update related entities and calculations
 6. Generate regulatory cancellation notifications
-7. Create comprehensive audit trail
+7. Create audit trail
 
 **Business Rules**:
 - **Authorization Limits**: Cancellations must be within authorized limits

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides comprehensive swimlane diagrams showing the complete flow of trade processing events from FpML message ingestion through trade confirmation, validation, and conversion, including all entity interactions, decision points, and error handling paths.
+This document provides swimlane diagrams showing the complete flow of trade processing events from FpML message ingestion through trade confirmation, validation, and conversion, including all entity interactions, decision points, and error handling paths.
 
 ## Diagram Summary
 
@@ -199,7 +199,7 @@ These swimlane diagrams have been validated against the following trade processi
 - UC-005: External System Integration
 - UC-006: Audit and Compliance Logging
 
-All diagrams include comprehensive error handling, timing requirements, SLA constraints, and regulatory compliance considerations as specified in the trade processing requirements.
+All diagrams include complete error handling, timing requirements, SLA constraints, and regulatory compliance considerations as specified in the trade processing requirements.
 
 ## Mermaid Diagram Definitions
 

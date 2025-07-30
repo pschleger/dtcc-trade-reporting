@@ -81,7 +81,7 @@
 4. Check if update requires approval based on business rules
 5. Execute LEI validation for legal entity identifier changes
 6. Apply update to counterparty master data
-7. Create comprehensive audit trail entry
+7. Create audit trail entry
 8. Notify relevant systems and users of the update
 
 **Business Rules**:

@@ -71,7 +71,7 @@
 - Updates counterparty status to SUSPENDED in master data
 - Blocks new trade creation with suspended counterparty
 - Generates risk alerts and notifications to relevant teams
-- Creates comprehensive audit trail for regulatory compliance
+- Creates audit trail for regulatory compliance
 
 ### 4. Business Logic
 **Processing Steps**:

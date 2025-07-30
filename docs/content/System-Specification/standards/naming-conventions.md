@@ -206,7 +206,7 @@ Please provide valid Legal Entity Identifier for counterparty.
 ## Documentation Standards
 
 ### Entity Documentation
-Each entity type requires comprehensive documentation including:
+Each entity type requires complete documentation including:
 
 - **Business Purpose**: Clear description of entity role in business process
 - **Lifecycle Overview**: Summary of entity states and transitions

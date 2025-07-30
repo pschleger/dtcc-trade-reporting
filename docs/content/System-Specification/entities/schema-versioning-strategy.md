@@ -174,7 +174,7 @@ For business-critical changes requiring review:
 - Development environments can use preview versions
 
 ### Documentation
-- Each version includes comprehensive documentation
+- Each version includes documentation
 - Migration guides provided for major versions
 - Breaking change notifications sent to stakeholders
 - API documentation updated with version information

@@ -141,7 +141,7 @@ ELSE
 
 **Environment-Specific Settings**:
 - Development: Relaxed error detection, more lenient permissions
-- Production: Strict error detection, comprehensive authorization
+- Production: Strict error detection, complete authorization
 
 ## 10. Error Handling
 **Evaluation Errors**:

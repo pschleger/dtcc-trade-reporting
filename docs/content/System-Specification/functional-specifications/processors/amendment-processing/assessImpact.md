@@ -4,7 +4,7 @@
 **Component Name**: assessImpact
 **Component Type**: CyodaProcessor
 **Business Domain**: Amendment Processing
-**Purpose**: Assesses the comprehensive impact of trade amendments on positions, risk metrics, regulatory reporting, and downstream systems
+**Purpose**: Assesses the complete impact of trade amendments on positions, risk metrics, regulatory reporting, and downstream systems
 **Workflow Context**: AmendmentWorkflow (impact assessment state)
 
 ## 2. Input Specifications
@@ -114,7 +114,7 @@
 6. Analyze counterparty exposure and consent requirements
 7. Identify affected downstream systems and processes
 8. Determine approval requirements based on impact level
-9. Generate comprehensive impact summary and recommendations
+9. Generate complete impact summary and recommendations
 10. Update amendment with impact assessment results
 
 **Business Rules**:
@@ -214,7 +214,7 @@
 
 **Environment-Specific Configuration**:
 - **Development**: Reduced thresholds and simplified calculations
-- **Production**: Full thresholds and comprehensive impact assessment
+- **Production**: Full thresholds and impact assessment
 
 ## 10. Integration Points
 **API Contracts**:

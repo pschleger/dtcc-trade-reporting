@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document defines the comprehensive security and compliance requirements for all external interfaces of the DTCC Regulatory Reporting System. These requirements ensure regulatory compliance, data protection, and operational security across all integration points.
+This document defines the complete security and compliance requirements for all external interfaces of the DTCC Regulatory Reporting System. These requirements ensure regulatory compliance, data protection, and operational security across all integration points.
 
 ---
 
@@ -397,7 +397,7 @@ Roles:
 
 ## Conclusion
 
-This security and compliance framework provides comprehensive protection for the DTCC Regulatory Reporting System's external interfaces. Regular review and updates are required to maintain effectiveness against evolving threats and changing regulatory requirements.
+This security and compliance framework provides protection for the DTCC Regulatory Reporting System's external interfaces. Regular review and updates are required to maintain effectiveness against evolving threats and changing regulatory requirements.
 
 The implementation of these requirements ensures:
 - **Regulatory Compliance**: Full compliance with applicable regulations

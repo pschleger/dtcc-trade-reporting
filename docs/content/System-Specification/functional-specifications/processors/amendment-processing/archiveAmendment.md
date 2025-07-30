@@ -4,7 +4,7 @@
 **Component Name**: archiveAmendment
 **Component Type**: CyodaProcessor
 **Business Domain**: Amendment Processing
-**Purpose**: Archives completed trade amendments with comprehensive audit trail, supporting documents, and regulatory compliance for long-term retention
+**Purpose**: Archives completed trade amendments with audit trail, supporting documents, and regulatory compliance for long-term retention
 **Workflow Context**: AmendmentWorkflow (archiving state)
 
 ## 2. Input Specifications
@@ -83,7 +83,7 @@
 {
   "status": "ERROR",
   "errorCode": "AMENDMENT_ARCHIVAL_FAILED",
-  "errorMessage": "Amendment archival failed due to incomplete audit trail",
+  "errorMessage": "Amendment archival failed due to inaudit trail",
   "details": {
     "amendmentId": "AMD-001",
     "missingComponents": ["approval_documents", "impact_assessment"],
@@ -209,7 +209,7 @@
 
 **Environment-Specific Configuration**:
 - **Development**: Reduced retention periods and simplified archival
-- **Production**: Full retention periods and comprehensive archival
+- **Production**: Full retention periods and complete archival
 
 ## 10. Integration Points
 **API Contracts**:

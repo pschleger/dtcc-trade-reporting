@@ -140,7 +140,7 @@ ELSE
 
 **Environment-Specific Settings**:
 - Development: Relaxed error detection, more lenient validation
-- Production: Strict error detection, comprehensive validation
+- Production: Strict error detection, validation
 
 ## 10. Error Handling
 **Evaluation Errors**:

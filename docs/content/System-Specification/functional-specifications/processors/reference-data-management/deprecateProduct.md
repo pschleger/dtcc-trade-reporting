@@ -81,7 +81,7 @@
 5. Block new trading activities using deprecated product
 6. Initiate transition workflow for existing trades
 7. Generate notifications to all relevant stakeholders
-8. Create comprehensive audit trail and compliance documentation
+8. Create audit trail and compliance documentation
 
 **Business Rules**:
 - **Impact Assessment**: Must assess impact on all existing trades and positions
@@ -173,7 +173,7 @@
 
 **Environment-Specific Configuration**:
 - Development: Use shortened grace periods and simplified transition
-- Production: Use full grace periods and comprehensive transition planning
+- Production: Use full grace periods and complete transition planning
 
 ### 10. Integration Points
 **API Contracts**:

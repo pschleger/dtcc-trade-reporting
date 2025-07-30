@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides comprehensive swimlane diagrams showing position calculation, real-time position updates, reconciliation processes, and position reporting flows, including all entity interactions, timing dependencies, and error resolution procedures for the DTCC Regulatory Reporting System.
+This document provides swimlane diagrams showing position calculation, real-time position updates, reconciliation processes, and position reporting flows, including all entity interactions, timing dependencies, and error resolution procedures for the DTCC Regulatory Reporting System.
 
 ## Diagram Summary
 
@@ -37,7 +37,7 @@ This document provides comprehensive swimlane diagrams showing position calculat
 - Total aggregation cycle: < 45s
 
 ### 3. Daily Position Reconciliation Process
-**Purpose**: Shows comprehensive daily reconciliation between internal and external position data.
+**Purpose**: Shows complete daily reconciliation between internal and external position data.
 
 **Key Components**:
 - External position data retrieval from counterparty systems
@@ -179,7 +179,7 @@ These swimlane diagrams have been validated against the following position manag
 - UC-PM-005: Execute End-of-Day Batch Processing
 - UC-PM-006: Monitor Position Thresholds and Generate Alerts
 
-All diagrams include comprehensive error handling, timing requirements, SLA constraints, and regulatory compliance considerations as specified in the position management requirements.
+All diagrams include complete error handling, timing requirements, SLA constraints, and regulatory compliance considerations as specified in the position management requirements.
 
 ## Mermaid Diagram Definitions
 
@@ -822,7 +822,7 @@ sequenceDiagram
 
 ## Conclusion
 
-These comprehensive swimlane diagrams provide detailed visualization of all position management and reconciliation processes within the DTCC Regulatory Reporting System. Each diagram includes:
+These complete swimlane diagrams provide detailed visualization of all position management and reconciliation processes within the DTCC Regulatory Reporting System. Each diagram includes:
 
 - **Complete entity interactions** between Position, Trade, ReconciliationResult, and supporting entities
 - **Detailed timing dependencies** with specific SLA requirements for each processing stage

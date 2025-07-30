@@ -84,9 +84,9 @@ Business events related to trade processing must meet specific business requirem
 
 **Processing Requirements:**
 - Trade confirmations must be validated within 5 minutes of receipt
-- Trade amendments must complete impact assessment within 15 minutes
+- Trade amendments must impact assessment within 15 minutes
 - Trade cancellations must be processed before settlement date
-- All trade processing must maintain complete audit trail
+- All trade processing must maintain audit trail
 
 **Business Rules:**
 - Invalid trades must be rejected with clear business reason

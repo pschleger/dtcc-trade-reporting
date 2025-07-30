@@ -22,7 +22,7 @@ The DTCC Regulatory Reporting System is built on the Cyoda EDBMS platform, which
 - Entity behavior is defined by finite state machines
 - State transitions are guarded by criteria and trigger processors
 - Workflows can be synchronous or asynchronous
-- Each workflow maintains complete audit trails
+- Each workflow maintains audit trails
 
 ### 4. Event-Driven State Transitions
 - External events trigger entity workflow state transitions

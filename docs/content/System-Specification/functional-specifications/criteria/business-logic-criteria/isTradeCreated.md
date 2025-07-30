@@ -154,7 +154,7 @@ END IF
 **Evaluation Parameters**:
 - `validateTradeIdFormat`: boolean - Enable trade ID format validation - Default: true
 - `checkPersistenceIntegrity`: boolean - Enable persistence integrity checks - Default: true
-- `requireAuditTrail`: boolean - Require complete audit trail - Default: true
+- `requireAuditTrail`: boolean - Require audit trail - Default: true
 
 **Environment-Specific Settings**:
 - Development: Relaxed validation for testing

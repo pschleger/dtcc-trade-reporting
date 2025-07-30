@@ -89,7 +89,7 @@
 4. Apply amendment changes to trade entity
 5. Update related entities and calculations
 6. Generate regulatory amendment notifications
-7. Create comprehensive audit trail
+7. Create audit trail
 
 **Business Rules**:
 - **Authorization Limits**: Amendments must be within authorized limits

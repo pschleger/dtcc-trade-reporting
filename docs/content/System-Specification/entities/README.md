@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains comprehensive JSON Schema definitions for all business entities in the DTCC Regulatory Reporting System. These schemas support the complete lifecycle of OTC derivatives trade processing, position management, and regulatory reporting.
+This directory contains JSON Schema definitions for all business entities in the DTCC Regulatory Reporting System. These schemas support the complete lifecycle of OTC derivatives trade processing, position management, and regulatory reporting.
 
 Entity Schema JSON files are located in the `src/main/resources/schema/business/` directory of the codebase.
 DO NOT PUT ANY entity schema artefacts in this directory.
@@ -53,7 +53,7 @@ Entities coordinating system operations and data quality:
 ## Key Features
 
 ### Workflow State Management
-All business entities include comprehensive workflow state management:
+All business entities include complete workflow state management:
 - Current state tracking with timestamps
 - State transition history with actor information
 - Support for manual and automated transitions
@@ -302,7 +302,7 @@ assert.equal(trade.metadata.workflowState.state, 'validated');
 
 For questions or issues with the business entity schemas:
 
-1. Check the comprehensive documentation in `schema-documentation.md`
+1. Check the complete documentation in `schema-documentation.md`
 2. Review the versioning strategy in `schema-versioning-strategy.md`
 3. Examine the example usage patterns above
 4. Contact the development team for schema-related questions

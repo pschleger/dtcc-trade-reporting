@@ -2,7 +2,7 @@
 
 ## Overview
 
-This index provides a comprehensive catalog of all external interfaces in the DTCC Regulatory Reporting System, organized by integration category with descriptions, technical specifications, and cross-references to related workflows and functional components.
+This index provides a complete catalog of all external interfaces in the DTCC Regulatory Reporting System, organized by integration category with descriptions, technical specifications, and cross-references to related workflows and functional components.
 
 ---
 
@@ -366,4 +366,4 @@ external-interfaces/
 
 ---
 
-*This external interfaces index provides comprehensive coverage of all external system integrations in the DTCC Regulatory Reporting System. For specific interface details, refer to the detailed external interface specifications or integration testing guide.*
+*This external interfaces index provides coverage of all external system integrations in the DTCC Regulatory Reporting System. For specific interface details, refer to the detailed external interface specifications or integration testing guide.*

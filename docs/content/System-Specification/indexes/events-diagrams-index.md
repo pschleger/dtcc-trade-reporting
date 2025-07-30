@@ -2,7 +2,7 @@
 
 ## Overview
 
-This index provides a comprehensive catalog of all events and diagrams in the DTCC Regulatory Reporting System, organized by category with descriptions, relationships, and cross-references to related workflows and functional components.
+This index provides a complete catalog of all events and diagrams in the DTCC Regulatory Reporting System, organized by category with descriptions, relationships, and cross-references to related workflows and functional components.
 
 ---
 
@@ -311,4 +311,4 @@ events/
 
 ---
 
-*This events and diagrams index provides comprehensive coverage of all events and visual diagrams in the DTCC Regulatory Reporting System. For specific event details, refer to the individual event documentation or the detailed event catalog.*
+*This events and diagrams index provides coverage of all events and visual diagrams in the DTCC Regulatory Reporting System. For specific event details, refer to the individual event documentation or the detailed event catalog.*

@@ -4,7 +4,7 @@
 **Component Name**: applyAmendment
 **Component Type**: CyodaProcessor
 **Business Domain**: Amendment Processing
-**Purpose**: Applies validated and approved trade amendments to trade entities with complete audit trail and downstream system notifications
+**Purpose**: Applies validated and approved trade amendments to trade entities with audit trail and downstream system notifications
 **Workflow Context**: AmendmentWorkflow (applying state)
 
 ## 2. Input Specifications
@@ -96,7 +96,7 @@
 **Side Effects**:
 - Updates original trade entity with amended values
 - Creates backup of original trade data
-- Generates comprehensive audit trail
+- Generates audit trail
 - Triggers position recalculation for affected positions
 - Publishes amendment applied events to downstream systems
 
@@ -109,7 +109,7 @@
 5. Apply amendment fields to trade entity
 6. Validate amended trade for data consistency
 7. Update trade entity with amended values and metadata
-8. Create comprehensive audit trail entry
+8. Create audit trail entry
 9. Trigger downstream system notifications and recalculations
 10. Release trade lock and publish completion events
 
@@ -210,7 +210,7 @@
 
 **Environment-Specific Configuration**:
 - **Development**: Reduced timeouts and simplified validation
-- **Production**: Full timeouts and comprehensive validation
+- **Production**: Full timeouts and validation
 
 ## 10. Integration Points
 **API Contracts**:

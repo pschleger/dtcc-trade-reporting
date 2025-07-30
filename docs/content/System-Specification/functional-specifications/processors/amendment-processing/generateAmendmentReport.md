@@ -120,7 +120,7 @@
 - **Data Accuracy**: All reported data must be accurate and validated
 
 **Algorithms**:
-- Amendment data aggregation for comprehensive reporting
+- Amendment data aggregation for complete reporting
 - Before/after comparison generation for impact visualization
 - Regulatory format transformation based on jurisdiction
 - Validation algorithms for schema and business rule compliance

@@ -180,7 +180,7 @@
 
 **Environment-Specific Configuration**:
 - **Development**: Relaxed validation with detailed logging
-- **Production**: Strict validation with comprehensive audit trail
+- **Production**: Strict validation with audit trail
 
 ## 10. Integration Points
 **API Contracts**:

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides detailed specifications for the external events that trigger business processes in the DTCC Regulatory Reporting System. These are the complete set of externally-triggered events that the system responds to.
+This document provides specifications for the external events that trigger business processes in the DTCC Regulatory Reporting System. These are the complete set of externally-triggered events that the system responds to.
 
 **Note**: This document focuses on the technical specifications and payload structures for the external events cataloged in the main event catalog.
 

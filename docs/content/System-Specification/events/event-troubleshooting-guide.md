@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides comprehensive troubleshooting procedures for event-related issues in the DTCC Regulatory Reporting System. It enables operations teams to quickly diagnose, resolve, and prevent event processing problems that could impact regulatory compliance.
+This guide provides troubleshooting procedures for event-related issues in the DTCC Regulatory Reporting System. It enables operations teams to quickly diagnose, resolve, and prevent event processing problems that could impact regulatory compliance.
 
 ## Event Processing Issue Categories
 

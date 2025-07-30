@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains comprehensive functional specifications for all workflow components (processors and criteria) defined in the DTCC regulatory reporting system. Each specification provides detailed implementation guidance, business logic documentation, and technical requirements for development teams.
+This directory contains functional specifications for all workflow components (processors and criteria) defined in the DTCC regulatory reporting system. Each specification provides implementation guidance, business logic documentation, and technical requirements for development teams.
 
 ## Component Categories
 
@@ -135,7 +135,7 @@ Each component specification follows a standardized template:
 
 ### Documentation Standards
 - Clear, unambiguous language
-- Comprehensive examples and use cases
+- Detailed examples and use cases
 - Regular review and updates
 - Stakeholder feedback incorporation
 

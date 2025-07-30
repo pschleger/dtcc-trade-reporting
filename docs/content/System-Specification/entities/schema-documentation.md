@@ -2,12 +2,12 @@
 
 ## Overview
 
-This document provides comprehensive documentation for all business entity schemas in the DTCC Regulatory Reporting System. Each schema is designed to support the complete lifecycle of OTC derivatives trade processing, position management, and regulatory reporting.
+This document provides documentation for all business entity schemas in the DTCC Regulatory Reporting System. Each schema is designed to support the complete lifecycle of OTC derivatives trade processing, position management, and regulatory reporting.
 
 ## Schema Design Principles
 
 ### 1. Workflow State Management
-All business entities include comprehensive workflow state management through the `BusinessEntityMetadata` schema:
+All business entities include complete workflow state management through the `BusinessEntityMetadata` schema:
 - Current state tracking with timestamps
 - State transition history with actor information
 - Support for manual and automated transitions
