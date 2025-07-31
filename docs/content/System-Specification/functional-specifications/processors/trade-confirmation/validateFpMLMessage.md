@@ -79,13 +79,22 @@
 
 ## 4. Business Logic
 **Processing Steps**:
-1. Parse incoming FpML XML message
-2. Validate against FpML schema definition
-3. Extract trade identification and party information
-4. Validate counterparty LEI codes against registry
-5. Validate trade economics and product specifications
-6. Check business rule compliance (trading limits, authorized products)
-7. Extract and structure trade data for downstream processing
+1. Parse incoming FpML XML message (supports all standard FpML document types - see supported types below)
+2. Determine specific document type and apply appropriate validation rules
+3. Validate against FpML schema definition
+4. Extract trade identification and party information (for trade-containing documents)
+5. Validate counterparty LEI codes against registry
+6. Validate trade economics and product specifications
+7. Check business rule compliance (trading limits, authorized products)
+8. Extract and structure trade data for downstream processing
+
+**Supported FpML Document Types**:
+- **Core Types**: dataDocument, FpML
+- **Confirmation Types**: requestConfirmation, confirmationAgreed, executionNotification, executionRetracted
+- **Statement Types**: dealStatement, outstandingContractsStatement, facilityPositionStatement, facilityStatement, loanPartyProfileStatement, loanLegalActionStatement
+- **Notification Types**: facilityNotification, lcNotification, loanAllocationNotification, loanBulkServicingNotification, loanContractNotification, loanCovenantObligationNotification, loanLegalActionNotification, loanTradeNotification
+- **Acknowledgement Types**: loanNotificationAcknowledgement, loanNotificationException, loanNotificationRetracted
+- **Request Types**: requestClearing
 
 **Business Rules**:
 - **LEI Validation**: All party LEI codes must be valid and active in LEI registry
@@ -102,6 +111,9 @@
 ## 5. Validation Rules
 **Pre-processing Validations**:
 - **Message Format**: FpML message must be well-formed XML
+- **Root Element**: Document must have a supported FpML root element (see supported document types above)
+- **Document Type**: System automatically detects document type and applies appropriate validation rules
+- **Trade Element**: Trade element required only for trade-containing document types
 - **Message Size**: Message size must not exceed 10MB limit
 - **Required Fields**: All mandatory FpML elements must be present
 

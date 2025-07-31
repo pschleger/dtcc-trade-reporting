@@ -2,6 +2,7 @@ package com.java_template.application.service;
 
 import com.java_template.application.dto.request.FpMLTradeConfirmationRequest;
 import com.java_template.application.dto.response.TradeConfirmationResponse;
+import com.java_template.application.enums.FpMLDocumentType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
@@ -141,24 +142,36 @@ public class FpMLProcessingService {
      */
     private List<TradeConfirmationResponse.ValidationResult> validateFpMLStructure(
             Document document, FpMLTradeConfirmationRequest request) {
-        
+
         List<TradeConfirmationResponse.ValidationResult> results = new ArrayList<>();
-        
+
         try {
             XPath xpath = xPathFactory.newXPath();
-            
-            // Validate root element
-            XPathExpression rootExpr = xpath.compile("/*[local-name()='FpML' or local-name()='dataDocument']");
+
+            // Validate root element using structured approach
+            String rootElementXPath = FpMLDocumentType.generateRootElementXPath();
+            XPathExpression rootExpr = xpath.compile(rootElementXPath);
             if (rootExpr.evaluate(document, XPathConstants.NODE) == null) {
-                results.add(createValidationResult("SCHEMA", "ERROR", "INVALID_ROOT", 
-                        "Document must have FpML or dataDocument root element", "/", null, null));
-            }
-            
-            // Validate trade element exists
-            XPathExpression tradeExpr = xpath.compile("//*[local-name()='trade']");
-            if (tradeExpr.evaluate(document, XPathConstants.NODE) == null) {
-                results.add(createValidationResult("SCHEMA", "ERROR", "MISSING_TRADE", 
-                        "FpML document must contain a trade element", "//trade", null, null));
+                results.add(createValidationResult("SCHEMA", "ERROR", "INVALID_ROOT",
+                        "Document must have a supported FpML root element. Supported types: " +
+                        FpMLDocumentType.getSupportedTypesAsString(), "/", null, null));
+            } else {
+                // Determine the actual document type
+                FpMLDocumentType documentType = determineDocumentType(document, xpath);
+                if (documentType != null) {
+                    log.info("Detected FpML document type: {} ({})", documentType.getElementName(), documentType.getDescription());
+
+                    // Validate trade element exists only for document types that require it
+                    if (documentType.isRequiresTrade()) {
+                        XPathExpression tradeExpr = xpath.compile("//*[local-name()='trade']");
+                        if (tradeExpr.evaluate(document, XPathConstants.NODE) == null) {
+                            results.add(createValidationResult("SCHEMA", "ERROR", "MISSING_TRADE",
+                                    "FpML document of type '" + documentType.getElementName() + "' must contain a trade element", "//trade", null, null));
+                        }
+                    }
+                } else {
+                    log.warn("Could not determine specific FpML document type");
+                }
             }
             
             // Validate party information
@@ -278,12 +291,30 @@ public class FpMLProcessingService {
     }
 
     /**
+     * Determine the specific FpML document type from the root element.
+     */
+    private FpMLDocumentType determineDocumentType(Document document, XPath xpath) {
+        try {
+            // Get the root element name
+            XPathExpression rootNameExpr = xpath.compile("local-name(/*)");
+            String rootElementName = rootNameExpr.evaluate(document);
+
+            if (rootElementName != null && !rootElementName.isEmpty()) {
+                return FpMLDocumentType.fromElementName(rootElementName);
+            }
+        } catch (XPathExpressionException e) {
+            log.error("Error determining document type: {}", e.getMessage(), e);
+        }
+        return null;
+    }
+
+    /**
      * Create a validation result object.
      */
     private TradeConfirmationResponse.ValidationResult createValidationResult(
             String validationType, String severity, String errorCode, String errorMessage,
             String fieldPath, String expectedValue, String actualValue) {
-        
+
         return TradeConfirmationResponse.ValidationResult.builder()
                 .validationType(validationType)
                 .severity(severity)

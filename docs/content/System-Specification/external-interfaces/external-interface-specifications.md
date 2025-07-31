@@ -45,9 +45,15 @@ Accept: application/json
 
 #### 1.2.3 Data Format Requirements
 - **Schema**: FpML 5.12 specification
+- **Root Elements**: Supports all standard FpML document types including:
+  - Core types: dataDocument, FpML
+  - Confirmation types: requestConfirmation, confirmationAgreed, executionNotification, executionRetracted
+  - Statement types: dealStatement, outstandingContractsStatement, facilityPositionStatement, facilityStatement, etc.
+  - Notification types: facilityNotification, lcNotification, loanAllocationNotification, etc.
+  - Request types: requestClearing
 - **Encoding**: UTF-8
 - **Maximum Size**: 10MB per message
-- **Required Elements**:
+- **Required Elements** (for trade-containing documents):
   - Trade header with unique trade ID
   - Counterparty information with LEI codes
   - Product specifications
