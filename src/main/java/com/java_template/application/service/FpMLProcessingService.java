@@ -86,7 +86,7 @@ public class FpMLProcessingService {
                     .validationResults(validationResults)
                     .extractedTradeData(extractedData)
                     .duplicateCheckResults(performDuplicateCheck(request))
-                    .links(buildResponseLinks(processingId, request.getMessageId()))
+                    .links(buildResponseLinks(request.getMessageId()))
                     .build();
 
         } catch (Exception e) {
@@ -284,10 +284,10 @@ public class FpMLProcessingService {
     /**
      * Build response links for the processed message.
      */
-    private TradeConfirmationResponse.ResponseLinks buildResponseLinks(String processingId, String messageId) {
+    private TradeConfirmationResponse.ResponseLinks buildResponseLinks(String messageId) {
         return TradeConfirmationResponse.ResponseLinks.builder()
-                .self("/api/v1/trade-confirmations/" + processingId)
-                .status("/api/v1/trade-confirmations/" + processingId + "/status")
+                .self("/api/v1/trade-confirmations/" + messageId)
+                .status("/api/v1/trade-confirmations/" + messageId + "/status")
                 .build();
     }
 
