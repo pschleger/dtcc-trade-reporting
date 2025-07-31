@@ -59,7 +59,7 @@ public class FpMLProcessingService {
             Document document = parseXmlDocument(fpmlXml);
 
             // Validate FpML structure
-            List<TradeConfirmationResponse.ValidationResult> validationResults = validateFpMLStructure(document, request);
+            List<TradeConfirmationResponse.ValidationResult> validationResults = validateFpMLStructure(document);
 
             // Extract trade data if validation passes
             TradeConfirmationResponse.ExtractedTradeData extractedData = null;
@@ -264,7 +264,7 @@ public class FpMLProcessingService {
 
     /**
      * Perform duplicate check for the message.
-     *
+     * <p>
      * TODO: Implement proper duplicate detection logic
      * - Check messageId against database of previously processed messages
      * - Calculate and compare message hash (SHA-256 of FpML content)
@@ -286,8 +286,8 @@ public class FpMLProcessingService {
      */
     private TradeConfirmationResponse.ResponseLinks buildResponseLinks(String processingId, String messageId) {
         return TradeConfirmationResponse.ResponseLinks.builder()
-                .self("/api/v1/trade-confirmations/" + messageId)
-                .status("/api/v1/trade-confirmations/" + messageId + "/status")
+                .self("/api/v1/trade-confirmations/" + processingId)
+                .status("/api/v1/trade-confirmations/" + processingId + "/status")
                 .build();
     }
 
