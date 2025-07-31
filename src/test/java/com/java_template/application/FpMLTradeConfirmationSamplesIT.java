@@ -5,11 +5,7 @@ import com.java_template.application.dto.request.FpMLTradeConfirmationRequest;
 import com.java_template.application.dto.response.ApiResponse;
 import com.java_template.application.dto.response.TradeConfirmationResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,19 +24,18 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * Integration test that processes FpML trade confirmation samples from official FpML archives.
  * Tests the complete trade confirmation pipeline using real FpML 5.13 samples across
  * all major derivative product types.
- *
+ * <p>
  * This is a true integration test that connects to a running Cyoda environment and
  * validates the end-to-end processing of FpML trade confirmations.
  */
@@ -82,7 +77,7 @@ class FpMLTradeConfirmationSamplesIT {
      */
     @TestFactory
     @WithMockUser
-    Stream<DynamicTest> testRepresentativeFpMLSamples() throws Exception {
+    Stream<DynamicTest> testRepresentativeFpMLSamples() {
         List<TarGzFpMLSampleLoader.FpMLSample> samples = loadRepresentativeSamples();
 
         if (samples.isEmpty()) {
@@ -104,7 +99,7 @@ class FpMLTradeConfirmationSamplesIT {
      */
     @TestFactory
     @WithMockUser
-    Stream<DynamicTest> testCoreProductTypes() throws Exception {
+    Stream<DynamicTest> testCoreProductTypes() {
         List<TarGzFpMLSampleLoader.FpMLSample> samples = loadCoreProductTypeSamples();
 
         if (samples.isEmpty()) {
@@ -154,18 +149,9 @@ class FpMLTradeConfirmationSamplesIT {
     }
 
     /**
-     * Creates a dynamic test for a specific FpML sample.
-     */
-    private DynamicTest createDynamicTest(TarGzFpMLSampleLoader.FpMLSample sample) {
-        return DynamicTest.dynamicTest(
-            String.format("Process %s", sample.getDisplayName()),
-            () -> processFpMLSample(sample)
-        );
-    }
-
-    /**
      * Processes samples in parallel batches to speed up test execution.
      */
+    @SuppressWarnings("SameParameterValue")
     private Stream<DynamicTest> processInParallelBatches(List<TarGzFpMLSampleLoader.FpMLSample> samples, int batchSize) {
         List<DynamicTest> tests = new ArrayList<>();
 
@@ -215,7 +201,7 @@ class FpMLTradeConfirmationSamplesIT {
     /**
      * Processes a single FpML sample and validates the response.
      */
-    private void processFpMLSample(TarGzFpMLSampleLoader.FpMLSample sample) throws Exception {
+    private void processFpMLSample(TarGzFpMLSampleLoader.FpMLSample sample) {
         log.info("Testing FpML sample: {} ({})", sample.getFileName(), sample.getProductType());
 
         try {
@@ -366,7 +352,7 @@ class FpMLTradeConfirmationSamplesIT {
                 errorDetails = " Errors: " + String.join(", ", errorMessages);
             }
             if (tradeResponse.getValidationResults() != null && !tradeResponse.getValidationResults().isEmpty()) {
-                errorDetails += " Validation: " + tradeResponse.getValidationResults().toString();
+                errorDetails += " Validation: " + tradeResponse.getValidationResults();
             }
 
             log.error("Sample {} processing FAILED (ValidationStatus: {}).{}",

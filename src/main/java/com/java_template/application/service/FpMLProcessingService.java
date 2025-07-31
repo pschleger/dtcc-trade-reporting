@@ -8,16 +8,10 @@ import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
+import javax.xml.xpath.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -53,35 +47,35 @@ public class FpMLProcessingService {
      */
     public TradeConfirmationResponse processFpMLMessage(FpMLTradeConfirmationRequest request) {
         log.info("Processing FpML message with ID: {}", request.getMessageId());
-        
+
         String processingId = UUID.randomUUID().toString();
         Instant startTime = Instant.now();
-        
+
         try {
             // Decode base64 FpML content
             String fpmlXml = decodeBase64Content(request.getFpmlContent());
-            
+
             // Parse XML document
             Document document = parseXmlDocument(fpmlXml);
-            
+
             // Validate FpML structure
             List<TradeConfirmationResponse.ValidationResult> validationResults = validateFpMLStructure(document, request);
-            
+
             // Extract trade data if validation passes
             TradeConfirmationResponse.ExtractedTradeData extractedData = null;
             String validationStatus = "VALID";
             String processingStatus = "PROCESSED";
-            
+
             boolean hasErrors = validationResults.stream()
                     .anyMatch(result -> "ERROR".equals(result.getSeverity()));
-            
+
             if (!hasErrors) {
                 extractedData = extractTradeData(document);
             } else {
                 validationStatus = "INVALID";
                 processingStatus = "FAILED";
             }
-            
+
             return TradeConfirmationResponse.builder()
                     .messageId(request.getMessageId())
                     .processingId(processingId)
@@ -94,10 +88,10 @@ public class FpMLProcessingService {
                     .duplicateCheckResults(performDuplicateCheck(request))
                     .links(buildResponseLinks(processingId, request.getMessageId()))
                     .build();
-                    
+
         } catch (Exception e) {
             log.error("Error processing FpML message {}: {}", request.getMessageId(), e.getMessage(), e);
-            
+
             return TradeConfirmationResponse.builder()
                     .messageId(request.getMessageId())
                     .processingId(processingId)
@@ -141,7 +135,7 @@ public class FpMLProcessingService {
      * Validate FpML document structure and content.
      */
     private List<TradeConfirmationResponse.ValidationResult> validateFpMLStructure(
-            Document document, FpMLTradeConfirmationRequest request) {
+            Document document) {
 
         List<TradeConfirmationResponse.ValidationResult> results = new ArrayList<>();
 
@@ -173,26 +167,26 @@ public class FpMLProcessingService {
                     log.warn("Could not determine specific FpML document type");
                 }
             }
-            
+
             // Validate party information
             XPathExpression partyExpr = xpath.compile("//*[local-name()='party']");
             if (partyExpr.evaluate(document, XPathConstants.NODE) == null) {
-                results.add(createValidationResult("SCHEMA", "WARNING", "MISSING_PARTIES", 
+                results.add(createValidationResult("SCHEMA", "WARNING", "MISSING_PARTIES",
                         "FpML document should contain party information", "//party", null, null));
             }
-            
+
             // If no errors found, add success result
             if (results.isEmpty()) {
-                results.add(createValidationResult("SCHEMA", "INFO", "VALIDATION_SUCCESS", 
+                results.add(createValidationResult("SCHEMA", "INFO", "VALIDATION_SUCCESS",
                         "FpML document structure is valid", null, null, null));
             }
-            
+
         } catch (XPathExpressionException e) {
             log.error("XPath validation error: {}", e.getMessage(), e);
-            results.add(createValidationResult("SCHEMA", "ERROR", "XPATH_ERROR", 
+            results.add(createValidationResult("SCHEMA", "ERROR", "XPATH_ERROR",
                     "Error during XML validation: " + e.getMessage(), null, null, null));
         }
-        
+
         return results;
     }
 
@@ -202,12 +196,12 @@ public class FpMLProcessingService {
     private TradeConfirmationResponse.ExtractedTradeData extractTradeData(Document document) {
         try {
             XPath xpath = xPathFactory.newXPath();
-            
+
             // Extract basic trade information
             String tradeId = extractXPathValue(xpath, document, "//*[local-name()='tradeId']/@*[local-name()='tradeIdScheme']");
             String uti = extractXPathValue(xpath, document, "//*[local-name()='uti']/text()");
             String usi = extractXPathValue(xpath, document, "//*[local-name()='usi']/text()");
-            
+
             return TradeConfirmationResponse.ExtractedTradeData.builder()
                     .tradeId(tradeId)
                     .uti(uti)
@@ -220,7 +214,7 @@ public class FpMLProcessingService {
                     .productType(extractXPathValue(xpath, document, "//*[local-name()='productType']/text()"))
                     .counterparties(extractCounterparties(xpath, document))
                     .build();
-                    
+
         } catch (Exception e) {
             log.error("Error extracting trade data: {}", e.getMessage(), e);
             return null;
@@ -244,11 +238,11 @@ public class FpMLProcessingService {
      */
     private List<TradeConfirmationResponse.CounterpartyInfo> extractCounterparties(XPath xpath, Document document) {
         List<TradeConfirmationResponse.CounterpartyInfo> counterparties = new ArrayList<>();
-        
+
         // This is a simplified extraction - real implementation would be more complex
         String partyALei = extractXPathValue(xpath, document, "//*[local-name()='party'][1]/*[local-name()='partyId'][@*[local-name()='partyIdScheme']='http://www.fpml.org/coding-scheme/external/iso17442']/text()");
         String partyBLei = extractXPathValue(xpath, document, "//*[local-name()='party'][2]/*[local-name()='partyId'][@*[local-name()='partyIdScheme']='http://www.fpml.org/coding-scheme/external/iso17442']/text()");
-        
+
         if (partyALei != null) {
             counterparties.add(TradeConfirmationResponse.CounterpartyInfo.builder()
                     .lei(partyALei)
@@ -256,7 +250,7 @@ public class FpMLProcessingService {
                     .tradingCapacity("PRINCIPAL")
                     .build());
         }
-        
+
         if (partyBLei != null) {
             counterparties.add(TradeConfirmationResponse.CounterpartyInfo.builder()
                     .lei(partyBLei)
@@ -264,15 +258,22 @@ public class FpMLProcessingService {
                     .tradingCapacity("PRINCIPAL")
                     .build());
         }
-        
+
         return counterparties;
     }
 
     /**
      * Perform duplicate check for the message.
+     *
+     * TODO: Implement proper duplicate detection logic
+     * - Check messageId against database of previously processed messages
+     * - Calculate and compare message hash (SHA-256 of FpML content)
+     * - Consider time window for duplicate detection (e.g., 24 hours)
+     * - Handle edge cases like legitimate resubmissions vs duplicates
      */
     private TradeConfirmationResponse.DuplicateCheckResults performDuplicateCheck(FpMLTradeConfirmationRequest request) {
-        // Simplified duplicate check - real implementation would check against database
+        // TODO: Replace this mock implementation with real duplicate detection
+        // Current implementation always returns false (no duplicates detected)
         return TradeConfirmationResponse.DuplicateCheckResults.builder()
                 .isDuplicate(false)
                 .duplicateCheckTimestamp(Instant.now())
@@ -311,6 +312,7 @@ public class FpMLProcessingService {
     /**
      * Create a validation result object.
      */
+    @SuppressWarnings("SameParameterValue")
     private TradeConfirmationResponse.ValidationResult createValidationResult(
             String validationType, String severity, String errorCode, String errorMessage,
             String fieldPath, String expectedValue, String actualValue) {

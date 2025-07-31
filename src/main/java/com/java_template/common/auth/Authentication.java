@@ -1,9 +1,9 @@
 package com.java_template.common.auth;
 
-import com.java_template.common.config.Config;
 import com.java_template.common.util.SslUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.security.oauth2.client.*;
 import org.springframework.security.oauth2.client.endpoint.RestClientClientCredentialsTokenResponseClient;
@@ -16,10 +16,7 @@ import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import org.springframework.http.client.JdkClientHttpRequestFactory;
 
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -74,9 +71,8 @@ public class Authentication {
         accessTokenResponseClient.setRestClient(restClient);
         OAuth2AuthorizedClientProvider acp = OAuth2AuthorizedClientProviderBuilder
                 .builder()
-                .clientCredentials(builder -> {
-                    builder.accessTokenResponseClient(accessTokenResponseClient);
-                })
+                .clientCredentials(builder ->
+                        builder.accessTokenResponseClient(accessTokenResponseClient))
                 .build();
 
         acm.setAuthorizedClientProvider(acp);
@@ -131,6 +127,7 @@ public class Authentication {
                 return expiresAt != null && Instant.now().isBefore(expiresAt.minusSeconds(60));
             }
 
+            @SuppressWarnings("unused")
             public String getTokenValue() {
                 return oAuth2AccessToken.getTokenValue();
             }
