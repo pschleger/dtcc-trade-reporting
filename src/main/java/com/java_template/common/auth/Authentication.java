@@ -4,13 +4,19 @@ import com.java_template.common.config.Config;
 import com.java_template.common.util.SslUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.security.oauth2.client.*;
+import org.springframework.security.oauth2.client.endpoint.RestClientClientCredentialsTokenResponseClient;
+import org.springframework.security.oauth2.client.http.OAuth2ErrorResponseErrorHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
+import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -31,26 +37,6 @@ public class Authentication {
     private static final String CACHE_KEY = "cyoda";
 
     public Authentication() {
-        // Configure SSL context globally for OAuth2 client
-        try {
-            SSLContext sslContext = SslUtils.createSelectiveSSLContext();
-            HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
-
-            // Set hostname verifier for trusted hosts
-            if (Config.SSL_TRUST_ALL || !Config.getTrustedHosts().isEmpty()) {
-                HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> {
-                    if (Config.SSL_TRUST_ALL) {
-                        logger.debug("Trusting hostname {} due to SSL_TRUST_ALL=true", hostname);
-                        return true;
-                    }
-                    return SslUtils.shouldTrustHost(hostname);
-                });
-                logger.info("OAuth2 client configured with custom SSL settings for trusted hosts: {}",
-                        Config.getTrustedHosts());
-            }
-        } catch (Exception e) {
-            logger.error("Failed to configure SSL for OAuth2 client: {}", e.getMessage());
-        }
 
         ClientRegistration registration = ClientRegistration.withRegistrationId("cyoda")
                 .tokenUri(CYODA_API_URL + "/oauth/token")
@@ -63,9 +49,39 @@ public class Authentication {
 
         var registrationRepo = new InMemoryClientRegistrationRepository(registration);
         var clientService = new InMemoryOAuth2AuthorizedClientService(registrationRepo);
-        this.authorizedClientManager = new AuthorizedClientServiceOAuth2AuthorizedClientManager(
+        AuthorizedClientServiceOAuth2AuthorizedClientManager acm = new AuthorizedClientServiceOAuth2AuthorizedClientManager(
                 registrationRepo, clientService
         );
+
+        // We have to inject a different OAuth2AuthorizedClientProvider which is built using RestClientClientCredentialsTokenResponseClient
+        // rather than the deprecated DefaultClientCredentialsTokenResponseClient.
+        // This fixes the issue we were seeing with error responses where the response body was getting lost.
+        // We also inject a custom RestTemplate which uses our custom HttpClient to handle SSL trust.
+        RestClientClientCredentialsTokenResponseClient accessTokenResponseClient = new RestClientClientCredentialsTokenResponseClient();
+
+        RestClient restClient = RestClient.builder()
+                .requestFactory(new JdkClientHttpRequestFactory(
+                        SslUtils.createHttpClient()
+                ))
+                .messageConverters((messageConverters) -> {
+                    messageConverters.clear();
+                    messageConverters.add(new FormHttpMessageConverter());
+                    messageConverters.add(new OAuth2AccessTokenResponseHttpMessageConverter());
+                })
+                .defaultStatusHandler(new OAuth2ErrorResponseErrorHandler())
+                .build();
+
+        accessTokenResponseClient.setRestClient(restClient);
+        OAuth2AuthorizedClientProvider acp = OAuth2AuthorizedClientProviderBuilder
+                .builder()
+                .clientCredentials(builder -> {
+                    builder.accessTokenResponseClient(accessTokenResponseClient);
+                })
+                .build();
+
+        acm.setAuthorizedClientProvider(acp);
+
+        this.authorizedClientManager = acm;
     }
 
     /**
