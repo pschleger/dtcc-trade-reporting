@@ -1,4 +1,4 @@
-package com.java_template.application.integration;
+package com.java_template.application;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;

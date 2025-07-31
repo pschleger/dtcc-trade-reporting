@@ -8,7 +8,7 @@ Paul Muadib, I have successfully implemented a comprehensive tar.gz-based FpML i
 
 ### **Test Infrastructure:**
 - **TarGzFpMLSampleLoader**: Utility class for streaming FpML samples from tar.gz archives
-- **FpMLTradeConfirmationSamplesTest**: Dynamic test generation for comprehensive coverage
+- **FpMLTradeConfirmationSamplesIT**: Integration test with dynamic test generation for comprehensive coverage
 - **Product Type Detection**: Accurate classification based on official FpML directory structure
 - **MacOS Metadata Filtering**: Excludes `__MACOSX` and `._` files automatically
 
@@ -125,10 +125,10 @@ The zip-based integration testing system is now ready for:
 
 ### **Files Created/Updated:**
 
-- `src/test/java/com/java_template/application/integration/TarGzFpMLSampleLoader.java`
-- `src/test/java/com/java_template/application/integration/FpMLTradeConfirmationSamplesTest.java`
+- `src/test/java/com/java_template/application/TarGzFpMLSampleLoader.java`
+- `src/test/java/com/java_template/application/FpMLTradeConfirmationSamplesIT.java`
 - `src/test/resources/fpml-official-samples/FpML-confirmation-5-13.tar.gz`
-- `build.gradle` (added Apache Commons Compress dependency)
+- `build.gradle` (added Apache Commons Compress dependency and test separation)
 - `docs/fpml-zip-integration-summary.md`
 
 ### **Cleanup Completed:**

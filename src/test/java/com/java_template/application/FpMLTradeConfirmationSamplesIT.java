@@ -1,4 +1,4 @@
-package com.java_template.application.integration;
+package com.java_template.application;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.java_template.application.dto.request.FpMLTradeConfirmationRequest;
@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -39,12 +40,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Integration test that processes FpML trade confirmation samples from official FpML archives.
  * Tests the complete trade confirmation pipeline using real FpML 5.13 samples across
  * all major derivative product types.
+ *
+ * This is a true integration test that connects to a running Cyoda environment and
+ * validates the end-to-end processing of FpML trade confirmations.
  */
 @Slf4j
 @SpringBootTest(classes = com.java_template.Application.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class FpMLTradeConfirmationSamplesTest {
+@Tag("integration")
+class FpMLTradeConfirmationSamplesIT {
 
     @Autowired
     private MockMvc mockMvc;
@@ -347,18 +352,34 @@ class FpMLTradeConfirmationSamplesTest {
                 sample.getFpmlVersion(),
                 sample.getRootElementType());
 
-        // Handle different response scenarios gracefully
+        // Check processing status FIRST - this should never be FAILED regardless of validation status
+        boolean isProcessingFailed = "FAILED".equals(tradeResponse.getProcessingStatus());
         boolean isSystemError = "SYSTEM_ERROR".equals(tradeResponse.getValidationStatus());
 
-        if (isSystemError) {
-            log.info("Sample {} failed due to system error (likely OAuth/Cyoda connectivity) - expected in test environment",
-                    sample.getFileName());
-            // For system errors, just verify the system handled them gracefully
-            // Processing errors might be null or empty for OAuth failures, which is acceptable
-            log.debug("System error detected for sample {} - OAuth/connectivity issue expected in test environment",
+        if (isProcessingFailed) {
+            // Processing failed - this should ALWAYS cause the test to fail
+            String errorDetails = "";
+            if (tradeResponse.getProcessingErrors() != null && !tradeResponse.getProcessingErrors().isEmpty()) {
+                List<String> errorMessages = tradeResponse.getProcessingErrors().stream()
+                        .map(error -> error.getErrorCode() + ": " + error.getErrorMessage())
+                        .toList();
+                errorDetails = " Errors: " + String.join(", ", errorMessages);
+            }
+            if (tradeResponse.getValidationResults() != null && !tradeResponse.getValidationResults().isEmpty()) {
+                errorDetails += " Validation: " + tradeResponse.getValidationResults().toString();
+            }
+
+            log.error("Sample {} processing FAILED (ValidationStatus: {}).{}",
+                    sample.getFileName(), tradeResponse.getValidationStatus(), errorDetails);
+            throw new AssertionError("Sample " + sample.getFileName() + " processing FAILED (ValidationStatus: " +
+                    tradeResponse.getValidationStatus() + ")." + errorDetails);
+        } else if (isSystemError) {
+            log.info("Sample {} had system error (likely OAuth/Cyoda connectivity) but processing succeeded - expected in test environment",
                     sample.getFileName());
         } else {
-            // For non-system errors, we should have validation results
+            // For successful processing, we should have validation results
+            assertThat(tradeResponse.getProcessingStatus()).as("Processing should be successful for " + sample.getFileName()).isEqualTo("PROCESSED");
+
             if (tradeResponse.getValidationResults() != null) {
                 assertThat(tradeResponse.getValidationResults()).as("Validation results should be present for " + sample.getFileName()).isNotNull();
             } else {

@@ -11,6 +11,7 @@ Essential coding practices and constraints that govern how code changes should b
 
 - **NEVER COMMIT CODE**: Do not commit code changes - the human handles all commits
 - **Focus on Implementation**: Assume the human will review and commit your changes
+- When moving files, use "git mv", so that these do not appear as deleted and created files.
 
 ## Code Philosophy and Approach
 

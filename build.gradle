@@ -79,11 +79,75 @@ dependencies {
 }
 
 test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        includeEngines 'junit-jupiter'
+        // Only exclude integration tests when explicitly running unit tests
+        if (project.hasProperty('unitTestsOnly')) {
+            excludeTags 'integration'
+        }
+    }
 
     // Pass system properties to tests (needed for conditional test execution)
     systemProperties = System.properties
 }
+
+// Unit tests only task
+task unitTest(type: Test) {
+    description = 'Runs only unit tests (excludes integration tests)'
+    group = 'verification'
+
+    useJUnitPlatform {
+        excludeTags 'integration'
+        includeEngines 'junit-jupiter'
+    }
+
+    // Pass system properties to tests
+    systemProperties = System.properties
+
+    // Only include unit tests
+    include '**/*Test.class'
+    exclude '**/*IT.class'
+}
+
+// Integration test task
+task integrationTest(type: Test) {
+    description = 'Runs integration tests that connect to external services'
+    group = 'verification'
+
+    useJUnitPlatform {
+        includeTags 'integration'
+        includeEngines 'junit-jupiter'
+    }
+
+    // Pass system properties to tests
+    systemProperties = System.properties
+
+    // Only include integration tests
+    include '**/*IT.class'
+    exclude '**/*Test.class'
+
+    // Integration tests should run after unit tests
+    shouldRunAfter unitTest
+}
+
+// Task for running all tests (unit + integration) - useful for IDE
+task allTests(type: Test) {
+    description = 'Runs all tests including integration tests'
+    group = 'verification'
+
+    useJUnitPlatform {
+        includeEngines 'junit-jupiter'
+    }
+
+    // Pass system properties to tests
+    systemProperties = System.properties
+
+    // Include all tests
+    include '**/*Test.class', '**/*IT.class'
+}
+
+// Make check depend on both unit and integration tests
+check.dependsOn unitTest, integrationTest
 
 jsonSchema2Pojo {
     source = files("src/main/resources/schema")

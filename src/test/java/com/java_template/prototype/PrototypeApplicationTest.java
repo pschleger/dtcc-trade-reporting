@@ -37,6 +37,7 @@ import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2Clien
     "spring.profiles.active=prototype-test"
 })
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@EnabledIf("isPrototypeEnabled")
 public class PrototypeApplicationTest {
 
     @SuppressWarnings("SpringComponentScan")  // entity packages shows up in concrete implementations of this template
@@ -63,7 +64,6 @@ public class PrototypeApplicationTest {
     }
 
     @Test
-    @EnabledIf("isPrototypeEnabled")
     void runPrototypeApplication() throws InterruptedException {
         System.out.println("🚀 Prototype Application Started!");
         System.out.println("📍 Swagger UI: http://localhost:8080/swagger-ui/index.html");

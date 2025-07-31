@@ -4,8 +4,22 @@
 
 Comprehensive testing standards and practices that must be followed for all code changes, bug fixes, and feature implementations.
 
+## Naming Tests
+We distinguish between two test types:
+
+### Integration Tests
+An integration test is a test where the Spring Boot Application physically connects to a running Cyoda Environment and asserts the proper state of the system after it settles down by getting entities and asserting their correct state and content.
+
+Integration Test classes must end with `IT`
+
+### Unit Tests
+A unit test is any test that specifically tests functionality without integration to external resources, be they in testcontainers or externally running services. They can run standalone without any dependecies on external resources or services.
+
+Unit Test classes must end with `Test`
+
 ## Running tests
 - Before running any tests, check what type of project it is, for example is it a maven project, gradle project, npm project, etc, and launch the appropriate command to run tests without requiring human intervention.
+- It must be possible to easily run all unit tests separately from integration tests.
 
 ## Test-Driven Development (TDD)
 
